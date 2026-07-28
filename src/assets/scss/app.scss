@@ -1,0 +1,12 @@
+// Font Awesome -- import syntax copied verbatim from
+// legacy/resources/scss/_fontawesome.scss (same Vite/Sass engine, proven working)
+$fa-font-path: '@fortawesome/fontawesome-free/webfonts';
+@import '@fortawesome/fontawesome-free/scss/fontawesome';
+@import '@fortawesome/fontawesome-free/scss/regular';
+@import '@fortawesome/fontawesome-free/scss/solid';
+@import '@fortawesome/fontawesome-free/scss/brands';
+
+// Bootstrap 5, with the legacy primary-color override -- copied verbatim
+// from legacy/resources/scss/_bootstrap.scss ($primary: #2a547f;)
+$primary: #2a547f;
+@import 'bootstrap/scss/bootstrap';
