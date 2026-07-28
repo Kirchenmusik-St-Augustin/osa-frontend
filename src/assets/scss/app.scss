@@ -6,7 +6,24 @@ $fa-font-path: '@fortawesome/fontawesome-free/webfonts';
 @import '@fortawesome/fontawesome-free/scss/solid';
 @import '@fortawesome/fontawesome-free/scss/brands';
 
+// Fonts -- copied verbatim from legacy/resources/scss/_fonts.scss. Must be
+// imported before bootstrap: $font-family-base/-monospace are consumed while
+// bootstrap/scss/bootstrap compiles, not read afterwards.
+$font-family-base: 'Quicksand', sans-serif;
+$font-family-monospace: 'Nova Mono', monospace;
+@import url('https://fonts.googleapis.com/css?family=Nova+Mono|Quicksand|Lora&display=swap');
+
 // Bootstrap 5, with the legacy primary-color override -- copied verbatim
 // from legacy/resources/scss/_bootstrap.scss ($primary: #2a547f;)
 $primary: #2a547f;
 @import 'bootstrap/scss/bootstrap';
+
+// Custom overrides -- copied verbatim from legacy/resources/scss/_custom.scss
+body {
+  background-color: white;
+  overflow-y: scroll;
+}
+
+.c-pointer {
+  cursor: pointer;
+}
