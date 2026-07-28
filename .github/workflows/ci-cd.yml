@@ -10,6 +10,7 @@ on:
 
 jobs:
   lint:
+    name: Lint & Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -21,6 +22,7 @@ jobs:
       - run: npm run format:check
 
   quality:
+    name: Typecheck & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -32,6 +34,7 @@ jobs:
       - run: npm run test:coverage
 
   security:
+    name: CodeQL Security Scan
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -43,6 +46,7 @@ jobs:
       - uses: github/codeql-action/analyze@v4
 
   release-image:
+    name: Build & Push Image
     needs: [lint, quality, security]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
