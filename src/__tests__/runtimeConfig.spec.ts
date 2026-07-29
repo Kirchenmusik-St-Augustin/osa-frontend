@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { apiBaseUrl, appEnvironment } from '@/runtimeConfig'
+import { apiBaseUrl, appEnvironment, googleClientId } from '@/runtimeConfig'
 
 // Explicitly stub/unstub every VITE_* var this module reads instead of
 // relying on it being absent from the ambient environment -- the dev
@@ -29,5 +29,15 @@ describe('runtimeConfig', () => {
   it('appEnvironment is undefined when nothing is configured', () => {
     vi.stubEnv('VITE_APP_ENVIRONMENT', undefined)
     expect(appEnvironment()).toBeUndefined()
+  })
+
+  it('googleClientId is undefined when nothing is configured', () => {
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', undefined)
+    expect(googleClientId()).toBeUndefined()
+  })
+
+  it('googleClientId reads from window.__APP_CONFIG__ when present', () => {
+    window.__APP_CONFIG__ = { GOOGLE_CLIENT_ID: 'test-client-id.apps.googleusercontent.com' }
+    expect(googleClientId()).toBe('test-client-id.apps.googleusercontent.com')
   })
 })

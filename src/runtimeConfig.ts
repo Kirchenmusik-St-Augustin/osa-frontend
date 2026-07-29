@@ -21,6 +21,18 @@ export function apiBaseUrl(): string {
   return readRuntimeConfig('API_BASE_URL') || import.meta.env.VITE_API_BASE_URL || '/api'
 }
 
+// Required-ness is enforced at the process level, not here: vite.config.ts's
+// validateViteEnv() (see vite.env-check.ts) exits the dev server/build
+// process immediately if VITE_APP_ENVIRONMENT is unset or invalid, and the
+// prod entrypoint script's require_env does the same for the container.
+// By the time any app code runs in a browser, a valid value is therefore
+// already guaranteed -- this getter itself stays a plain, non-throwing read.
 export function appEnvironment(): string | undefined {
   return readRuntimeConfig('APP_ENVIRONMENT') || import.meta.env.VITE_APP_ENVIRONMENT
+}
+
+export function googleClientId(): string | undefined {
+  // Optional -- absent/empty means the Google Sign-In button simply
+  // doesn't render (see LoginView.vue), not a startup failure.
+  return readRuntimeConfig('GOOGLE_CLIENT_ID') || import.meta.env.VITE_GOOGLE_CLIENT_ID
 }

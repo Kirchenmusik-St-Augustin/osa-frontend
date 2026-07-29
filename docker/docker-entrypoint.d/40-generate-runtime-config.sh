@@ -27,14 +27,18 @@ require_env() {
 require_env API_BASE_URL
 require_env APP_ENVIRONMENT
 
+# Optional: Google Sign-In stays a graceful no-op (button doesn't render)
+# when unset, mirroring the backend's own GOOGLE_CLIENT_ID-optional pattern.
+: "${GOOGLE_CLIENT_ID:=}"
+
 if [ ! -f "$TEMPLATE" ]; then
   echo "FATAL: $TEMPLATE not found. Aborting." >&2
   exit 1
 fi
 
-export API_BASE_URL APP_ENVIRONMENT
+export API_BASE_URL APP_ENVIRONMENT GOOGLE_CLIENT_ID
 
-envsubst '${API_BASE_URL} ${APP_ENVIRONMENT}' < "$TEMPLATE" > "$OUTPUT"
+envsubst '${API_BASE_URL} ${APP_ENVIRONMENT} ${GOOGLE_CLIENT_ID}' < "$TEMPLATE" > "$OUTPUT"
 
 rm -f "$TEMPLATE"
 
