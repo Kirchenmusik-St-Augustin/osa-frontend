@@ -97,4 +97,32 @@ describe('runAuthGuards', () => {
 
     expect(result).toBe(true)
   })
+
+  it("redirects home when the user lacks the route's requiredPermission", async () => {
+    mockedApi.post.mockReset()
+    mockedApi.post.mockResolvedValueOnce({
+      data: { access_token: 'restored', token_type: 'bearer' },
+    })
+    mockedApi.get.mockResolvedValueOnce({ data: authenticatedProfile })
+    const to = makeRoute({ meta: { requiredPermission: 'artistMaintain' } })
+
+    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+
+    expect(result).toEqual({ name: 'home' })
+  })
+
+  it('allows the route through once the user has the required permission', async () => {
+    mockedApi.post.mockReset()
+    mockedApi.post.mockResolvedValueOnce({
+      data: { access_token: 'restored', token_type: 'bearer' },
+    })
+    mockedApi.get.mockResolvedValueOnce({
+      data: { ...authenticatedProfile, permissions: ['artistMaintain'] },
+    })
+    const to = makeRoute({ meta: { requiredPermission: 'artistMaintain' } })
+
+    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+
+    expect(result).toBe(true)
+  })
 })

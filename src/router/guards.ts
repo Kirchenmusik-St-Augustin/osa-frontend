@@ -5,6 +5,11 @@ declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
     requiresGuest?: boolean
+    // Static per-route permission (e.g. 'artistMaintain') -- unlike the
+    // Coreelement pool's `:type`-dependent permission (coreelementGuard.ts),
+    // every Repertoire route needs exactly one fixed permission known at
+    // route-declaration time, so a plain `meta` field is enough here.
+    requiredPermission?: string
   }
 }
 
@@ -18,6 +23,10 @@ export const runAuthGuards: NavigationGuardWithThis<undefined> = async (to) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  if (to.meta.requiredPermission && !authStore.hasPermission(to.meta.requiredPermission)) {
+    return { name: 'home' }
   }
 
   if (to.meta.requiresGuest && authStore.isAuthenticated) {

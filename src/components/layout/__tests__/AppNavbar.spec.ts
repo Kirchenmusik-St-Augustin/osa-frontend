@@ -13,7 +13,8 @@ const mockLogout = vi.fn()
 let mockAuthState: {
   isAuthenticated: boolean
   user: { surname: string; givenname: string; administrator?: boolean } | null
-} = { isAuthenticated: false, user: null }
+  permissions: string[]
+} = { isAuthenticated: false, user: null, permissions: [] }
 
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
@@ -23,13 +24,14 @@ vi.mock('@/stores/auth', () => ({
     get user() {
       return mockAuthState.user
     },
+    hasPermission: (permission: string) => mockAuthState.permissions.includes(permission),
     logout: mockLogout,
   }),
 }))
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockAuthState = { isAuthenticated: false, user: null }
+  mockAuthState = { isAuthenticated: false, user: null, permissions: [] }
 })
 
 describe('AppNavbar', () => {
@@ -59,6 +61,7 @@ describe('AppNavbar', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [],
     }
     const wrapper = mount(AppNavbar)
 
@@ -71,6 +74,7 @@ describe('AppNavbar', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [],
     }
     mockLogout.mockResolvedValueOnce(undefined)
     const wrapper = mount(AppNavbar)
@@ -86,6 +90,7 @@ describe('AppNavbar', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max', administrator: false },
+      permissions: [],
     }
     const wrapper = mount(AppNavbar)
 
@@ -96,6 +101,7 @@ describe('AppNavbar', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max', administrator: true },
+      permissions: [],
     }
     const wrapper = mount(AppNavbar)
 
@@ -110,5 +116,43 @@ describe('AppNavbar', () => {
     ]) {
       expect(wrapper.text()).toContain(label)
     }
+  })
+
+  it('hides the Repertoire dropdown without any of its three permissions', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).not.toContain('Repertoire')
+  })
+
+  it('shows only the permitted Repertoire links', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: ['ordinariumworkMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('Repertoire')
+    expect(wrapper.text()).toContain('Ordinarium-Werke')
+    expect(wrapper.text()).not.toContain('Proprium-Werke')
+    expect(wrapper.text()).not.toContain('Komponisten und Dirigenten')
+  })
+
+  it('shows all three Repertoire links with all permissions', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: ['artistMaintain', 'ordinariumworkMaintain', 'propriumworkMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('Ordinarium-Werke')
+    expect(wrapper.text()).toContain('Proprium-Werke')
+    expect(wrapper.text()).toContain('Komponisten und Dirigenten')
   })
 })

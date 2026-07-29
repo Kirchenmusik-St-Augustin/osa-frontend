@@ -35,6 +35,48 @@ async function logout(): Promise<void> {
     <div id="mainNavBar" class="collapse navbar-collapse">
       <ul class="navbar-nav mb-2 mb-lg-0">
         <!-- Further left-hand navigation entries are added as real views land in later slices. -->
+        <li
+          v-if="
+            authStore.hasPermission('artistMaintain') ||
+            authStore.hasPermission('ordinariumworkMaintain') ||
+            authStore.hasPermission('propriumworkMaintain')
+          "
+          class="nav-item"
+        >
+          <div class="dropdown">
+            <button
+              class="btn dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              Repertoire
+            </button>
+            <div class="dropdown-menu" data-bs-theme="light">
+              <RouterLink
+                v-if="authStore.hasPermission('ordinariumworkMaintain')"
+                class="dropdown-item"
+                :to="{ name: 'repertoire-ordinariumworks-search' }"
+              >
+                Ordinarium-Werke
+              </RouterLink>
+              <RouterLink
+                v-if="authStore.hasPermission('propriumworkMaintain')"
+                class="dropdown-item"
+                :to="{ name: 'repertoire-propriumworks-search' }"
+              >
+                Proprium-Werke
+              </RouterLink>
+              <RouterLink
+                v-if="authStore.hasPermission('artistMaintain')"
+                class="dropdown-item"
+                :to="{ name: 'repertoire-artists-search' }"
+              >
+                Komponisten und Dirigenten
+              </RouterLink>
+            </div>
+          </div>
+        </li>
         <li v-if="authStore.user?.administrator" class="nav-item">
           <div class="dropdown">
             <button

@@ -49,4 +49,25 @@ describe('FormInput', () => {
 
     expect(wrapper.text()).toContain('Der Name ist bereits vergeben.')
   })
+
+  it('renders a number input with min defaulting to 0, emitting a number', async () => {
+    const wrapper = mount(FormInput, {
+      props: { id: 'duration', title: 'Dauer', modelValue: null, type: 'number' },
+    })
+
+    const input = wrapper.find('input#duration')
+    expect(input.attributes('type')).toBe('number')
+    expect(input.attributes('min')).toBe('0')
+
+    await input.setValue('42')
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([42])
+  })
+
+  it('passes an explicit max through to the number input', () => {
+    const wrapper = mount(FormInput, {
+      props: { id: 'duration', title: 'Dauer', modelValue: null, type: 'number', max: 999 },
+    })
+
+    expect(wrapper.find('input#duration').attributes('max')).toBe('999')
+  })
 })
