@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { COREELEMENT_TYPES } from '@/constants/coreelementTypes'
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+async function logout(): Promise<void> {
+  await authStore.logout()
+  await router.push({ name: 'login' })
+}
 </script>
 
 <template>
@@ -24,10 +34,56 @@ import { RouterLink } from 'vue-router'
     </button>
     <div id="mainNavBar" class="collapse navbar-collapse">
       <ul class="navbar-nav mb-2 mb-lg-0">
-        <!-- Left-hand navigation entries are added as real views land in later slices. -->
+        <!-- Further left-hand navigation entries are added as real views land in later slices. -->
+        <li v-if="authStore.user?.administrator" class="nav-item">
+          <div class="dropdown">
+            <button
+              class="btn dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              Administrator
+            </button>
+            <div class="dropdown-menu" data-bs-theme="light">
+              <RouterLink
+                v-for="typeMeta in COREELEMENT_TYPES"
+                :key="typeMeta.type"
+                class="dropdown-item"
+                :to="{ name: 'administrator-coreelement', params: { type: typeMeta.type } }"
+              >
+                {{ typeMeta.label }}
+              </RouterLink>
+            </div>
+          </div>
+        </li>
       </ul>
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-        <!-- Right-hand navigation entries (auth/user menu) land with the Auth slice. -->
+        <li v-if="authStore.isAuthenticated" class="nav-item">
+          <div class="dropdown">
+            <button
+              class="btn dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i class="fas fa-fw fa-user me-1"></i>
+              <span>{{ authStore.user?.surname }}, {{ authStore.user?.givenname }}</span>
+            </button>
+            <!-- "Mein Benutzerkonto"/"Meine Anfragen und Buchungen"/"Statistiken" etc.
+                 land with their respective future domain slices (User-/System-Verwaltung,
+                 Schritt 6) -- no route exists for them yet in this Auth-only slice. -->
+            <div class="dropdown-menu dropdown-menu-end" data-bs-theme="light">
+              <button type="button" class="dropdown-item text-danger" @click="logout">
+                <i class="fas fa-fw fa-sign-out-alt me-1"></i>
+                <span>Abmelden</span>
+              </button>
+            </div>
+          </div>
+        </li>
+        <li v-else class="nav-item">
+          <RouterLink class="nav-link" :to="{ name: 'login' }">Log in</RouterLink>
+        </li>
       </ul>
     </div>
   </nav>
