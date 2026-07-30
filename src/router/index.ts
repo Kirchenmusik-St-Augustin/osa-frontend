@@ -11,10 +11,33 @@ const router = createRouter({
       component: AppLayout,
       children: [
         {
+          // The de-facto app home -- Legacy redirects '/' straight to the
+          // performances calendar (routes/web.php), there is no separate
+          // "home" concept or nav entry for it.
           path: '',
           name: 'home',
-          component: () => import('@/views/HomeView.vue'),
+          component: () => import('@/views/performances/PerformanceCalendarView.vue'),
           meta: { requiresAuth: true },
+        },
+        {
+          path: 'performances/create',
+          name: 'performances-create',
+          component: () => import('@/views/performances/PerformanceFormView.vue'),
+          meta: { requiresAuth: true, requiredPermission: 'performanceMaintain' },
+        },
+        {
+          path: 'performances/:id(\\d+)',
+          name: 'performances-show',
+          component: () => import('@/views/performances/PerformanceShowView.vue'),
+          props: true,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'performances/:id(\\d+)/edit',
+          name: 'performances-edit',
+          component: () => import('@/views/performances/PerformanceFormView.vue'),
+          props: true,
+          meta: { requiresAuth: true, requiredPermission: 'performanceMaintain' },
         },
         {
           path: 'login',
