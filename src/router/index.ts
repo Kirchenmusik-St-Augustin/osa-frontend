@@ -40,6 +40,38 @@ const router = createRouter({
           meta: { requiresAuth: true, requiredPermission: 'performanceMaintain' },
         },
         {
+          path: 'performances/:id(\\d+)/cast',
+          name: 'performances-cast',
+          component: () => import('@/views/performances/CastView.vue'),
+          props: true,
+          meta: { requiresAuth: true, requiredPermission: 'performanceCast' },
+        },
+        {
+          // No past-lock check client-side (consistent with
+          // performances-edit above) -- billing is the one Booking-domain
+          // page Legacy's own policy never locks by schedule either, see
+          // booking_service.get_billing's docstring.
+          path: 'performances/:id(\\d+)/billing',
+          name: 'performances-billing',
+          component: () => import('@/views/performances/BillingView.vue'),
+          props: true,
+          meta: { requiresAuth: true, requiredPermission: 'performanceBilling' },
+        },
+        {
+          path: 'performances/:id(\\d+)/requests-and-bookings',
+          name: 'performances-requests-and-bookings',
+          component: () => import('@/views/performances/RequestsAndBookingsView.vue'),
+          props: true,
+          meta: { requiresAuth: true, requiredPermission: 'performanceMaintain' },
+        },
+        {
+          path: 'performances/:id(\\d+)/message-to-cast',
+          name: 'performances-message-to-cast',
+          component: () => import('@/views/performances/MessageToCastView.vue'),
+          props: true,
+          meta: { requiresAuth: true, requiredPermission: 'performanceMaintain' },
+        },
+        {
           path: 'login',
           name: 'login',
           component: () => import('@/views/auth/LoginView.vue'),
@@ -85,6 +117,12 @@ const router = createRouter({
           props: true,
           meta: { requiresAuth: true },
           beforeEnter: coreelementRouteGuard,
+        },
+        {
+          path: 'administrator/fees',
+          name: 'administrator-fees',
+          component: () => import('@/views/administrator/FeeView.vue'),
+          meta: { requiresAuth: true, requiredPermission: 'feeMaintain' },
         },
         {
           path: 'repertoire/artists',

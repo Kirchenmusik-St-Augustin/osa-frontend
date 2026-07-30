@@ -34,6 +34,23 @@ export interface PerformanceSetup {
   choirjobs: PositionEntry[]
 }
 
+export interface PositionRef {
+  id: number
+  name: string
+}
+
+// Lives here (not useBookings.ts) because PerformanceCalendarItem below
+// needs it too, and useBookings.ts already depends on this module for
+// PerformanceLocation/-PropriumItem/-Rehearsal/-Setup -- the other
+// direction would be circular. Port of userBookingStatus()'s 6-state
+// result: 0=not bookable, 1=bookable/unrequested, 2=requested, 3=standby,
+// 4=booked/regular, 5=rejected ("nicht gebucht").
+export interface BookingStatus {
+  status: number
+  position: PositionRef | null
+  at: string | null
+}
+
 export interface PerformanceCalendarItem {
   id: number
   schedule: string
@@ -43,6 +60,7 @@ export interface PerformanceCalendarItem {
   ordinariumwork_artist_name: string
   ordinariumwork_demanding: boolean
   artist_name: string | null
+  user_booking: BookingStatus
   proprium: PerformancePropriumItem[]
   demanding_proprium: boolean
   rehearsals: PerformanceRehearsal[]

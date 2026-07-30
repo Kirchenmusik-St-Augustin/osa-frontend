@@ -157,4 +157,90 @@ describe('PerformanceCard', () => {
     })
     expect(past.classes()).not.toContain('border-primary')
   })
+
+  it('hides the three disponent-only booking links without performanceCast, even with performanceMaintain', () => {
+    mockPermissions = ['performanceMaintain']
+    const wrapper = mount(PerformanceCard, {
+      props: { performance: basePerformance, showMenu: true },
+    })
+
+    expect(wrapper.text()).toContain('Bearbeiten')
+    expect(wrapper.text()).not.toContain('Anfragen und Buchungen')
+    expect(wrapper.text()).not.toContain('Besetzung')
+    expect(wrapper.text()).not.toContain('Nachricht an aktuelle Besetzung')
+  })
+
+  it('shows the three disponent-only booking links with performanceCast (implies performanceMaintain gate)', () => {
+    mockPermissions = ['performanceMaintain', 'performanceCast']
+    const wrapper = mount(PerformanceCard, {
+      props: { performance: basePerformance, showMenu: true },
+    })
+
+    expect(wrapper.text()).toContain('Anfragen und Buchungen')
+    expect(wrapper.text()).toContain('Besetzung')
+    expect(wrapper.text()).toContain('Nachricht an aktuelle Besetzung')
+  })
+
+  it('shows "Abrechnung" with performanceBilling even for a past performance (no upcoming gate)', () => {
+    mockPermissions = ['performanceBilling']
+    const wrapper = mount(PerformanceCard, {
+      props: { performance: { ...basePerformance, schedule: pastIso() }, showMenu: true },
+    })
+
+    expect(wrapper.text()).toContain('Abrechnung')
+  })
+
+  it('hides "Abrechnung" without performanceBilling', () => {
+    const wrapper = mount(PerformanceCard, {
+      props: { performance: basePerformance, showMenu: true },
+    })
+
+    expect(wrapper.text()).not.toContain('Abrechnung')
+  })
+
+  it('renders no booking-status badge when the performance carries no user_booking', () => {
+    const wrapper = mount(PerformanceCard, { props: { performance: basePerformance } })
+    expect(wrapper.find('.badge').exists()).toBe(false)
+  })
+
+  it('renders the booking-status badge when user_booking is present', () => {
+    const wrapper = mount(PerformanceCard, {
+      props: {
+        performance: {
+          ...basePerformance,
+          user_booking: { status: 2, position: null, at: null },
+        },
+      },
+    })
+    expect(wrapper.text()).toContain('angefragt')
+  })
+
+  it('emits change-status when the interactive trigger is clicked with bookingTrigger', async () => {
+    const wrapper = mount(PerformanceCard, {
+      props: {
+        performance: {
+          ...basePerformance,
+          user_booking: { status: 1, position: null, at: null },
+        },
+        bookingTrigger: true,
+      },
+    })
+
+    await wrapper.find('.fa-hand-point-up').trigger('click')
+
+    expect(wrapper.emitted('change-status')).toHaveLength(1)
+  })
+
+  it('does not render an interactive trigger without bookingTrigger', () => {
+    const wrapper = mount(PerformanceCard, {
+      props: {
+        performance: {
+          ...basePerformance,
+          user_booking: { status: 1, position: null, at: null },
+        },
+      },
+    })
+
+    expect(wrapper.find('.fa-hand-point-up').exists()).toBe(false)
+  })
 })

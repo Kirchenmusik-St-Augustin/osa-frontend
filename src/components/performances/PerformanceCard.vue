@@ -2,12 +2,22 @@
 import { computed, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateTime, parseWallClock } from '@/services/dateFormat'
-import type { PerformancePropriumItem, PerformanceRehearsal } from '@/composables/usePerformances'
+import type {
+  BookingStatus,
+  PerformancePropriumItem,
+  PerformanceRehearsal,
+} from '@/composables/usePerformances'
+import BookingStatusBadge from '@/components/bookings/BookingStatusBadge.vue'
 import PropriumSetup from './PropriumSetup.vue'
 
 // Structural subset shared by PerformanceCalendarItem and PerformanceShow --
 // this card is used on both the calendar and (with showMenu off) the Show
-// page, 1:1 Legacy's dual-purpose PerformanceCardComponent.vue.
+// page, 1:1 Legacy's dual-purpose PerformanceCardComponent.vue. `user_booking`
+// is optional -- only the calendar (PerformanceCalendarItem) carries it,
+// Cast/Billing/RequestsAndBookings/MessageToCast's own PerformanceShortBase
+// don't need the self-service badge on their own card (see
+// project_osa_migration_plan memory, Schritt 6 plan B.4 correction: Legacy's
+// Show.vue passes neither with-status nor booking-trigger either).
 export interface PerformanceCardData {
   id: number
   schedule: string
@@ -16,6 +26,7 @@ export interface PerformanceCardData {
   ordinariumwork_artist_name: string
   ordinariumwork_demanding: boolean
   artist_name: string | null
+  user_booking?: BookingStatus
   proprium: PerformancePropriumItem[]
   demanding_proprium: boolean
   rehearsals: PerformanceRehearsal[]
@@ -25,15 +36,19 @@ const props = withDefaults(
   defineProps<{
     performance: PerformanceCardData
     showMenu?: boolean
+    bookingTrigger?: boolean
     initShowRehearsals?: boolean
     initShowProprium?: boolean
   }>(),
   {
     showMenu: false,
+    bookingTrigger: false,
     initShowRehearsals: false,
     initShowProprium: false,
   },
 )
+
+const emit = defineEmits<{ 'change-status': [] }>()
 
 const authStore = useAuthStore()
 
@@ -49,6 +64,14 @@ const upcoming = computed(() => parseWallClock(props.performance.schedule).getTi
   <div class="card performance mb-3 mx-auto" :class="upcoming ? 'border-primary' : ''">
     <div class="card-header">
       <div class="row">
+        <div class="col-lg-5 order-lg-2 text-nowrap text-end">
+          <BookingStatusBadge
+            v-if="performance.user_booking"
+            :status="performance.user_booking"
+            :interactive="bookingTrigger"
+            @trigger="emit('change-status')"
+          />
+        </div>
         <div class="col-lg-7 order-lg-1 text-nowrap text-start">
           <span>{{ formatDateTime(performance.schedule) }}, </span>
           <span class="me-2" :style="{ color: `#${performance.location.color}` }">{{
@@ -103,6 +126,47 @@ const upcoming = computed(() => parseWallClock(props.performance.schedule).getTi
                     :to="{ name: 'performances-edit', params: { id: performance.id } }"
                   >
                     <i class="fas fa-edit me-1"></i>Bearbeiten
+                  </RouterLink>
+                </li>
+                <li v-if="authStore.hasPermission('performanceCast')">
+                  <RouterLink
+                    class="dropdown-item"
+                    :to="{
+                      name: 'performances-requests-and-bookings',
+                      params: { id: performance.id },
+                    }"
+                  >
+                    <i class="fas fa-eye me-1"></i>Anfragen und Buchungen
+                  </RouterLink>
+                </li>
+                <li v-if="authStore.hasPermission('performanceCast')">
+                  <RouterLink
+                    class="dropdown-item"
+                    :to="{ name: 'performances-cast', params: { id: performance.id } }"
+                  >
+                    <i class="fas fa-boxes me-1"></i>Besetzung
+                  </RouterLink>
+                </li>
+                <li v-if="authStore.hasPermission('performanceCast')">
+                  <RouterLink
+                    class="dropdown-item"
+                    :to="{
+                      name: 'performances-message-to-cast',
+                      params: { id: performance.id },
+                    }"
+                  >
+                    <i class="fas fa-envelope me-1"></i>Nachricht an aktuelle Besetzung
+                  </RouterLink>
+                </li>
+              </template>
+              <template v-if="authStore.hasPermission('performanceBilling')">
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <RouterLink
+                    class="dropdown-item"
+                    :to="{ name: 'performances-billing', params: { id: performance.id } }"
+                  >
+                    <i class="fas fa-euro-sign me-1"></i>Abrechnung
                   </RouterLink>
                 </li>
               </template>

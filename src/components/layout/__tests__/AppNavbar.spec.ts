@@ -113,6 +113,7 @@ describe('AppNavbar', () => {
       'Proprium-Elemente',
       'Orte',
       'Rollen',
+      'Honorare',
     ]) {
       expect(wrapper.text()).toContain(label)
     }

@@ -3,7 +3,9 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePerformances, type PerformanceCalendarItem } from '@/composables/usePerformances'
+import { useBookings } from '@/composables/useBookings'
 import { formatMonthYear } from '@/services/dateFormat'
+import { confirmAction, showToast } from '@/services/notifications'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 
 // The de-facto app home (Legacy redirects '/' to the performances calendar,
@@ -12,6 +14,7 @@ import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 const route = useRoute()
 const authStore = useAuthStore()
 const { listForMonth } = usePerformances()
+const { changeBookingStatus } = useBookings()
 
 const now = new Date()
 
@@ -42,6 +45,23 @@ watch(
   },
   { immediate: true },
 )
+
+// The self-service trigger mutates the CURRENT user's status on the
+// backend, computing the actual transition itself (no client-sent target
+// status, see useBookings.ts's changeBookingStatus() docstring) -- a full
+// list refresh afterward mirrors Legacy's own Inertia GET-visit to this
+// same page, which reloads every card's `user_booking` in one go.
+async function handleChangeStatus(performanceId: number): Promise<void> {
+  const confirmed = await confirmAction()
+  if (!confirmed) return
+
+  try {
+    await changeBookingStatus(performanceId)
+    performances.value = await listForMonth(year.value, month.value)
+  } catch {
+    showToast('Ein unerwarteter Fehler ist aufgetreten.', true)
+  }
+}
 </script>
 
 <template>
@@ -79,7 +99,9 @@ watch(
           :key="performance.id"
           :performance="performance"
           show-menu
+          booking-trigger
           init-show-rehearsals
+          @change-status="handleChangeStatus(performance.id)"
         />
       </div>
       <div v-else class="text-center">Für diesen Monat sind keine Aufführungen geplant.</div>

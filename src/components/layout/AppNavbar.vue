@@ -96,6 +96,9 @@ async function logout(): Promise<void> {
               >
                 {{ typeMeta.label }}
               </RouterLink>
+              <RouterLink class="dropdown-item" :to="{ name: 'administrator-fees' }">
+                Honorare
+              </RouterLink>
             </div>
           </div>
         </li>
