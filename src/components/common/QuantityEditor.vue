@@ -51,7 +51,12 @@ const setupChanged = computed(() => JSON.stringify(setup.value) !== JSON.stringi
 function add(): void {
   const item = props.available.find((candidate) => candidate.id === selectedUnused.value)
   if (!item) return
-  setup.value = [...setup.value, { id: item.id, name: item.name, quantity: 1 }]
+  const updated = [...setup.value, { id: item.id, name: item.name, quantity: 1 }]
+  // Rebuilt in `available`'s canonical order, not insertion order --
+  // 1:1 Legacy's add().
+  setup.value = props.available
+    .map((candidate) => updated.find((entry) => entry.id === candidate.id))
+    .filter((entry): entry is QuantitySetupEntry => entry !== undefined)
 }
 
 function remove(id: number): void {

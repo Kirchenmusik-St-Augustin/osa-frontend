@@ -30,6 +30,23 @@ describe('QuantityEditor', () => {
     expect(emitted?.[emitted.length - 1]).toEqual([[{ id: 1, name: 'Fagott', quantity: 1 }]])
   })
 
+  it('inserts the added item at its canonical position, not at the end', async () => {
+    const wrapper = mount(QuantityEditor, {
+      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+    })
+
+    await wrapper.find('select').setValue('2')
+    await wrapper.find('button.btn-primary').trigger('click')
+
+    const emitted = wrapper.emitted('update:modelValue')
+    expect(emitted?.[emitted.length - 1]).toEqual([
+      [
+        { id: 1, name: 'Fagott', quantity: 1 },
+        { id: 2, name: 'Oboe', quantity: 1 },
+      ],
+    ])
+  })
+
   it('increments quantity via the plus icon', async () => {
     const wrapper = mount(QuantityEditor, {
       props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
