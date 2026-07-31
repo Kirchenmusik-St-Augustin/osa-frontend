@@ -113,10 +113,37 @@ describe('AppNavbar', () => {
       'Proprium-Elemente',
       'Orte',
       'Rollen',
-      'Honorare',
     ]) {
       expect(wrapper.text()).toContain(label)
     }
+  })
+
+  it('hides the System dropdown without the feeMaintain permission', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).not.toContain('System')
+  })
+
+  it('shows the System dropdown with "Tarife verwalten" for a user with feeMaintain', () => {
+    // Legacy's System menu is gated on role 'disponent' (AuthLeftMenu.vue)
+    // -- feeMaintain mirrors that role gate 1:1 (see permission_service.py).
+    // Deliberately NOT gated by the administrator flag, unlike the
+    // Coreelement types in the Administrator dropdown above.
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max', administrator: false },
+      permissions: ['feeMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('System')
+    expect(wrapper.text()).toContain('Tarife verwalten')
+    expect(wrapper.text()).not.toContain('Administrator')
   })
 
   it('hides the Repertoire dropdown without any of its three permissions', () => {

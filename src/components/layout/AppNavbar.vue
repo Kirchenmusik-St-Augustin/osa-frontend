@@ -77,6 +77,31 @@ async function logout(): Promise<void> {
             </div>
           </div>
         </li>
+        <!-- Legacy's "System" menu (AuthLeftMenu.vue) is gated on role
+             'disponent' and currently only has one built item here
+             (Fees/"Tarife verwalten") -- Benutzerverzeichnis/Benutzerkonten
+             verwalten land with User-/System-Verwaltung (Schritt 7). Fees
+             was wrongly wired under the Administrator dropdown before
+             (User-reported 2026-07-31) -- it belongs here, gated by its own
+             feeMaintain permission (role 'disponent'), not the
+             Coreelement types' administrator-Flag. -->
+        <li v-if="authStore.hasPermission('feeMaintain')" class="nav-item">
+          <div class="dropdown">
+            <button
+              class="btn dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              System
+            </button>
+            <div class="dropdown-menu" data-bs-theme="light">
+              <RouterLink class="dropdown-item" :to="{ name: 'system-fees' }">
+                Tarife verwalten
+              </RouterLink>
+            </div>
+          </div>
+        </li>
         <li v-if="authStore.user?.administrator" class="nav-item">
           <div class="dropdown">
             <button
@@ -95,9 +120,6 @@ async function logout(): Promise<void> {
                 :to="{ name: 'administrator-coreelement', params: { type: typeMeta.type } }"
               >
                 {{ typeMeta.label }}
-              </RouterLink>
-              <RouterLink class="dropdown-item" :to="{ name: 'administrator-fees' }">
-                Honorare
               </RouterLink>
             </div>
           </div>
