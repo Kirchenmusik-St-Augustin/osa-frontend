@@ -32,6 +32,7 @@ const emit = defineEmits<{
     stack: 'cast' | 'notBooked',
     candidates: { id: number; name: string; fee: number }[],
   ]
+  'remove-not-booked': [id: number]
 }>()
 
 const open = ref(false)
@@ -63,33 +64,42 @@ function handleAddTo(payload: {
 function reset(): void {
   emit('cast-changed', props.item.id, JSON.parse(JSON.stringify(castOrig)) as CastMember[])
 }
+
+function handleRemoveNotBooked(id: number): void {
+  emit('remove-not-booked', id)
+}
 </script>
 
 <template>
   <div class="list-group-item">
     <div class="d-flex justify-content-between c-pointer" @click="open = !open">
-      <span>
-        <i :class="open ? 'fas fa-caret-down' : 'fas fa-caret-right'"></i>
-        <span class="ms-1">{{ item.name }}</span>
-      </span>
+      <span>{{ item.name }}</span>
       <span class="badge" :class="badgeClass">{{ cast.length }} / {{ item.quantity }}</span>
     </div>
-    <div v-if="open" class="row mt-2">
-      <div class="col-sm-6">
-        <SingleCastList :cast="cast" :required="item.quantity" @cast-changed="handleCastChanged" />
+    <div v-show="open" class="card bg-info-subtle p-2 mt-2">
+      <div class="row">
+        <div class="col-sm-7 mt-1">
+          <SingleCastList
+            :cast="cast"
+            :required="item.quantity"
+            :not-booked="notBooked"
+            @cast-changed="handleCastChanged"
+            @remove-not-booked="handleRemoveNotBooked"
+          />
+        </div>
+        <div class="col-sm-5 mt-1">
+          <SingleCastSelector
+            :all-booked="allBooked"
+            :not-booked="notBooked"
+            :bookable="bookable"
+            :fees="fees"
+            :popular="popular"
+            :modal-id="`${type}-${item.id}`"
+            @add-to="handleAddTo"
+          />
+        </div>
       </div>
-      <div class="col-sm-6">
-        <SingleCastSelector
-          :all-booked="allBooked"
-          :not-booked="notBooked"
-          :bookable="bookable"
-          :fees="fees"
-          :popular="popular"
-          :modal-id="`${type}-${item.id}`"
-          @add-to="handleAddTo"
-        />
-      </div>
-      <div v-if="castChanged" class="text-end mt-2 c-pointer">
+      <div class="mt-3 small text-end c-pointer" :class="{ invisible: !castChanged }">
         <small class="text-black-50" @click="reset">auf derz. Werte zurücksetzen</small>
       </div>
     </div>

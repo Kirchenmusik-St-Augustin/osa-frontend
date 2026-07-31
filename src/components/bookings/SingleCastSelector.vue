@@ -7,12 +7,15 @@ import type {
   NotBookedEntry,
   PopularItem,
 } from '@/composables/useBookings'
+import MultiSelectDropdown, { type MultiSelectGroup } from './MultiSelectDropdown.vue'
 import PopularModal from './PopularModal.vue'
 
 // Port of Legacy's SingleCastSelectorComponent.vue -- candidate picker for
-// one position, split into "Anfragen" (users who requested this
-// performance) and "direkt buchen" (everyone else qualified), a Fee preset
-// dropdown, and the optional ⭐ popular-bookings suggestion modal.
+// one position: a collapsed "N ausgewählt" dropdown (MultiSelectDropdown,
+// tabbed "Anfragen"/"direkt buchen") instead of two permanently-expanded
+// candidate lists, a Fee preset dropdown, and the optional ⭐
+// popular-bookings suggestion modal. The whole panel disappears once there
+// is nobody left to pick (Legacy: `v-if="selectOptions.length"`).
 const props = defineProps<{
   allBooked: BookableUser[]
   notBooked: NotBookedEntry[]
@@ -56,11 +59,16 @@ const otherOptions = computed(() =>
   props.bookable.other.filter((user) => !excludedIds.value.has(user.id)),
 )
 
-function toggleCandidate(id: number): void {
-  selectedCandidateIds.value = selectedCandidateIds.value.includes(id)
-    ? selectedCandidateIds.value.filter((candidateId) => candidateId !== id)
-    : [...selectedCandidateIds.value, id]
-}
+const selectGroups = computed((): MultiSelectGroup[] => {
+  const groups: MultiSelectGroup[] = []
+  if (requestingOptions.value.length) {
+    groups.push({ label: 'Anfragen', values: requestingOptions.value })
+  }
+  if (otherOptions.value.length) {
+    groups.push({ label: 'direkt buchen', values: otherOptions.value })
+  }
+  return groups
+})
 
 function candidatesFor(ids: number[]): { id: number; name: string; fee: number }[] {
   const allOptions = [...requestingOptions.value, ...otherOptions.value]
@@ -78,75 +86,48 @@ function addTo(stack: 'cast' | 'notBooked'): void {
 </script>
 
 <template>
-  <div>
-    <button
-      v-if="popular"
-      type="button"
-      class="btn btn-sm"
-      data-bs-toggle="modal"
-      :data-bs-target="`#popular${modalId}`"
-      title="populäre Buchungen"
-    >
-      <i class="fas fa-star text-primary"></i>
-    </button>
+  <div v-if="selectGroups.length" class="text-end">
+    <div class="mb-2 text-primary">
+      <button
+        v-if="popular"
+        type="button"
+        class="btn btn-sm"
+        data-bs-toggle="modal"
+        :data-bs-target="`#popular${modalId}`"
+        title="populäre Buchungen"
+      >
+        <i class="fas fa-star text-primary"></i>
+      </button>
+    </div>
     <PopularModal v-if="popular" :modal-id="modalId" :popular="popular" />
 
-    <div class="row">
-      <div class="col-sm-6">
-        <small class="text-black-50">Anfragen</small>
-        <div v-for="user in requestingOptions" :key="user.id" class="form-check">
-          <input
-            :id="`cast-candidate-requesting-${user.id}`"
-            class="form-check-input"
-            type="checkbox"
-            :checked="selectedCandidateIds.includes(user.id)"
-            @change="toggleCandidate(user.id)"
-          />
-          <label class="form-check-label" :for="`cast-candidate-requesting-${user.id}`">
-            {{ user.name }}
-          </label>
-        </div>
-      </div>
-      <div class="col-sm-6">
-        <small class="text-black-50">direkt buchen</small>
-        <div v-for="user in otherOptions" :key="user.id" class="form-check">
-          <input
-            :id="`cast-candidate-other-${user.id}`"
-            class="form-check-input"
-            type="checkbox"
-            :checked="selectedCandidateIds.includes(user.id)"
-            @change="toggleCandidate(user.id)"
-          />
-          <label class="form-check-label" :for="`cast-candidate-other-${user.id}`">
-            {{ user.name }}
-          </label>
-        </div>
-      </div>
-    </div>
+    <MultiSelectDropdown v-model="selectedCandidateIds" :options="selectGroups" />
 
-    <select v-model.number="selectedFeeId" class="form-select form-select-sm mt-2">
-      <option v-for="fee in fees" :key="fee.id" :value="fee.id">
-        {{ fee.amount }},- ({{ fee.name }})
-      </option>
-    </select>
-
-    <div class="text-end mt-2">
-      <button
-        type="button"
-        class="btn btn-secondary btn-sm me-2"
-        :disabled="!selectedCandidateIds.length"
-        @click="addTo('notBooked')"
-      >
-        zurückweisen
-      </button>
-      <button
-        type="button"
-        class="btn btn-primary btn-sm"
-        :disabled="!selectedCandidateIds.length"
-        @click="addTo('cast')"
-      >
-        hinzufügen
-      </button>
+    <div class="my-2">ausgewählte Personen:</div>
+    <div class="mb-2">Entweder um</div>
+    <div class="mb-2">
+      <select v-model.number="selectedFeeId" class="form-select form-select-sm">
+        <option v-for="fee in fees" :key="fee.id" :value="fee.id">
+          {{ fee.amount }},- ({{ fee.name }})
+        </option>
+      </select>
     </div>
+    <button
+      type="button"
+      class="btn btn-sm btn-primary mb-2"
+      :disabled="!selectedCandidateIds.length"
+      @click="addTo('cast')"
+    >
+      hinzufügen
+    </button>
+    <div class="my-2">...oder allfällige Anfragen</div>
+    <button
+      type="button"
+      class="btn btn-sm btn-primary mb-2"
+      :disabled="!selectedCandidateIds.length"
+      @click="addTo('notBooked')"
+    >
+      zurückweisen
+    </button>
   </div>
 </template>

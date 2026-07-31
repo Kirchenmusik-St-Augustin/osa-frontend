@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import SingleCastSelector from '../SingleCastSelector.vue'
 import type { BookableGroup, Fee } from '@/composables/useBookings'
 
@@ -17,8 +17,15 @@ const fees: Fee[] = [
   { id: 3, name: 'Instrumentalist', amount: 80 },
 ]
 
+// The candidate list lives inside the collapsed MultiSelectDropdown --
+// open it before asserting on its contents (1:1 Legacy's "N ausgewählt"
+// toggle behavior).
+async function openDropdown(wrapper: VueWrapper): Promise<void> {
+  await wrapper.find('.c-pointer').trigger('click')
+}
+
 describe('SingleCastSelector', () => {
-  it('excludes already-booked and not-booked users from the candidate lists', () => {
+  it('excludes already-booked and not-booked users from the candidate lists', async () => {
     const wrapper = mount(SingleCastSelector, {
       props: {
         allBooked: [{ id: 3, name: 'AlreadyBooked' }],
@@ -28,6 +35,7 @@ describe('SingleCastSelector', () => {
         modalId: 'instruments-1',
       },
     })
+    await openDropdown(wrapper)
     expect(wrapper.text()).not.toContain('AlreadyBooked')
     expect(wrapper.text()).toContain('Other')
   })
@@ -44,8 +52,12 @@ describe('SingleCastSelector', () => {
     const wrapper = mount(SingleCastSelector, {
       props: { allBooked: [], notBooked: [], bookable, fees, modalId: 'instruments-1' },
     })
-    await wrapper.find('input[type="checkbox"]').setValue(true)
-    await wrapper.find('button.btn-primary').trigger('click')
+    await openDropdown(wrapper)
+    await wrapper.find('.list-group-item').trigger('click')
+    await wrapper
+      .findAll('button.btn-primary')
+      .find((button) => button.text() === 'hinzufügen')
+      ?.trigger('click')
 
     const emitted = wrapper.emitted('add-to')
     expect(emitted).toHaveLength(1)
@@ -59,8 +71,12 @@ describe('SingleCastSelector', () => {
     const wrapper = mount(SingleCastSelector, {
       props: { allBooked: [], notBooked: [], bookable, fees, modalId: 'instruments-1' },
     })
-    await wrapper.find('input[type="checkbox"]').setValue(true)
-    await wrapper.find('button.btn-secondary').trigger('click')
+    await openDropdown(wrapper)
+    await wrapper.find('.list-group-item').trigger('click')
+    await wrapper
+      .findAll('button.btn-primary')
+      .find((button) => button.text() === 'zurückweisen')
+      ?.trigger('click')
 
     const emitted = wrapper.emitted('add-to')
     expect(emitted?.[0]?.[0]).toMatchObject({ stack: 'notBooked' })
@@ -83,5 +99,22 @@ describe('SingleCastSelector', () => {
       },
     })
     expect(withPopular.find('.fa-star').exists()).toBe(true)
+  })
+
+  it('hides the entire panel once nobody is left to pick', () => {
+    const wrapper = mount(SingleCastSelector, {
+      props: {
+        allBooked: [
+          { id: 1, name: 'Requester' },
+          { id: 2, name: 'Other' },
+          { id: 3, name: 'AlreadyBooked' },
+        ],
+        notBooked: [],
+        bookable,
+        fees,
+        modalId: 'instruments-1',
+      },
+    })
+    expect(wrapper.find('select').exists()).toBe(false)
   })
 })

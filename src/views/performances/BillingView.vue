@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 import { useBookings, type PerformanceBilling } from '@/composables/useBookings'
+import { parseWallClock } from '@/services/dateFormat'
 
 // Port of Legacy's Billing.vue -- no past-lock (see
 // booking_service.get_billing's docstring), printable via window.print().
@@ -12,6 +13,19 @@ const performance = ref<PerformanceBilling | null>(null)
 
 onMounted(async () => {
   performance.value = await getBilling(Number(props.id))
+})
+
+// Legacy's "zurück" goes to the calendar month of the performance's own
+// schedule (PerformanceController::billing() links to
+// `route('...performances.index', { year, month })`), never to the
+// performance's own show/detail page.
+const backTarget = computed(() => {
+  if (!performance.value) return { name: 'home' as const }
+  const scheduleDate = parseWallClock(performance.value.schedule)
+  return {
+    name: 'home' as const,
+    query: { year: scheduleDate.getFullYear(), month: scheduleDate.getMonth() + 1 },
+  }
 })
 
 const TYPE_LABELS = {
@@ -46,17 +60,12 @@ function printWindow(): void {
       />
 
       <div class="text-center my-3 d-print-none">
-        <RouterLink
-          class="btn btn-primary mx-2"
-          :to="{ name: 'performances-show', params: { id: performance.id } }"
-        >
-          zurück
-        </RouterLink>
+        <RouterLink class="btn btn-primary mx-2" :to="backTarget"> zurück </RouterLink>
         <button type="button" class="btn btn-secondary mx-2" @click="printWindow">drucken</button>
       </div>
 
       <div v-for="type in ['instruments', 'voices', 'choirjobs'] as const" :key="type" class="mb-4">
-        <div class="h4">{{ TYPE_LABELS[type] }}</div>
+        <div class="h4 text-center">{{ TYPE_LABELS[type] }}</div>
         <div v-for="item in performance.billing[type].items" :key="item.id" class="mb-2">
           <div class="h5">{{ item.name }}</div>
           <div
@@ -73,7 +82,7 @@ function printWindow(): void {
       </div>
 
       <div class="mt-4">
-        <div class="h4">Zusammenfassung</div>
+        <div class="h4 text-center">Zusammenfassung</div>
         <div class="d-flex justify-content-between">
           <span>Instrumente</span><span>{{ performance.billing.instruments.sum }}</span>
         </div>
@@ -101,12 +110,7 @@ function printWindow(): void {
       </div>
 
       <div class="text-center my-3 d-print-none">
-        <RouterLink
-          class="btn btn-primary mx-2"
-          :to="{ name: 'performances-show', params: { id: performance.id } }"
-        >
-          zurück
-        </RouterLink>
+        <RouterLink class="btn btn-primary mx-2" :to="backTarget"> zurück </RouterLink>
         <button type="button" class="btn btn-secondary mx-2" @click="printWindow">drucken</button>
       </div>
     </div>

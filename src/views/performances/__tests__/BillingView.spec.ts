@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import BillingView from '../BillingView.vue'
 import type { PerformanceBilling } from '@/composables/useBookings'
 
@@ -115,5 +115,31 @@ describe('BillingView', () => {
 
     expect(printSpy).toHaveBeenCalled()
     printSpy.mockRestore()
+  })
+
+  it('both "zurück" links go to the calendar month of the performance, not its show page', async () => {
+    // Legacy's Billing.vue links "zurück" (both instances) to
+    // `route('...performances.index', { year, month })` (the calendar),
+    // never to the performance's own show/detail page.
+    mockGetBilling.mockResolvedValueOnce(makeBilling())
+    const wrapper = mount(BillingView, { props: { id: '1' } })
+    await flushPromises()
+
+    const backLinks = wrapper.findAllComponents(RouterLinkStub)
+    expect(backLinks).toHaveLength(2)
+    for (const link of backLinks) {
+      expect(link.props('to')).toEqual({ name: 'home', query: { year: 2026, month: 8 } })
+    }
+  })
+
+  it('centers the Instrumente/Stimmen/Choraufgaben/Zusammenfassung subtitles like Legacy', async () => {
+    mockGetBilling.mockResolvedValueOnce(makeBilling())
+    const wrapper = mount(BillingView, { props: { id: '1' } })
+    await flushPromises()
+
+    const subtitle = wrapper.findAll('.h4').find((el) => el.text() === 'Instrumente')
+    expect(subtitle?.classes()).toContain('text-center')
+    const summary = wrapper.findAll('.h4').find((el) => el.text() === 'Zusammenfassung')
+    expect(summary?.classes()).toContain('text-center')
   })
 })

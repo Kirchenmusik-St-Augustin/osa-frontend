@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 import BookingStatusBadge from '@/components/bookings/BookingStatusBadge.vue'
 import { useBookings, type PerformanceRequestsAndBookings } from '@/composables/useBookings'
+import { parseWallClock } from '@/services/dateFormat'
 
 // Port of Legacy's RequestsAndBookings.vue -- available to planner AND
 // disponent (gated on performanceMaintain, not performanceCast), unlike the
@@ -14,6 +15,19 @@ const performance = ref<PerformanceRequestsAndBookings | null>(null)
 
 onMounted(async () => {
   performance.value = await getRequestsAndBookings(Number(props.id))
+})
+
+// Legacy's "zurück" goes to the calendar month of the performance's own
+// schedule (PerformanceController::requestsAndBookings() links to
+// `route('...performances.index', { year, month })`), never to the
+// performance's own show/detail page.
+const backTarget = computed(() => {
+  if (!performance.value) return { name: 'home' as const }
+  const scheduleDate = parseWallClock(performance.value.schedule)
+  return {
+    name: 'home' as const,
+    query: { year: scheduleDate.getFullYear(), month: scheduleDate.getMonth() + 1 },
+  }
 })
 </script>
 
@@ -37,6 +51,10 @@ onMounted(async () => {
         }"
       />
 
+      <div class="text-center my-4">
+        <RouterLink class="btn btn-primary mx-2" :to="backTarget"> zurück </RouterLink>
+      </div>
+
       <table v-if="performance.entries.length" class="table mt-3">
         <thead>
           <tr>
@@ -53,13 +71,8 @@ onMounted(async () => {
       </table>
       <p v-else class="text-center mt-3">Derzeit liegen keine Buchungen oder Anfragen vor.</p>
 
-      <div class="text-center my-5">
-        <RouterLink
-          class="btn btn-primary mx-2"
-          :to="{ name: 'performances-show', params: { id: performance.id } }"
-        >
-          zurück
-        </RouterLink>
+      <div class="text-center my-4">
+        <RouterLink class="btn btn-primary mx-2" :to="backTarget"> zurück </RouterLink>
       </div>
     </div>
   </div>

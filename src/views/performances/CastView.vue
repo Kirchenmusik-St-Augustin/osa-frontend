@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 import CastItem from '@/components/bookings/CastItem.vue'
 import {
@@ -11,6 +12,7 @@ import {
   type PerformanceCastPage,
 } from '@/composables/useBookings'
 import { confirmAction, showToast } from '@/services/notifications'
+import { parseWallClock } from '@/services/dateFormat'
 
 // Port of Legacy's Cast.vue -- the disponent-only Besetzung/Casting page.
 // Only disponent may reach this route at all (see router meta), so no
@@ -24,6 +26,7 @@ import { confirmAction, showToast } from '@/services/notifications'
 const props = defineProps<{ id: string }>()
 const performanceId = computed(() => Number(props.id))
 
+const router = useRouter()
 const { getCastPage, saveCast } = useBookings()
 
 type PositionType = 'instruments' | 'voices' | 'choirjobs'
@@ -56,6 +59,19 @@ onMounted(async () => {
 })
 
 const castChanged = computed(() => JSON.stringify(form) !== formOrig.value)
+
+// Legacy's "zurück" AND a successful "speichern" both go to the calendar
+// month of the performance's own schedule (PerformanceController::cast()/
+// saveCast() `to_route('...performances.index', ['year' => ..., 'month' =>
+// ...])`) -- never to the performance's own show/detail page.
+const backTarget = computed(() => {
+  if (!page.value) return { name: 'home' as const }
+  const scheduleDate = parseWallClock(page.value.schedule)
+  return {
+    name: 'home' as const,
+    query: { year: scheduleDate.getFullYear(), month: scheduleDate.getMonth() + 1 },
+  }
+})
 
 const allBooked = computed((): { id: number; name: string }[] => {
   const all: { id: number; name: string }[] = []
@@ -142,21 +158,26 @@ async function save(): Promise<void> {
   }
 
   try {
-    const result = await saveCast(performanceId.value, payload)
-    setForm(result)
+    await saveCast(performanceId.value, payload)
     showToast('gespeichert.')
+    await router.push(backTarget.value)
   } catch {
     showToast('Ein Fehler ist aufgetreten.', true)
   }
 }
 
 function reset(): void {
-  if (page.value) setForm(page.value.form_data)
+  // Reset to the currently *saved* values, not the page's original load
+  // state -- formOrig is kept current on every setForm() call (initial
+  // load AND after a successful save), while page.value.form_data is only
+  // ever set once at mount and would silently fall back to the pre-save
+  // state after the first save.
+  if (formOrig.value) setForm(JSON.parse(formOrig.value) as CastFormData)
 }
 </script>
 
 <template>
-  <h2 class="h2 text-center mb-4">Besetzung</h2>
+  <h2 class="h2 text-center mb-4">Besetzung bearbeiten</h2>
 
   <div v-if="page" class="row justify-content-center mt-4">
     <div class="col-md-9 justify-content-center">
@@ -176,24 +197,19 @@ function reset(): void {
       />
 
       <div class="text-center my-3">
-        <RouterLink
-          class="btn btn-primary mx-2"
-          :to="{ name: 'performances-show', params: { id: page.id } }"
-        >
-          zurück
-        </RouterLink>
-        <button type="button" class="btn btn-primary mx-2" :disabled="!castChanged" @click="save">
+        <RouterLink class="btn btn-primary mx-2" :to="backTarget"> zurück </RouterLink>
+        <button type="button" class="btn btn-danger mx-2" :disabled="!castChanged" @click="save">
           speichern
         </button>
       </div>
-      <div v-if="castChanged" class="text-center mb-3 c-pointer">
+      <div class="text-center mb-3 c-pointer" :class="{ invisible: !castChanged }">
         <small class="text-black-50" @click="reset"
           >alles auf derzeit gespeicherte Werte zurücksetzen</small
         >
       </div>
 
       <div v-for="type in POSITION_TYPES" :key="type" class="mb-4">
-        <h4>{{ POSITION_LABELS[type] }}</h4>
+        <div class="h4 text-center mb-4">{{ POSITION_LABELS[type] }}</div>
         <div v-if="itemsFor(type).length" class="d-flex justify-content-between fw-bold px-2 mb-1">
           <span>Name</span>
           <span>gebucht</span>
@@ -212,23 +228,8 @@ function reset(): void {
             :popular="popularFor(type, item.id)"
             @cast-changed="(itemId, cast) => handleCastChanged(type, itemId, cast)"
             @add-to="handleAddTo"
+            @remove-not-booked="removeNotBooked"
           />
-        </div>
-      </div>
-
-      <div v-if="form.not_booked.length" class="mt-4">
-        <h5>nicht gebucht</h5>
-        <div
-          v-for="entry in form.not_booked"
-          :key="entry.id"
-          class="d-flex justify-content-between"
-        >
-          <span class="text-danger">{{ entry.name }}</span>
-          <i
-            class="fas fa-times c-pointer text-danger"
-            title="entfernen"
-            @click="removeNotBooked(entry.id)"
-          ></i>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import RequestsAndBookingsView from '../RequestsAndBookingsView.vue'
 import type { PerformanceRequestsAndBookings } from '@/composables/useBookings'
 
@@ -61,5 +61,21 @@ describe('RequestsAndBookingsView', () => {
 
     expect(wrapper.find('table').exists()).toBe(false)
     expect(wrapper.text()).toContain('Derzeit liegen keine Buchungen oder Anfragen vor.')
+  })
+
+  it('both "zurück" links (above and below the table) go to the calendar month of the performance, not its show page', async () => {
+    // Legacy's RequestsAndBookings.vue renders "zurück" TWICE (before and
+    // after the table) and links both to
+    // `route('...performances.index', { year, month })` (the calendar),
+    // never to the performance's own show/detail page.
+    mockGetRequestsAndBookings.mockResolvedValueOnce(makePage())
+    const wrapper = mount(RequestsAndBookingsView, { props: { id: '1' } })
+    await flushPromises()
+
+    const backLinks = wrapper.findAllComponents(RouterLinkStub)
+    expect(backLinks).toHaveLength(2)
+    for (const link of backLinks) {
+      expect(link.props('to')).toEqual({ name: 'home', query: { year: 2026, month: 8 } })
+    }
   })
 })

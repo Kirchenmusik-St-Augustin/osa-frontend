@@ -18,20 +18,32 @@ const minDate = new Date()
 minDate.setDate(minDate.getDate() + 1)
 minDate.setHours(0, 0, 0, 0)
 
-const localDate = ref<Date>(parseWallClock(model.value))
+// vue-flatpickr-component's v-model does NOT always hand back a Date --
+// its onClose()/onInput() handlers emit the formatted STRING instead (see
+// its source), regardless of what gets bound in. Left unguarded, treating
+// that string as a Date and calling toWallClockString()/getTime() on it
+// throws inside the watcher below -- silently, since Vue only logs it --
+// which is what dropped every date change made through this picker (both
+// the performance's own schedule in PerformanceFormView and each
+// rehearsal's own schedule in RehearsalsEditor use this component).
+function asDate(value: Date | string): Date {
+  return value instanceof Date ? value : parseWallClock(value)
+}
+
+const localDate = ref<Date | string>(parseWallClock(model.value))
 
 watch(localDate, (value) => {
-  model.value = toWallClockString(value)
+  model.value = toWallClockString(asDate(value))
 })
 
 watch(model, (value) => {
   const converted = parseWallClock(value)
-  if (converted.getTime() !== localDate.value.getTime()) {
+  if (converted.getTime() !== asDate(localDate.value).getTime()) {
     localDate.value = converted
   }
 })
 
-const isEditable = computed(() => localDate.value.getTime() > minDate.getTime())
+const isEditable = computed(() => asDate(localDate.value).getTime() > minDate.getTime())
 
 const config = {
   altInput: true,
