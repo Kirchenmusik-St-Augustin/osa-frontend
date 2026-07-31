@@ -22,28 +22,34 @@ vi.mock('@/stores/auth', () => ({
   }),
 }))
 
-let capturedGoogleCallback: ((credential: string) => Promise<void>) | undefined
-vi.mock('@/composables/useGoogleSignIn', () => ({
-  useGoogleSignIn: vi.fn((_container: unknown, onCredential: (credential: string) => void) => {
-    capturedGoogleCallback = onCredential as (credential: string) => Promise<void>
-  }),
-}))
-
 let mockGoogleClientId: string | undefined = 'test-client-id.apps.googleusercontent.com'
 vi.mock('@/runtimeConfig', () => ({
   googleClientId: () => mockGoogleClientId,
 }))
 
+// GoogleLogin (vue3-google-login) is stubbed everywhere, same as vb-intern's
+// own LoginView.spec.ts -- mounting the real component would call out to
+// window.google/Google's GSI script loader, which isn't available in jsdom.
+// Stubbing it lets us grab its `callback` prop and invoke it directly to
+// simulate a real Google sign-in response.
+function mountLoginView() {
+  return mount(LoginView, { global: { stubs: { GoogleLogin: true } } })
+}
+
+function triggerGoogleCallback(wrapper: ReturnType<typeof mountLoginView>, credential: string) {
+  const googleLogin = wrapper.findComponent({ name: 'GoogleLogin' })
+  return googleLogin.props('callback')({ credential })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   mockRoute.query = {}
   mockGoogleClientId = 'test-client-id.apps.googleusercontent.com'
-  capturedGoogleCallback = undefined
 })
 
 describe('LoginView', () => {
   it('renders the Legacy card structure', () => {
-    const wrapper = mount(LoginView)
+    const wrapper = mountLoginView()
 
     expect(wrapper.text()).toContain('Anmeldung.')
     expect(wrapper.find('input#email').exists()).toBe(true)
@@ -54,14 +60,14 @@ describe('LoginView', () => {
 
   it('does not render the Google button area without a configured client ID', () => {
     mockGoogleClientId = undefined
-    const wrapper = mount(LoginView)
+    const wrapper = mountLoginView()
 
     expect(wrapper.find('#google-signin-button-wrapper').exists()).toBe(false)
   })
 
   it('logs in and redirects home on success', async () => {
     mockLogin.mockResolvedValueOnce(undefined)
-    const wrapper = mount(LoginView)
+    const wrapper = mountLoginView()
 
     await wrapper.find('input#email').setValue('a@example.test')
     await wrapper.find('input#password').setValue('secret')
@@ -75,7 +81,7 @@ describe('LoginView', () => {
   it('redirects to a safe same-app path from the query string', async () => {
     mockRoute.query = { redirect: '/some-protected-page' }
     mockLogin.mockResolvedValueOnce(undefined)
-    const wrapper = mount(LoginView)
+    const wrapper = mountLoginView()
 
     await wrapper.find('input#email').setValue('a@example.test')
     await wrapper.find('input#password').setValue('secret')
@@ -90,7 +96,7 @@ describe('LoginView', () => {
     async (unsafeTarget) => {
       mockRoute.query = { redirect: unsafeTarget }
       mockLogin.mockResolvedValueOnce(undefined)
-      const wrapper = mount(LoginView)
+      const wrapper = mountLoginView()
 
       await wrapper.find('input#email').setValue('a@example.test')
       await wrapper.find('input#password').setValue('secret')
@@ -105,7 +111,7 @@ describe('LoginView', () => {
     mockLogin.mockRejectedValueOnce({
       response: { data: { detail: 'Anmeldedaten unbekannt.' } },
     })
-    const wrapper = mount(LoginView)
+    const wrapper = mountLoginView()
 
     await wrapper.find('input#email').setValue('a@example.test')
     await wrapper.find('input#password').setValue('wrong')
@@ -119,18 +125,19 @@ describe('LoginView', () => {
     mockLoginWithGoogleCredential.mockRejectedValueOnce({
       response: { status: 404, data: { detail: 'ACCOUNT_NOT_LINKED' } },
     })
-    mount(LoginView)
+    const wrapper = mountLoginView()
 
-    await capturedGoogleCallback?.('google-credential-token')
+    await triggerGoogleCallback(wrapper, 'google-credential-token')
 
     expect(mockLoginWithGoogleCredential).toHaveBeenCalledWith('google-credential-token')
+    expect(wrapper.text()).toContain('Authentisierung zur Konten-Verknüpfung')
   })
 
   it('logs in via Google and redirects home on success', async () => {
     mockLoginWithGoogleCredential.mockResolvedValueOnce(undefined)
-    mount(LoginView)
+    const wrapper = mountLoginView()
 
-    await capturedGoogleCallback?.('google-credential-token')
+    await triggerGoogleCallback(wrapper, 'google-credential-token')
     await vi.waitFor(() => expect(mockPush).toHaveBeenCalled())
 
     expect(mockPush).toHaveBeenCalledWith({ name: 'home' })
@@ -141,9 +148,9 @@ describe('LoginView', () => {
       response: { status: 404, data: { detail: 'ACCOUNT_NOT_LINKED' } },
     })
     mockLinkGoogleAccount.mockResolvedValueOnce(undefined)
-    const wrapper = mount(LoginView)
+    const wrapper = mountLoginView()
 
-    await capturedGoogleCallback?.('google-credential-token')
+    await triggerGoogleCallback(wrapper, 'google-credential-token')
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('Authentisierung zur Konten-Verknüpfung')

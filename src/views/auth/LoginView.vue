@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue'
+import { ref } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import type { AxiosError } from 'axios'
+import { GoogleLogin, type CallbackTypes } from 'vue3-google-login'
 import { useAuthStore } from '@/stores/auth'
 import { extractApiErrors } from '@/services/apiErrors'
 import { googleClientId } from '@/runtimeConfig'
-import { useGoogleSignIn } from '@/composables/useGoogleSignIn'
 
 const title = 'Login'
 const router = useRouter()
@@ -48,26 +48,30 @@ async function submit(): Promise<void> {
   }
 }
 
-// Google Sign-In: ID-token ("credential") flow via Google Identity Services,
-// not Legacy's server-redirect Socialite dance (see the backend's
-// google_callback endpoint docstring for the full reasoning) -- same
-// business capability (log in if already linked, link via local password
-// if not linked yet), leaner mechanism given this backend is stateless-JWT.
+// Google Sign-In: ID-token ("credential") flow via Google Identity Services
+// (vue3-google-login, same package/methodology as the vb-fastapi-vue sister
+// project's vb-intern), not Legacy's server-redirect Socialite dance (see
+// the backend's google_callback endpoint docstring for the full reasoning)
+// -- same business capability (log in if already linked, link via local
+// password if not linked yet), leaner mechanism given this backend is
+// stateless-JWT.
 const showLinkForm = ref(false)
 const pendingCredential = ref<string | null>(null)
 const linkPassword = ref('')
 const linkFieldErrors = ref<Record<string, string>>({})
 const googleError = ref<string | null>(null)
 
-async function handleGoogleCredential(credential: string): Promise<void> {
+async function handleGoogleCredential(
+  response: CallbackTypes.CredentialPopupResponse,
+): Promise<void> {
   googleError.value = null
   try {
-    await authStore.loginWithGoogleCredential(credential)
+    await authStore.loginWithGoogleCredential(response.credential)
     await redirectAfterLogin()
   } catch (error) {
     const axiosError = error as AxiosError
     if (axiosError.response?.status === 404) {
-      pendingCredential.value = credential
+      pendingCredential.value = response.credential
       showLinkForm.value = true
       return
     }
@@ -87,9 +91,6 @@ async function submitLinkAccount(): Promise<void> {
     linkFieldErrors.value = generalError ? { email: generalError, ...fe } : fe
   }
 }
-
-const buttonContainer = useTemplateRef<HTMLDivElement>('google-signin-button')
-useGoogleSignIn(buttonContainer, handleGoogleCredential)
 </script>
 
 <template>
@@ -126,7 +127,7 @@ useGoogleSignIn(buttonContainer, handleGoogleCredential)
             <div class="text-center">
               <button type="submit" class="btn btn-primary" :disabled="submitting">Anmelden</button>
               <div v-if="googleClientId()" id="google-signin-button-wrapper" class="small mt-3">
-                <div ref="google-signin-button"></div>
+                <GoogleLogin :callback="handleGoogleCredential" />
                 <small v-if="googleError" class="text-danger">{{ googleError }}</small>
               </div>
             </div>
