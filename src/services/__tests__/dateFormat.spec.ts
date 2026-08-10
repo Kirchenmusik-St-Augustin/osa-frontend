@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatDateOnly,
   formatDateTime,
   formatDateTimeWithWeekday,
   formatMonthYear,
+  formatTimeOnly,
   formatUtcDateTime,
   parseWallClock,
   toWallClockString,
@@ -79,6 +81,32 @@ describe('formatUtcDateTime', () => {
     const withOffset = '2026-06-15T12:00:00+05:00'
     expect(formatUtcDateTime(zulu)).not.toBe(formatUtcDateTime(withOffset))
     expect(formatDateTime(zulu)).toBe(formatDateTime(withOffset))
+  })
+})
+
+describe('formatDateOnly', () => {
+  it('renders the same calendar date for two ISO strings representing the same instant', () => {
+    expect(formatDateOnly('2026-06-12T10:00:00+00:00')).toBe(
+      formatDateOnly('2026-06-12T12:00:00+02:00'),
+    )
+  })
+
+  it('renders day, full month name and year, no time', () => {
+    const result = formatDateOnly(new Date(2026, 5, 12, 10, 0, 0).toISOString())
+    expect(result).toBe('12. Juni 2026')
+  })
+})
+
+describe('formatTimeOnly', () => {
+  it('renders the same wall-clock time for two ISO strings representing the same instant', () => {
+    expect(formatTimeOnly('2026-06-12T10:05:30+00:00')).toBe(
+      formatTimeOnly('2026-06-12T12:05:30+02:00'),
+    )
+  })
+
+  it('renders zero-padded HH:mm:ss', () => {
+    const result = formatTimeOnly(new Date(2026, 5, 12, 9, 5, 3).toISOString())
+    expect(result).toBe('09:05:03')
   })
 })
 

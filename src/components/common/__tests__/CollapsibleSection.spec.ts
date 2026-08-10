@@ -26,4 +26,23 @@ describe('CollapsibleSection', () => {
 
     expect(wrapper.text()).toContain('Visible content')
   })
+
+  it('omits the "anzeigen"/"verbergen" hint when hideDesc is set', () => {
+    const wrapper = mount(CollapsibleSection, {
+      props: { title: 'Details', hideDesc: true },
+      slots: { default: 'Hidden content' },
+    })
+
+    expect(wrapper.text()).not.toContain('anzeigen')
+  })
+
+  it('omits the bordered padding wrapper when hideBorder is set', async () => {
+    const wrapper = mount(CollapsibleSection, {
+      props: { title: 'Details', initShow: true, hideBorder: true },
+      slots: { default: 'Visible content' },
+    })
+
+    const contentWrapper = wrapper.findAll('div')[1]
+    expect(contentWrapper.classes()).not.toContain('border')
+  })
 })

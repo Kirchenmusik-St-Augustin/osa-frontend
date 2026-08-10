@@ -21,8 +21,8 @@ export interface CoreelementPayload {
 }
 
 // UI-independent API layer for the generic Coreelement admin pages (CLAUDE.md:
-// "API-Calls ... müssen in testbare TypeScript-Composables ausgelagert
-// werden"). `type` accepts a plain value OR a ref/getter -- Vue Router
+// API calls must be extracted into testable TypeScript composables).
+// `type` accepts a plain value OR a ref/getter -- Vue Router
 // reuses the same CoreelementView instance across navigations between two
 // `administrator-coreelement` routes (only the `:type` param changes), so
 // a plain string captured once at setup time would silently keep pointing

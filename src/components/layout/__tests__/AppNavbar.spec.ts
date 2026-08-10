@@ -167,6 +167,41 @@ describe('AppNavbar', () => {
     }
   })
 
+  it('hides "Versandte E-Mails ansehen"/"Logbuch" for an administrator without sentEmailView/requestLogView', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max', administrator: true },
+      permissions: [],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).not.toContain('Versandte E-Mails ansehen')
+    expect(wrapper.text()).not.toContain('Logbuch')
+  })
+
+  it('shows "Versandte E-Mails ansehen"/"Logbuch" for an administrator with sentEmailView/requestLogView', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max', administrator: true },
+      permissions: ['sentEmailView', 'requestLogView'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('Versandte E-Mails ansehen')
+    expect(wrapper.text()).toContain('Logbuch')
+  })
+
+  it('shows the "Statistiken" link in the user dropdown for any authenticated user', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('Statistiken')
+  })
+
   it('hides the System dropdown without the feeMaintain permission', () => {
     mockAuthState = {
       isAuthenticated: true,
@@ -237,5 +272,35 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).toContain('Ordinarium-Werke')
     expect(wrapper.text()).toContain('Proprium-Werke')
     expect(wrapper.text()).toContain('Komponisten und Dirigenten')
+  })
+
+  it('hides the "Kurz-URLs" placeholder without shorturlMaintain', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).not.toContain('Kurz-URLs')
+  })
+
+  it('shows "Kurz-URLs" as a plain, non-navigating button with shorturlMaintain', () => {
+    // Placeholder: the Shorturl domain (Schritt 8) doesn't exist yet, so
+    // this button is deliberately inert -- shown for navbar pixel-parity
+    // only, 1:1 Legacy's AuthLeftMenu.vue item order/label/gate.
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: ['shorturlMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('Kurz-URLs')
+    const button = wrapper
+      .findAll('button.btn')
+      .find((el) => el.text() === 'Kurz-URLs' && !el.classes().includes('dropdown-toggle'))
+    expect(button).toBeDefined()
+    expect(button?.attributes('type')).toBe('button')
   })
 })

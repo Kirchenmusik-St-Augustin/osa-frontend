@@ -51,7 +51,7 @@ async function logout(): Promise<void> {
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              Repertoire
+              <span>Repertoire</span>
             </button>
             <div class="dropdown-menu" data-bs-theme="light">
               <RouterLink
@@ -59,21 +59,21 @@ async function logout(): Promise<void> {
                 class="dropdown-item"
                 :to="{ name: 'repertoire-ordinariumworks-search' }"
               >
-                Ordinarium-Werke
+                <span>Ordinarium-Werke</span>
               </RouterLink>
               <RouterLink
                 v-if="authStore.hasPermission('propriumworkMaintain')"
                 class="dropdown-item"
                 :to="{ name: 'repertoire-propriumworks-search' }"
               >
-                Proprium-Werke
+                <span>Proprium-Werke</span>
               </RouterLink>
               <RouterLink
                 v-if="authStore.hasPermission('artistMaintain')"
                 class="dropdown-item"
                 :to="{ name: 'repertoire-artists-search' }"
               >
-                Komponisten und Dirigenten
+                <span>Komponisten und Dirigenten</span>
               </RouterLink>
             </div>
           </div>
@@ -93,17 +93,17 @@ async function logout(): Promise<void> {
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              System
+              <span>System</span>
             </button>
             <div class="dropdown-menu" data-bs-theme="light">
               <RouterLink class="dropdown-item" :to="{ name: 'system-userdirectory' }">
-                Benutzerverzeichnis
+                <span>Benutzerverzeichnis</span>
               </RouterLink>
               <RouterLink class="dropdown-item" :to="{ name: 'system-users-search' }">
-                Benutzerkonten verwalten
+                <span>Benutzerkonten verwalten</span>
               </RouterLink>
               <RouterLink class="dropdown-item" :to="{ name: 'system-fees' }">
-                Tarife verwalten
+                <span>Tarife verwalten</span>
               </RouterLink>
             </div>
           </div>
@@ -116,7 +116,7 @@ async function logout(): Promise<void> {
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              Administrator
+              <span>Administrator</span>
             </button>
             <div class="dropdown-menu" data-bs-theme="light">
               <RouterLink
@@ -128,10 +128,32 @@ async function logout(): Promise<void> {
                 {{ typeMeta.label }}
               </RouterLink>
               <RouterLink class="dropdown-item" :to="{ name: 'administrator-users-search' }">
-                Benutzerkonten (Administration)
+                <span>Benutzerkonten (Administration)</span>
+              </RouterLink>
+              <hr class="dropdown-divider" />
+              <RouterLink
+                v-if="authStore.hasPermission('sentEmailView')"
+                class="dropdown-item"
+                :to="{ name: 'administrator-sent-emails-index' }"
+              >
+                <span>Versandte E-Mails ansehen</span>
+              </RouterLink>
+              <RouterLink
+                v-if="authStore.hasPermission('requestLogView')"
+                class="dropdown-item"
+                :to="{ name: 'administrator-request-logs-index' }"
+              >
+                <span>Logbuch</span>
               </RouterLink>
             </div>
           </div>
+        </li>
+        <!-- Placeholder: the Shorturl domain itself (Schritt 8) doesn't
+             exist yet, but the permission gate is already wired -- shown
+             now, non-functional, purely so the navbar's item set/order can
+             be pixel-compared against Legacy before that domain lands. -->
+        <li v-if="authStore.hasPermission('shorturlMaintain')" class="nav-item">
+          <button type="button" class="btn">Kurz-URLs</button>
         </li>
       </ul>
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
@@ -147,8 +169,6 @@ async function logout(): Promise<void> {
               <span>{{ authStore.user?.surname }}, {{ authStore.user?.givenname }}</span>
               <EmailThresholdWarning variant="icon" />
             </button>
-            <!-- "Statistiken" (with its own kill-switch warning icon) lands
-                 with the Admin-/Audit-Viewer (Schritt 9) -- not built yet. -->
             <div class="dropdown-menu dropdown-menu-end" data-bs-theme="light">
               <RouterLink class="dropdown-item" :to="{ name: 'selfadmin-profile-show' }">
                 <i class="fas fa-fw fa-user-circle me-1"></i>
@@ -161,6 +181,12 @@ async function logout(): Promise<void> {
               <RouterLink class="dropdown-item" :to="{ name: 'support-message-to-contactperson' }">
                 <i class="fas fa-fw fa-anchor me-1"></i>
                 <span>Meine Ansprechpersonen</span>
+              </RouterLink>
+              <hr class="dropdown-divider" />
+              <RouterLink class="dropdown-item" :to="{ name: 'statistics' }">
+                <i class="fas fa-fw fa-chart-line me-1"></i>
+                <span>Statistiken</span>
+                <EmailThresholdWarning variant="icon" />
               </RouterLink>
               <hr class="dropdown-divider" />
               <button type="button" class="dropdown-item text-danger" @click="logout">

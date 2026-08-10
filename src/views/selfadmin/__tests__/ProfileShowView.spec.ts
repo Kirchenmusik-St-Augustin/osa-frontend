@@ -9,6 +9,16 @@ vi.mock('@/composables/useProfile', () => ({
   useProfile: () => ({ get: mockGet, disconnectOauth2: mockDisconnectOauth2 }),
 }))
 
+const mockGetEnvironment = vi.fn()
+vi.mock('@/composables/useSystem', () => ({
+  useSystem: () => ({ getEnvironment: mockGetEnvironment }),
+}))
+
+let mockAppEnvironment: string | undefined
+vi.mock('@/runtimeConfig', () => ({
+  appEnvironment: () => mockAppEnvironment,
+}))
+
 const mockConfirmAction = vi.fn()
 const mockShowToast = vi.fn()
 vi.mock('@/services/notifications', () => ({
@@ -40,6 +50,8 @@ function makeUser(overrides: Partial<User> = {}): User {
 beforeEach(() => {
   vi.clearAllMocks()
   mockConfirmAction.mockResolvedValue(true)
+  mockGetEnvironment.mockResolvedValue({ environment: 'development' })
+  mockAppEnvironment = 'development'
 })
 
 describe('ProfileShowView', () => {
@@ -106,5 +118,26 @@ describe('ProfileShowView', () => {
     await flushPromises()
 
     expect(mockDisconnectOauth2).not.toHaveBeenCalled()
+  })
+
+  it('shows the backend and frontend deployment environment in the footer', async () => {
+    mockGet.mockResolvedValueOnce(makeUser())
+    mockGetEnvironment.mockResolvedValueOnce({ environment: 'qa' })
+    mockAppEnvironment = 'production'
+    const wrapper = mount(ProfileShowView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Backend: qa')
+    expect(wrapper.text()).toContain('Frontend: production')
+  })
+
+  it('omits the backend environment line when the fetch fails, without breaking the page', async () => {
+    mockGet.mockResolvedValueOnce(makeUser())
+    mockGetEnvironment.mockRejectedValueOnce(new Error('network error'))
+    const wrapper = mount(ProfileShowView)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Backend:')
+    expect(wrapper.text()).toContain('SCHINDLER')
   })
 })

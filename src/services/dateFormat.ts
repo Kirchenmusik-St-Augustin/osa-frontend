@@ -119,3 +119,19 @@ export function formatDateTimeWithWeekday(iso: string): string {
 export function formatMonthYear(year: number, month: number): string {
   return `${MONTHS_FULL[month - 1]} ${year}`
 }
+
+// Mirrors moment.js's localized "LL" format ("D. MMMM YYYY", e.g.
+// "12. Juni 2026") used by Legacy's RequestLogs/IndexUser.vue to group log
+// entries by day. UTC-instant input, same browser-local-getter approach as
+// formatUtcDateTime -- no time component.
+export function formatDateOnly(iso: string): string {
+  const date = new Date(iso)
+  return `${date.getDate()}. ${MONTHS_FULL[date.getMonth()]} ${date.getFullYear()}`
+}
+
+// Mirrors moment.js's "HH:mm:ss" format used per-row in Legacy's
+// RequestLogs/IndexUser.vue table. UTC-instant input.
+export function formatTimeOnly(iso: string): string {
+  const date = new Date(iso)
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}

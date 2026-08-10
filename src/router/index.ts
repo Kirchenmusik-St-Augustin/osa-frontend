@@ -173,6 +173,60 @@ const router = createRouter({
           },
         },
         {
+          // Schritt 9 (Admin-/Audit-Viewer, vorgezogen).
+          path: 'administrator/sent-emails',
+          name: 'administrator-sent-emails-index',
+          component: () => import('@/views/administrator/SentEmailIndexView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'sentEmailView',
+            title: 'Versandte Emails',
+          },
+        },
+        {
+          path: 'administrator/sent-emails/:id(\\d+)',
+          name: 'administrator-sent-emails-show',
+          component: () => import('@/views/administrator/SentEmailShowView.vue'),
+          props: true,
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'sentEmailView',
+            title: 'Versandte Email',
+          },
+        },
+        {
+          path: 'administrator/request-logs',
+          name: 'administrator-request-logs-index',
+          component: () => import('@/views/administrator/RequestLogIndexView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'requestLogView',
+            title: 'Logbuch',
+          },
+        },
+        {
+          path: 'administrator/request-logs/users/:userId(\\d+)',
+          name: 'administrator-request-logs-user',
+          component: () => import('@/views/administrator/RequestLogUserView.vue'),
+          props: true,
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'requestLogView',
+            title: 'Logbuch',
+          },
+        },
+        {
+          path: 'administrator/request-logs/:id(\\d+)',
+          name: 'administrator-request-logs-show',
+          component: () => import('@/views/administrator/RequestLogShowView.vue'),
+          props: true,
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'requestLogView',
+            title: 'Logbuch',
+          },
+        },
+        {
           // Legacy's Fee/Index.vue lives under content/system/fees, its own
           // dedicated FeeController -- not part of the Coreelement pool
           // (see FeeView.vue's docstring) and gated by role 'disponent'
@@ -286,6 +340,14 @@ const router = createRouter({
           name: 'support-message-to-contactperson',
           component: () => import('@/views/selfadmin/MessageToContactpersonView.vue'),
           meta: { requiresAuth: true, title: 'Meine Ansprechpersonen' },
+        },
+        {
+          // Schritt 9 -- no requiredPermission (1:1 Legacy: no Policy/Gate
+          // exists for Statistics at all, any authenticated user sees it).
+          path: 'statistics',
+          name: 'statistics',
+          component: () => import('@/views/StatisticsView.vue'),
+          meta: { requiresAuth: true, title: 'Statistiken' },
         },
         {
           path: 'repertoire/artists',
