@@ -32,6 +32,7 @@ const authenticatedProfile = {
   givenname: 'Max',
   administrator: false,
   permissions: [],
+  email_kill_switch: { active: false, period_days: 30, threshold: 950 },
 }
 
 beforeEach(() => {

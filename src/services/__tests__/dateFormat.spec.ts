@@ -3,6 +3,7 @@ import {
   formatDateTime,
   formatDateTimeWithWeekday,
   formatMonthYear,
+  formatUtcDateTime,
   parseWallClock,
   toWallClockString,
 } from '../dateFormat'
@@ -57,6 +58,27 @@ describe('formatDateTimeWithWeekday', () => {
   it('renders weekday, day, full month, year and time', () => {
     // 2026-08-02 is a Sunday.
     expect(formatDateTimeWithWeekday('2026-08-02T11:00:00')).toBe('So, 2. August 2026, 11:00')
+  })
+})
+
+describe('formatUtcDateTime', () => {
+  // Deliberately timezone-agnostic (no hardcoded expected wall-clock
+  // string) -- Vitest may run in any container TZ, only the *mechanism*
+  // (real offset-aware parsing) is under test here, not one fixed offset.
+  it('renders the same wall-clock time for two ISO strings representing the same instant', () => {
+    expect(formatUtcDateTime('2023-12-28T16:50:00+00:00')).toBe(
+      formatUtcDateTime('2023-12-28T18:50:00+02:00'),
+    )
+  })
+
+  it('honors the offset instead of reading the raw digits like parseWallClock does', () => {
+    // Identical digits, different offset -- five hours apart in reality.
+    // formatDateTime (parseWallClock) would render both identically since
+    // it ignores the offset entirely; formatUtcDateTime must not.
+    const zulu = '2026-06-15T12:00:00Z'
+    const withOffset = '2026-06-15T12:00:00+05:00'
+    expect(formatUtcDateTime(zulu)).not.toBe(formatUtcDateTime(withOffset))
+    expect(formatDateTime(zulu)).toBe(formatDateTime(withOffset))
   })
 })
 

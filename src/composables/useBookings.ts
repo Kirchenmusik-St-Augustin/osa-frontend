@@ -98,7 +98,12 @@ export interface Fee {
   amount: number
 }
 
-interface PerformanceShortBase {
+// Exported (not just an internal extends-base) because Schritt 7's
+// useSupport.ts needs the exact same shape 1:1 for /support/requests-and-
+// bookings -- backend names it PerformanceShortOutput, kept as
+// PerformanceShortBase here to avoid a churny rename of this file's other
+// PerformanceShortBase-derived types.
+export interface PerformanceShortBase {
   id: number
   ordinariumwork_name: string
   ordinariumwork_artist_name: string

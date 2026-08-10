@@ -148,6 +148,31 @@ const router = createRouter({
           beforeEnter: coreelementRouteGuard,
         },
         {
+          // Schritt 7: Content/Administrator/UserAdministrationController --
+          // restore/unlock/setPassword, gated `userAdministrate`
+          // (administrator-Flag only, NOT the disponent role that
+          // `userMaintain` also accepts).
+          path: 'administrator/users',
+          name: 'administrator-users-search',
+          component: () => import('@/views/administrator/UserAdministrationSearchView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'userAdministrate',
+            title: 'Benutzerkonten administrieren',
+          },
+        },
+        {
+          path: 'administrator/users/:id(\\d+)',
+          name: 'administrator-users-show',
+          component: () => import('@/views/administrator/UserAdministrationShowView.vue'),
+          props: true,
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'userAdministrate',
+            title: 'Benutzerkonten administrieren',
+          },
+        },
+        {
           // Legacy's Fee/Index.vue lives under content/system/fees, its own
           // dedicated FeeController -- not part of the Coreelement pool
           // (see FeeView.vue's docstring) and gated by role 'disponent'
@@ -162,6 +187,105 @@ const router = createRouter({
             requiredPermission: 'feeMaintain',
             title: 'Tarife verwalten',
           },
+        },
+        {
+          // Schritt 7: Content/System/UserController -- Benutzerkonten
+          // verwalten, gated `userMaintain` (Rolle disponent ODER
+          // administrator-Flag).
+          path: 'system/users',
+          name: 'system-users-search',
+          component: () => import('@/views/system/UserSearchView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'userMaintain',
+            title: 'Benutzerkonten verwalten',
+          },
+        },
+        {
+          path: 'system/users/create',
+          name: 'system-users-create',
+          component: () => import('@/views/system/UserFormView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'userMaintain',
+            title: 'Benutzerkonto verwalten',
+          },
+        },
+        {
+          path: 'system/users/:id(\\d+)',
+          name: 'system-users-show',
+          component: () => import('@/views/system/UserShowView.vue'),
+          props: true,
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'userMaintain',
+            title: 'Benutzerkonto verwalten',
+          },
+        },
+        {
+          path: 'system/users/:id(\\d+)/edit',
+          name: 'system-users-edit',
+          component: () => import('@/views/system/UserFormView.vue'),
+          props: true,
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'userMaintain',
+            title: 'Benutzerkonto verwalten',
+          },
+        },
+        {
+          // Nachtrag zu Baustelle 1: Legacy's
+          // content.system.users.requestsAndBookings link on the Show page.
+          path: 'system/users/:id(\\d+)/requests-and-bookings',
+          name: 'system-users-requests-and-bookings',
+          component: () => import('@/views/system/UserRequestsAndBookingsView.vue'),
+          props: true,
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'userMaintain',
+            title: 'Anfragen und Buchungen',
+          },
+        },
+        {
+          path: 'system/userdirectory',
+          name: 'system-userdirectory',
+          component: () => import('@/views/system/UserdirectoryView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'userMaintain',
+            title: 'Benutzerverzeichnis',
+          },
+        },
+        {
+          // Schritt 7: Content/Common/Selfadmin/ProfileController -- no
+          // Rollen-Gate at all, every logged-in user edits only themselves.
+          path: 'selfadmin/profile',
+          name: 'selfadmin-profile-show',
+          component: () => import('@/views/selfadmin/ProfileShowView.vue'),
+          meta: { requiresAuth: true, title: 'Mein Benutzerkonto' },
+        },
+        {
+          path: 'selfadmin/profile/edit',
+          name: 'selfadmin-profile-edit',
+          component: () => import('@/views/selfadmin/ProfileFormView.vue'),
+          meta: { requiresAuth: true, title: 'Persönliche Daten bearbeiten' },
+        },
+        {
+          // Schritt 7, Baustelle 5a: Content/Common/Selfadmin/Support --
+          // path mirrors the backend's /support prefix (unlike the
+          // Legacy route name `content.common.selfadmin.support...`, kept
+          // short since there's no Legacy URL to stay compatible with).
+          path: 'support/requests-and-bookings',
+          name: 'support-requests-and-bookings',
+          component: () => import('@/views/selfadmin/MyRequestsAndBookingsView.vue'),
+          meta: { requiresAuth: true, title: 'Meine Anfragen und Buchungen' },
+        },
+        {
+          // Baustelle 5b.
+          path: 'support/message-to-contactperson',
+          name: 'support-message-to-contactperson',
+          component: () => import('@/views/selfadmin/MessageToContactpersonView.vue'),
+          meta: { requiresAuth: true, title: 'Meine Ansprechpersonen' },
         },
         {
           path: 'repertoire/artists',

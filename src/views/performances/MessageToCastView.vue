@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
+import EmailThresholdWarning from '@/components/common/EmailThresholdWarning.vue'
 import {
   useBookings,
   type MessageRecipient,
@@ -8,6 +9,7 @@ import {
 } from '@/composables/useBookings'
 import { confirmAction, showToast } from '@/services/notifications'
 import { parseWallClock } from '@/services/dateFormat'
+import { useAuthStore } from '@/stores/auth'
 
 // Port of Legacy's MessageToCast.vue + Common/ListUsergroupComponent.vue
 // (incl. its SelectorComponent/ClipboardComponent) -- the ability dropdown
@@ -27,6 +29,7 @@ const props = defineProps<{ id: string }>()
 const performanceId = computed(() => Number(props.id))
 
 const { getMessageToCastPage, getMessageRecipients, sendMessageToCast } = useBookings()
+const authStore = useAuthStore()
 
 const performance = ref<PerformanceMessageToCast | null>(null)
 const recipients = ref<MessageRecipient[]>([])
@@ -86,6 +89,12 @@ const hasBookings = computed(() => {
 })
 
 const eligibleCount = computed(() => recipients.value.filter((r) => r.has_email).length)
+
+// Schritt 7 Nachzug: 1:1 Legacy's `v-if="!$app.helper.emailsDisabled()"` --
+// only the message-textarea+Senden block is swapped out, the recipient
+// table/dropdown above stays visible regardless (see EmailThresholdWarning's
+// own docstring for the source reference).
+const emailKillSwitchActive = computed(() => authStore.user?.email_kill_switch.active ?? false)
 
 function toggleCheckAll(): void {
   selectedRecipientIds.value = checkAllStatus.value
@@ -256,22 +265,25 @@ async function send(): Promise<void> {
           Mailing-Liste in Zwischenablage kopieren
         </div>
 
-        <textarea
-          v-model="message"
-          class="form-control mt-3"
-          rows="5"
-          placeholder="Nachricht"
-        ></textarea>
-        <div class="text-center mt-2">
-          <button
-            type="button"
-            class="btn btn-primary"
-            :disabled="!message || !selectedRecipientIds.length || sending"
-            @click="send"
-          >
-            Senden
-          </button>
-        </div>
+        <template v-if="!emailKillSwitchActive">
+          <textarea
+            v-model="message"
+            class="form-control mt-3"
+            rows="5"
+            placeholder="Nachricht"
+          ></textarea>
+          <div class="text-center mt-2">
+            <button
+              type="button"
+              class="btn btn-primary"
+              :disabled="!message || !selectedRecipientIds.length || sending"
+              @click="send"
+            >
+              Senden
+            </button>
+          </div>
+        </template>
+        <EmailThresholdWarning v-else variant="card" />
       </div>
       <p v-else class="text-center">Zu dieser Aufführung gibt es aktuell keine Buchungen.</p>
 

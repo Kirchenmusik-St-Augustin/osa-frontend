@@ -12,7 +12,7 @@ withDefaults(
   defineProps<{
     id: string
     title: string
-    type?: 'text' | 'textarea' | 'number'
+    type?: 'text' | 'textarea' | 'number' | 'email' | 'tel' | 'password'
     required?: boolean
     error?: string
     min?: number
@@ -51,7 +51,7 @@ withDefaults(
       :max="max"
       :required="required"
     />
-    <input v-else :id="id" v-model="model" class="form-control" type="text" :required="required" />
+    <input v-else :id="id" v-model="model" class="form-control" :type="type" :required="required" />
     <small class="text-danger">{{ error }}&nbsp;</small>
   </div>
 </template>

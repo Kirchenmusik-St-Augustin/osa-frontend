@@ -12,7 +12,12 @@ vi.mock('vue-router', async (importOriginal) => ({
 const mockLogout = vi.fn()
 let mockAuthState: {
   isAuthenticated: boolean
-  user: { surname: string; givenname: string; administrator?: boolean } | null
+  user: {
+    surname: string
+    givenname: string
+    administrator?: boolean
+    email_kill_switch?: { active: boolean; period_days: number; threshold: number }
+  } | null
   permissions: string[]
 } = { isAuthenticated: false, user: null, permissions: [] }
 
@@ -86,6 +91,49 @@ describe('AppNavbar', () => {
     expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
   })
 
+  it('shows the three self-service links in the user dropdown when logged in', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('Mein Benutzerkonto')
+    expect(wrapper.text()).toContain('Meine Anfragen und Buchungen')
+    expect(wrapper.text()).toContain('Meine Ansprechpersonen')
+  })
+
+  it('shows the email kill-switch warning icon next to the username while active', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: {
+        surname: 'MUSTER',
+        givenname: 'Max',
+        email_kill_switch: { active: true, period_days: 30, threshold: 100 },
+      },
+      permissions: [],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.find('.fa-triangle-exclamation').exists()).toBe(true)
+  })
+
+  it('hides the email kill-switch warning icon while inactive', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: {
+        surname: 'MUSTER',
+        givenname: 'Max',
+        email_kill_switch: { active: false, period_days: 30, threshold: 100 },
+      },
+      permissions: [],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.find('.fa-triangle-exclamation').exists()).toBe(false)
+  })
+
   it('hides the Administrator dropdown for a non-administrator', () => {
     mockAuthState = {
       isAuthenticated: true,
@@ -97,7 +145,7 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('Administrator')
   })
 
-  it('shows the Administrator dropdown with all six Coreelement links for an administrator', () => {
+  it('shows the Administrator dropdown with all six Coreelement links plus Benutzerkonten (Administration) for an administrator', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max', administrator: true },
@@ -113,6 +161,7 @@ describe('AppNavbar', () => {
       'Proprium-Elemente',
       'Orte',
       'Rollen',
+      'Benutzerkonten (Administration)',
     ]) {
       expect(wrapper.text()).toContain(label)
     }
@@ -129,11 +178,13 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('System')
   })
 
-  it('shows the System dropdown with "Tarife verwalten" for a user with feeMaintain', () => {
+  it('shows the System dropdown with all three links, in Legacy order, for a user with feeMaintain', () => {
     // Legacy's System menu is gated on role 'disponent' (AuthLeftMenu.vue)
     // -- feeMaintain mirrors that role gate 1:1 (see permission_service.py).
     // Deliberately NOT gated by the administrator flag, unlike the
-    // Coreelement types in the Administrator dropdown above.
+    // Coreelement types in the Administrator dropdown above. Order matches
+    // Legacy exactly: Benutzerverzeichnis, Benutzerkonten verwalten, Tarife
+    // verwalten.
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max', administrator: false },
@@ -142,7 +193,11 @@ describe('AppNavbar', () => {
     const wrapper = mount(AppNavbar)
 
     expect(wrapper.text()).toContain('System')
-    expect(wrapper.text()).toContain('Tarife verwalten')
+    const text = wrapper.text()
+    expect(text.indexOf('Benutzerverzeichnis')).toBeLessThan(
+      text.indexOf('Benutzerkonten verwalten'),
+    )
+    expect(text.indexOf('Benutzerkonten verwalten')).toBeLessThan(text.indexOf('Tarife verwalten'))
     expect(wrapper.text()).not.toContain('Administrator')
   })
 

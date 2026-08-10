@@ -70,4 +70,15 @@ describe('FormInput', () => {
 
     expect(wrapper.find('input#duration').attributes('max')).toBe('999')
   })
+
+  it.each(['email', 'tel', 'password'] as const)(
+    'passes type="%s" through to the input element (Schritt 7 User/Profile forms)',
+    (type) => {
+      const wrapper = mount(FormInput, {
+        props: { id: 'contact', title: 'Kontakt', modelValue: '', type },
+      })
+
+      expect(wrapper.find('input#contact').attributes('type')).toBe(type)
+    },
+  )
 })

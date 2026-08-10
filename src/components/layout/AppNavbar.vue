@@ -2,6 +2,7 @@
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { COREELEMENT_TYPES } from '@/constants/coreelementTypes'
+import EmailThresholdWarning from '@/components/common/EmailThresholdWarning.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -78,13 +79,12 @@ async function logout(): Promise<void> {
           </div>
         </li>
         <!-- Legacy's "System" menu (AuthLeftMenu.vue) is gated on role
-             'disponent' and currently only has one built item here
-             (Fees/"Tarife verwalten") -- Benutzerverzeichnis/Benutzerkonten
-             verwalten land with User-/System-Verwaltung (Schritt 7). Fees
-             was wrongly wired under the Administrator dropdown before
-             (User-reported 2026-07-31) -- it belongs here, gated by its own
-             feeMaintain permission (role 'disponent'), not the
-             Coreelement types' administrator-Flag. -->
+             'disponent', not the broader userMaintain permission (which also
+             allows administrators) -- Legacy's own System dropdown is
+             disponent-only too, administrators reach user management via
+             their own separate "Administrator" dropdown instead. Item order
+             matches Legacy exactly: Benutzerverzeichnis, Benutzerkonten
+             verwalten, Tarife verwalten. -->
         <li v-if="authStore.hasPermission('feeMaintain')" class="nav-item">
           <div class="dropdown">
             <button
@@ -96,6 +96,12 @@ async function logout(): Promise<void> {
               System
             </button>
             <div class="dropdown-menu" data-bs-theme="light">
+              <RouterLink class="dropdown-item" :to="{ name: 'system-userdirectory' }">
+                Benutzerverzeichnis
+              </RouterLink>
+              <RouterLink class="dropdown-item" :to="{ name: 'system-users-search' }">
+                Benutzerkonten verwalten
+              </RouterLink>
               <RouterLink class="dropdown-item" :to="{ name: 'system-fees' }">
                 Tarife verwalten
               </RouterLink>
@@ -121,6 +127,9 @@ async function logout(): Promise<void> {
               >
                 {{ typeMeta.label }}
               </RouterLink>
+              <RouterLink class="dropdown-item" :to="{ name: 'administrator-users-search' }">
+                Benutzerkonten (Administration)
+              </RouterLink>
             </div>
           </div>
         </li>
@@ -136,11 +145,24 @@ async function logout(): Promise<void> {
             >
               <i class="fas fa-fw fa-user me-1"></i>
               <span>{{ authStore.user?.surname }}, {{ authStore.user?.givenname }}</span>
+              <EmailThresholdWarning variant="icon" />
             </button>
-            <!-- "Mein Benutzerkonto"/"Meine Anfragen und Buchungen"/"Statistiken" etc.
-                 land with their respective future domain slices (User-/System-Verwaltung,
-                 Schritt 6) -- no route exists for them yet in this Auth-only slice. -->
+            <!-- "Statistiken" (with its own kill-switch warning icon) lands
+                 with the Admin-/Audit-Viewer (Schritt 9) -- not built yet. -->
             <div class="dropdown-menu dropdown-menu-end" data-bs-theme="light">
+              <RouterLink class="dropdown-item" :to="{ name: 'selfadmin-profile-show' }">
+                <i class="fas fa-fw fa-user-circle me-1"></i>
+                <span>Mein Benutzerkonto</span>
+              </RouterLink>
+              <RouterLink class="dropdown-item" :to="{ name: 'support-requests-and-bookings' }">
+                <i class="fas fa-fw fa-tasks me-1"></i>
+                <span>Meine Anfragen und Buchungen</span>
+              </RouterLink>
+              <RouterLink class="dropdown-item" :to="{ name: 'support-message-to-contactperson' }">
+                <i class="fas fa-fw fa-anchor me-1"></i>
+                <span>Meine Ansprechpersonen</span>
+              </RouterLink>
+              <hr class="dropdown-divider" />
               <button type="button" class="dropdown-item text-danger" @click="logout">
                 <i class="fas fa-fw fa-sign-out-alt me-1"></i>
                 <span>Abmelden</span>

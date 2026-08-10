@@ -2,6 +2,12 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/api'
 
+export interface EmailKillSwitchStatus {
+  active: boolean
+  period_days: number
+  threshold: number
+}
+
 export interface AuthUser {
   id: number
   email: string
@@ -9,6 +15,7 @@ export interface AuthUser {
   givenname: string
   administrator: boolean
   permissions: string[]
+  email_kill_switch: EmailKillSwitchStatus
 }
 
 export interface RegisterPayload {

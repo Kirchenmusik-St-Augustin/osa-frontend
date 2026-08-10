@@ -21,8 +21,12 @@ vi.mock('@/services/notifications', () => ({
   showToast: (...args: unknown[]) => mockShowToast(...args),
 }))
 
+let mockKillSwitchActive = false
 vi.mock('@/stores/auth', () => ({
-  useAuthStore: () => ({ hasPermission: () => false }),
+  useAuthStore: () => ({
+    hasPermission: () => false,
+    user: { email_kill_switch: { active: mockKillSwitchActive, period_days: 30, threshold: 100 } },
+  }),
 }))
 
 function makePage(
@@ -67,6 +71,7 @@ function rowCheckbox(wrapper: ReturnType<typeof mount>, index: number) {
 beforeEach(() => {
   vi.resetAllMocks()
   mockConfirmAction.mockResolvedValue(true)
+  mockKillSwitchActive = false
 })
 
 describe('MessageToCastView', () => {
@@ -245,6 +250,22 @@ describe('MessageToCastView', () => {
 
     expect(writeText).toHaveBeenCalledWith('huber@example.com')
     expect(mockShowToast).toHaveBeenCalledWith('Mailing-Liste in Zwischenablage kopiert.')
+  })
+
+  it('replaces the message-textarea+Senden block with the kill-switch card while active, keeping the recipient table visible', async () => {
+    mockKillSwitchActive = true
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(wrapper.find('textarea').exists()).toBe(false)
+    expect(wrapper.findAll('button').some((button) => button.text() === 'Senden')).toBe(false)
+    expect(wrapper.text()).toContain('Email-Versand aktuell deaktiviert')
+    // The recipient dropdown/table itself stays visible -- only the
+    // message-composition block is swapped out (verified against Legacy's
+    // MessageToContactperson.vue, see EmailThresholdWarning.vue docstring).
+    expect(wrapper.find('table').exists()).toBe(true)
   })
 
   it('both "zurück" links (above and below the form) go to the calendar month of the performance, not its show page', async () => {

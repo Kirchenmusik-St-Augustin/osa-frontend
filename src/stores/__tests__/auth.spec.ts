@@ -19,6 +19,7 @@ const profile = (overrides: Partial<Record<string, unknown>> = {}) => ({
   givenname: 'Max',
   administrator: false,
   permissions: ['performanceChangeUserStatus'],
+  email_kill_switch: { active: false, period_days: 30, threshold: 950 },
   ...overrides,
 })
 

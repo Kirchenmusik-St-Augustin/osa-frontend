@@ -85,11 +85,27 @@ export function toWallClockString(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
+function formatReadable(date: Date): string {
+  return `${date.getDate()}. ${MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 // Mirrors Legacy's helper.js `datetimeReadable()` ("D. MMM YYYY, HH:mm"),
 // e.g. "2. Aug 2026, 11:00".
 export function formatDateTime(iso: string): string {
-  const date = parseWallClock(iso)
-  return `${date.getDate()}. ${MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return formatReadable(parseWallClock(iso))
+}
+
+// Same "D. MMM YYYY, HH:mm" rendering as formatDateTime, but for genuinely
+// UTC-instant timestamps (created_at/updated_at/email_verified_at/
+// auth_lastsignal, all written via Python's datetime.now(UTC), unlike
+// Performance.schedule) -- these carry a real offset ("+00:00"/"Z"), so
+// they go through a normal Date() parse + the browser's local-timezone
+// getters instead of parseWallClock's raw-digit read. Assumes the viewer
+// is in the app's own timezone (Europe/Vienna) for the rendered wall-clock
+// numbers to be meaningful, same assumption Legacy's server-rendered pages
+// make implicitly.
+export function formatUtcDateTime(iso: string): string {
+  return formatReadable(new Date(iso))
 }
 
 // Mirrors the DatetimePickerComponent's read-only past-date fallback
