@@ -81,4 +81,78 @@ describe('FormInput', () => {
       expect(wrapper.find('input#contact').attributes('type')).toBe(type)
     },
   )
+
+  it('renders no label at all when title is omitted (Schritt 8 Scores grid)', () => {
+    const wrapper = mount(FormInput, {
+      props: { id: 'part1verl', modelValue: '' },
+    })
+
+    expect(wrapper.find('label').exists()).toBe(false)
+  })
+
+  it('shows the title as small, muted text when titleSmall is set', () => {
+    const wrapper = mount(FormInput, {
+      props: { id: 'violine1', title: 'Violine 1', modelValue: 0, titleSmall: true },
+    })
+
+    const label = wrapper.find('label')
+    expect(label.find('small.text-black-50').text()).toBe('Violine 1')
+    expect(label.find('strong').exists()).toBe(false)
+  })
+
+  it('sets both readonly and disabled on a readonly text input', () => {
+    const wrapper = mount(FormInput, {
+      props: { id: 'werk', title: 'Werk', modelValue: 'Messe', readonly: true },
+    })
+
+    const input = wrapper.find('input')
+    expect(input.attributes('readonly')).toBeDefined()
+    expect(input.attributes('disabled')).toBeDefined()
+  })
+
+  it('sets both readonly and disabled on a readonly textarea', () => {
+    const wrapper = mount(FormInput, {
+      props: {
+        id: 'bemerkung',
+        title: 'Bemerkung',
+        modelValue: 'x',
+        type: 'textarea',
+        readonly: true,
+      },
+    })
+
+    const textarea = wrapper.find('textarea')
+    expect(textarea.attributes('readonly')).toBeDefined()
+    expect(textarea.attributes('disabled')).toBeDefined()
+  })
+
+  it('adds form-control-sm when small is set', () => {
+    const wrapper = mount(FormInput, {
+      props: { id: 'kasten', title: 'Kasten', modelValue: '', small: true },
+    })
+
+    expect(wrapper.find('input').classes()).toContain('form-control-sm')
+  })
+
+  it('applies maxlength on a text input, matching the "max" prop', () => {
+    const wrapper = mount(FormInput, {
+      props: { id: 'boxnr', title: 'Boxnummer', modelValue: '', max: 16 },
+    })
+
+    expect(wrapper.find('input').attributes('maxlength')).toBe('16')
+  })
+
+  it('applies maxlength on a textarea too', () => {
+    const wrapper = mount(FormInput, {
+      props: {
+        id: 'bemerkung',
+        title: 'Bemerkung',
+        modelValue: '',
+        type: 'textarea',
+        max: 256,
+      },
+    })
+
+    expect(wrapper.find('textarea').attributes('maxlength')).toBe('256')
+  })
 })

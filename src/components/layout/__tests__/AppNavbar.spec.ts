@@ -259,19 +259,58 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).toContain('Ordinarium-Werke')
     expect(wrapper.text()).not.toContain('Proprium-Werke')
     expect(wrapper.text()).not.toContain('Komponisten und Dirigenten')
+    expect(wrapper.text()).not.toContain('Notenarchiv')
   })
 
-  it('shows all three Repertoire links with all permissions', () => {
+  it('shows only "Notenarchiv" with just scoreMaintain (Schritt 8)', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
-      permissions: ['artistMaintain', 'ordinariumworkMaintain', 'propriumworkMaintain'],
+      permissions: ['scoreMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('Repertoire')
+    expect(wrapper.text()).toContain('Notenarchiv')
+    expect(wrapper.text()).not.toContain('Ordinarium-Werke')
+  })
+
+  it('shows all four Repertoire links with all permissions, Notenarchiv last', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [
+        'artistMaintain',
+        'ordinariumworkMaintain',
+        'propriumworkMaintain',
+        'scoreMaintain',
+      ],
     }
     const wrapper = mount(AppNavbar)
 
     expect(wrapper.text()).toContain('Ordinarium-Werke')
     expect(wrapper.text()).toContain('Proprium-Werke')
     expect(wrapper.text()).toContain('Komponisten und Dirigenten')
+    expect(wrapper.text()).toContain('Notenarchiv')
+    // 1:1 Legacy's AuthLeftMenu.vue order: Ordinarium/Proprium/Komponisten
+    // first, Notenarchiv last.
+    const links = wrapper
+      .findAll('.dropdown-item')
+      .map((link) => link.text())
+      .filter((text) =>
+        [
+          'Ordinarium-Werke',
+          'Proprium-Werke',
+          'Komponisten und Dirigenten',
+          'Notenarchiv',
+        ].includes(text),
+      )
+    expect(links).toEqual([
+      'Ordinarium-Werke',
+      'Proprium-Werke',
+      'Komponisten und Dirigenten',
+      'Notenarchiv',
+    ])
   })
 
   it('hides "Kurz-URLs" without shorturlMaintain', () => {

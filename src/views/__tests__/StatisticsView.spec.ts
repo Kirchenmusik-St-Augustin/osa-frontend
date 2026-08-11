@@ -23,6 +23,7 @@ function makeStats(overrides: Partial<Statistics> = {}): Statistics {
     performances: 120,
     ordinariumworks: 45,
     propriumworks: 30,
+    scores: 1274,
     email: { active: false, period_days: 30, threshold: 950, sent: 214 },
     ...overrides,
   }
@@ -47,6 +48,11 @@ describe('StatisticsView', () => {
     expect(wrapper.text()).toContain('45')
     expect(wrapper.text()).toContain('Proprium-Kompositionen')
     expect(wrapper.text()).toContain('30')
+    expect(wrapper.text()).toContain('Partituren im Archiv')
+    // Legacy's declined-but-partially-relevant vue-countup-v3 still
+    // thousands-groups every badge with a literal comma (its own
+    // hardcoded separator, not locale-aware) -- 1274 must render "1,274".
+    expect(wrapper.text()).toContain('1,274')
   })
 
   it('renders the email-output row with period/threshold/sent', async () => {
@@ -67,7 +73,7 @@ describe('StatisticsView', () => {
     await flushPromises()
 
     const badges = wrapper.findAll('.badge')
-    expect(badges).toHaveLength(5)
+    expect(badges).toHaveLength(6)
     for (const badge of badges) {
       expect(badge.element.parentElement?.classList.contains('h3')).toBe(true)
     }
@@ -80,14 +86,6 @@ describe('StatisticsView', () => {
 
     const hint = wrapper.find('small')
     expect(hint.classes()).not.toContain('d-block')
-  })
-
-  it('does not render the deliberately-omitted "Partituren im Archiv" row', async () => {
-    mockGet.mockResolvedValueOnce(makeStats())
-    const wrapper = mount(StatisticsView)
-    await flushPromises()
-
-    expect(wrapper.text()).not.toContain('Partituren im Archiv')
   })
 
   it('shows the kill-switch warning card only while active', async () => {

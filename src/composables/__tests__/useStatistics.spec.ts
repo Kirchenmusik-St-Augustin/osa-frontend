@@ -19,6 +19,7 @@ describe('useStatistics', () => {
       performances: 120,
       ordinariumworks: 45,
       propriumworks: 30,
+      scores: 612,
       email: { active: false, period_days: 30, threshold: 950, sent: 214 },
     }
     mockedApi.get.mockResolvedValueOnce({ data: stats })

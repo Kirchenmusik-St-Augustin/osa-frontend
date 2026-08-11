@@ -40,7 +40,8 @@ async function logout(): Promise<void> {
           v-if="
             authStore.hasPermission('artistMaintain') ||
             authStore.hasPermission('ordinariumworkMaintain') ||
-            authStore.hasPermission('propriumworkMaintain')
+            authStore.hasPermission('propriumworkMaintain') ||
+            authStore.hasPermission('scoreMaintain')
           "
           class="nav-item"
         >
@@ -74,6 +75,13 @@ async function logout(): Promise<void> {
                 :to="{ name: 'repertoire-artists-search' }"
               >
                 <span>Komponisten und Dirigenten</span>
+              </RouterLink>
+              <RouterLink
+                v-if="authStore.hasPermission('scoreMaintain')"
+                class="dropdown-item"
+                :to="{ name: 'repertoire-scores-search' }"
+              >
+                <span>Notenarchiv</span>
               </RouterLink>
             </div>
           </div>

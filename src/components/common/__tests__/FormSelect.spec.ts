@@ -49,4 +49,38 @@ describe('FormSelect', () => {
 
     expect(wrapper.text()).toContain('Komponist/in wurde nicht gefunden.')
   })
+
+  it('renders no label at all when title is omitted', () => {
+    const wrapper = mount(FormSelect, {
+      props: { id: 'artist', modelValue: null, options },
+    })
+
+    expect(wrapper.find('label').exists()).toBe(false)
+  })
+
+  it('shows the title as small, muted text when titleSmall is set', () => {
+    const wrapper = mount(FormSelect, {
+      props: { id: 'artist', title: 'Komponist', modelValue: null, options, titleSmall: true },
+    })
+
+    const label = wrapper.find('label')
+    expect(label.find('small.text-black-50').text()).toBe('Komponist')
+    expect(label.find('strong').exists()).toBe(false)
+  })
+
+  it('disables the select when readonly', () => {
+    const wrapper = mount(FormSelect, {
+      props: { id: 'artist', title: 'Komponist', modelValue: null, options, readonly: true },
+    })
+
+    expect(wrapper.find('select').attributes('disabled')).toBeDefined()
+  })
+
+  it('adds form-select-sm when small is set', () => {
+    const wrapper = mount(FormSelect, {
+      props: { id: 'artist', title: 'Komponist', modelValue: null, options, small: true },
+    })
+
+    expect(wrapper.find('select').classes()).toContain('form-select-sm')
+  })
 })

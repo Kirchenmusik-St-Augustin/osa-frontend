@@ -490,6 +490,51 @@ const router = createRouter({
           },
         },
         {
+          // Legacy's Scores/{Search,Form,Show}.vue all set the exact same
+          // page title "Noten-Archiv" (with hyphen) -- distinct from the
+          // navbar link text "Notenarchiv" (no hyphen, AuthLeftMenu.vue).
+          path: 'repertoire/scores',
+          name: 'repertoire-scores-search',
+          component: () => import('@/views/scores/ScoreSearchView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'scoreMaintain',
+            title: 'Noten-Archiv',
+          },
+        },
+        {
+          path: 'repertoire/scores/create',
+          name: 'repertoire-scores-create',
+          component: () => import('@/views/scores/ScoreFormView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'scoreMaintain',
+            title: 'Noten-Archiv',
+          },
+        },
+        {
+          path: 'repertoire/scores/:id(\\d+)',
+          name: 'repertoire-scores-show',
+          component: () => import('@/views/scores/ScoreShowView.vue'),
+          props: true,
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'scoreMaintain',
+            title: 'Noten-Archiv',
+          },
+        },
+        {
+          path: 'repertoire/scores/:id(\\d+)/edit',
+          name: 'repertoire-scores-edit',
+          component: () => import('@/views/scores/ScoreFormView.vue'),
+          props: true,
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'scoreMaintain',
+            title: 'Noten-Archiv',
+          },
+        },
+        {
           path: ':pathMatch(.*)*',
           name: 'not-found',
           component: () => import('@/views/NotFoundView.vue'),

@@ -12,6 +12,7 @@ export interface Statistics {
   performances: number
   ordinariumworks: number
   propriumworks: number
+  scores: number
   email: StatisticsEmail
 }
 
