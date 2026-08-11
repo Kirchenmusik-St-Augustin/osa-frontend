@@ -28,6 +28,7 @@ function makeRoute(overrides: Partial<RouteLocationNormalized> = {}): RouteLocat
 const authenticatedProfile = {
   id: 1,
   email: 'a@example.test',
+  email_verified_at: '2024-01-01T00:00:00Z',
   surname: 'MUSTER',
   givenname: 'Max',
   administrator: false,
@@ -121,6 +122,51 @@ describe('runAuthGuards', () => {
       data: { ...authenticatedProfile, permissions: ['artistMaintain'] },
     })
     const to = makeRoute({ meta: { requiredPermission: 'artistMaintain' } })
+
+    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+
+    expect(result).toBe(true)
+  })
+
+  it('redirects an unverified logged-in user to verify-email-notice', async () => {
+    mockedApi.post.mockReset()
+    mockedApi.post.mockResolvedValueOnce({
+      data: { access_token: 'restored', token_type: 'bearer' },
+    })
+    mockedApi.get.mockResolvedValueOnce({
+      data: { ...authenticatedProfile, email_verified_at: null },
+    })
+    const to = makeRoute({ meta: { requiresAuth: true } })
+
+    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+
+    expect(result).toEqual({ name: 'verify-email-notice' })
+  })
+
+  it('lets an unverified logged-in user reach verify-email-notice itself', async () => {
+    mockedApi.post.mockReset()
+    mockedApi.post.mockResolvedValueOnce({
+      data: { access_token: 'restored', token_type: 'bearer' },
+    })
+    mockedApi.get.mockResolvedValueOnce({
+      data: { ...authenticatedProfile, email_verified_at: null },
+    })
+    const to = makeRoute({ name: 'verify-email-notice', meta: { requiresAuth: true } })
+
+    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+
+    expect(result).toBe(true)
+  })
+
+  it('lets an unverified logged-in user reach the token-consuming verify-email page', async () => {
+    mockedApi.post.mockReset()
+    mockedApi.post.mockResolvedValueOnce({
+      data: { access_token: 'restored', token_type: 'bearer' },
+    })
+    mockedApi.get.mockResolvedValueOnce({
+      data: { ...authenticatedProfile, email_verified_at: null },
+    })
+    const to = makeRoute({ name: 'verify-email', meta: {} })
 
     const result = await runAuthGuards(to, makeRoute(), vi.fn())
 

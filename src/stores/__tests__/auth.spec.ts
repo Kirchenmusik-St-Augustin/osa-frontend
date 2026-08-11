@@ -15,6 +15,7 @@ const mockedApi = vi.mocked(api)
 const profile = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 1,
   email: 'a@example.test',
+  email_verified_at: '2024-01-01T00:00:00Z',
   surname: 'MUSTER',
   givenname: 'Max',
   administrator: false,
@@ -172,6 +173,15 @@ describe('useAuthStore', () => {
 
     expect(store.isAuthenticated).toBe(true)
     expect(mockedApi.post).toHaveBeenCalledWith('/auth/verify-email', { token: 'some-token' })
+  })
+
+  it('resendVerificationEmail posts to the resend endpoint', async () => {
+    mockedApi.post.mockResolvedValueOnce({ data: { status: 'ok' } })
+    const store = useAuthStore()
+
+    await store.resendVerificationEmail()
+
+    expect(mockedApi.post).toHaveBeenCalledWith('/auth/resend-verification-email')
   })
 
   it('loginWithGoogleCredential sends the credential, sets the token, and fetches the profile', async () => {

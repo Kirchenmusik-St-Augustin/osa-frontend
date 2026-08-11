@@ -11,6 +11,7 @@ export interface EmailKillSwitchStatus {
 export interface AuthUser {
   id: number
   email: string
+  email_verified_at: string | null
   surname: string
   givenname: string
   administrator: boolean
@@ -106,6 +107,10 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchProfile()
   }
 
+  async function resendVerificationEmail(): Promise<void> {
+    await api.post('/auth/resend-verification-email')
+  }
+
   async function logout(): Promise<void> {
     try {
       await api.post('/auth/logout')
@@ -146,6 +151,7 @@ export const useAuthStore = defineStore('auth', () => {
     linkGoogleAccount,
     register,
     verifyEmail,
+    resendVerificationEmail,
     logout,
     restoreSession,
   }

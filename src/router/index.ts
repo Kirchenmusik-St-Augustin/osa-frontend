@@ -130,6 +130,14 @@ const router = createRouter({
           meta: { title: 'E-Mail-Prüfung' },
         },
         {
+          // Where runAuthGuards redirects a logged-in-but-unverified user --
+          // 1:1 Legacy's `verification.notice` (Auth/VerifyEmail.vue).
+          path: 'verify-email-notice',
+          name: 'verify-email-notice',
+          component: () => import('@/views/auth/VerifyEmailNoticeView.vue'),
+          meta: { requiresAuth: true, title: 'E-Mail-Prüfung' },
+        },
+        {
           // One dynamic route for all six Coreelement types (see
           // constants/coreelementTypes.ts) instead of six near-identical
           // route entries -- mirrors the backend's single generic
