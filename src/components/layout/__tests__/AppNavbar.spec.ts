@@ -274,7 +274,7 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).toContain('Komponisten und Dirigenten')
   })
 
-  it('hides the "Kurz-URLs" placeholder without shorturlMaintain', () => {
+  it('hides "Kurz-URLs" without shorturlMaintain', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
@@ -285,10 +285,9 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('Kurz-URLs')
   })
 
-  it('shows "Kurz-URLs" as a plain, non-navigating button with shorturlMaintain', () => {
-    // Placeholder: the Shorturl domain (Schritt 8) doesn't exist yet, so
-    // this button is deliberately inert -- shown for navbar pixel-parity
-    // only, 1:1 Legacy's AuthLeftMenu.vue item order/label/gate.
+  it('shows "Kurz-URLs" as a standalone link with shorturlMaintain', () => {
+    // 1:1 Legacy's AuthLeftMenu.vue: a standalone top-level nav item (not
+    // a dropdown), gated on role 'shorturls'.
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
@@ -297,10 +296,7 @@ describe('AppNavbar', () => {
     const wrapper = mount(AppNavbar)
 
     expect(wrapper.text()).toContain('Kurz-URLs')
-    const button = wrapper
-      .findAll('button.btn')
-      .find((el) => el.text() === 'Kurz-URLs' && !el.classes().includes('dropdown-toggle'))
-    expect(button).toBeDefined()
-    expect(button?.attributes('type')).toBe('button')
+    const link = wrapper.findAll('a.btn').find((el) => el.text() === 'Kurz-URLs')
+    expect(link).toBeDefined()
   })
 })

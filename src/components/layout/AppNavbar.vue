@@ -148,12 +148,10 @@ async function logout(): Promise<void> {
             </div>
           </div>
         </li>
-        <!-- Placeholder: the Shorturl domain itself (Schritt 8) doesn't
-             exist yet, but the permission gate is already wired -- shown
-             now, non-functional, purely so the navbar's item set/order can
-             be pixel-compared against Legacy before that domain lands. -->
         <li v-if="authStore.hasPermission('shorturlMaintain')" class="nav-item">
-          <button type="button" class="btn">Kurz-URLs</button>
+          <RouterLink class="btn" :to="{ name: 'shorturls' }">
+            <span>Kurz-URLs</span>
+          </RouterLink>
         </li>
       </ul>
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">

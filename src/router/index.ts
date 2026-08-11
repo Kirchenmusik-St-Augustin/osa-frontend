@@ -243,6 +243,20 @@ const router = createRouter({
           },
         },
         {
+          // Legacy's Shorturl/Index.vue lives under its own dedicated
+          // content/shorturl/shorturls route group (Rolle 'shorturls',
+          // ShorturlPolicy::maintain()) -- a standalone top-level nav item
+          // in Legacy, not nested under any dropdown (see AppNavbar.vue).
+          path: 'shorturls',
+          name: 'shorturls',
+          component: () => import('@/views/shorturl/ShorturlView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'shorturlMaintain',
+            title: 'Kurz-URLs',
+          },
+        },
+        {
           // Schritt 7: Content/System/UserController -- Benutzerkonten
           // verwalten, gated `userMaintain` (Rolle disponent ODER
           // administrator-Flag).
