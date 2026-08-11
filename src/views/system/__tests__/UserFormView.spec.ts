@@ -88,6 +88,7 @@ describe('UserFormView', () => {
       voices: [],
       choirjobs: [],
       roles: [],
+      administrator: false,
     })
     expect(mockShowToast).toHaveBeenCalledWith('gespeichert.')
     expect(mockPush).toHaveBeenCalledWith({ name: 'system-users-show', params: { id: 9 } })
@@ -177,6 +178,43 @@ describe('UserFormView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Rollen')
+  })
+
+  it('hides the Administrator checkbox for a non-administrator', async () => {
+    mockIsAdministrator = false
+    const wrapper = mount(UserFormView, { props: {} })
+    await flushPromises()
+
+    expect(wrapper.find('input#user-administrator').exists()).toBe(false)
+  })
+
+  it('shows the Administrator checkbox for an administrator and includes it in the save payload', async () => {
+    mockIsAdministrator = true
+    mockCreate.mockResolvedValueOnce(makeUser({ id: 9 }))
+    const wrapper = mount(UserFormView, { props: {} })
+    await flushPromises()
+
+    const checkbox = wrapper.find('input#user-administrator')
+    expect(checkbox.exists()).toBe(true)
+    await checkbox.setValue(true)
+    await wrapper.find('input#user-givenname').setValue('Margot')
+    await wrapper.find('input#user-surname').setValue('Schindler')
+    await wrapper.find('input#user-phone').setValue('0664 1234567')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ administrator: true }))
+  })
+
+  it('pre-fills the Administrator checkbox when editing an existing administrator-eligible user', async () => {
+    mockIsAdministrator = true
+    mockGet.mockResolvedValueOnce(makeUser({ id: 5, administrator: true }))
+    const wrapper = mount(UserFormView, { props: { id: '5' } })
+    await flushPromises()
+
+    expect((wrapper.find('input#user-administrator').element as HTMLInputElement).checked).toBe(
+      true,
+    )
   })
 
   it('does not save when the user cancels the confirmation', async () => {

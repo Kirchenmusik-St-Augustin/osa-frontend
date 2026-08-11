@@ -26,6 +26,7 @@ const form = reactive({
   voices: [] as SelectableItem[],
   choirjobs: [] as SelectableItem[],
   roles: [] as SelectableItem[],
+  administrator: false,
 })
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
@@ -52,6 +53,7 @@ onMounted(async () => {
   form.voices = user.voices
   form.choirjobs = user.choirjobs
   form.roles = user.roles
+  form.administrator = user.administrator
   initialEmail = user.email
   emailVerifiedAt.value = user.email_verified_at
 })
@@ -80,6 +82,7 @@ async function save(): Promise<void> {
     voices: form.voices.map((item) => item.id),
     choirjobs: form.choirjobs.map((item) => item.id),
     roles: form.roles.map((item) => item.id),
+    administrator: form.administrator,
   }
 
   try {
@@ -166,6 +169,14 @@ async function save(): Promise<void> {
             v-model="form.roles"
             title="Rollen"
             :available="options.roles"
+          />
+
+          <FormCheckbox
+            v-if="authStore.user?.administrator"
+            id="user-administrator"
+            v-model="form.administrator"
+            title="Administrator"
+            as-switch
           />
         </div>
       </div>

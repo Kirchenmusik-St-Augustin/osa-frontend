@@ -61,6 +61,7 @@ export interface UserPayload {
   voices: number[]
   choirjobs: number[]
   roles: number[]
+  administrator: boolean
 }
 
 // UI-independent API layer for Schritt 7's Benutzerverwaltung (System),
