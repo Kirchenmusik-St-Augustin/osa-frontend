@@ -13,28 +13,28 @@ beforeEach(() => {
 })
 
 describe('useRequestLogs', () => {
-  it('listUsersForMonth requests the month-scoped endpoint', async () => {
-    const users = [{ id: 1, label: 'SCHINDLER, Margot' }]
-    mockedApi.get.mockResolvedValueOnce({ data: users })
-    const { listUsersForMonth } = useRequestLogs()
+  it('listDaysWithUsersForMonth requests the month-scoped endpoint', async () => {
+    const dayGroups = [{ day: '2026-08-12', users: [{ id: 1, label: 'SCHINDLER, Margot' }] }]
+    mockedApi.get.mockResolvedValueOnce({ data: dayGroups })
+    const { listDaysWithUsersForMonth } = useRequestLogs()
 
-    const result = await listUsersForMonth(2026, 8)
+    const result = await listDaysWithUsersForMonth(2026, 8)
 
     expect(mockedApi.get).toHaveBeenCalledWith('/administrator/request-logs', {
       params: { year: 2026, month: 8 },
     })
-    expect(result).toEqual(users)
+    expect(result).toEqual(dayGroups)
   })
 
-  it('getForUser requests the user-scoped entries endpoint', async () => {
+  it('getForUser requests the day+user-scoped entries endpoint', async () => {
     const detail = { username: 'SCHINDLER, Margot', entries: [] }
     mockedApi.get.mockResolvedValueOnce({ data: detail })
     const { getForUser } = useRequestLogs()
 
-    const result = await getForUser(1, 2026, 8)
+    const result = await getForUser(1, 2026, 8, 12)
 
     expect(mockedApi.get).toHaveBeenCalledWith('/administrator/request-logs/users/1', {
-      params: { year: 2026, month: 8 },
+      params: { year: 2026, month: 8, day: 12 },
     })
     expect(result).toEqual(detail)
   })

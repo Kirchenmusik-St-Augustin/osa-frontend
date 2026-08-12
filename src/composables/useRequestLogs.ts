@@ -5,6 +5,11 @@ export interface RequestLogUserSummary {
   label: string
 }
 
+export interface RequestLogDayGroup {
+  day: string // Pydantic `date`, serialized as "YYYY-MM-DD"
+  users: RequestLogUserSummary[]
+}
+
 export interface RequestLogEntry {
   id: number
   created_at: string
@@ -35,8 +40,11 @@ export interface RequestLogShow {
 
 // UI-independent API layer for Schritt 9's RequestLog/Logbuch (Admin-/Audit-Viewer).
 export function useRequestLogs() {
-  async function listUsersForMonth(year: number, month: number): Promise<RequestLogUserSummary[]> {
-    const response = await api.get<RequestLogUserSummary[]>('/administrator/request-logs', {
+  async function listDaysWithUsersForMonth(
+    year: number,
+    month: number,
+  ): Promise<RequestLogDayGroup[]> {
+    const response = await api.get<RequestLogDayGroup[]>('/administrator/request-logs', {
       params: { year, month },
     })
     return response.data
@@ -46,10 +54,11 @@ export function useRequestLogs() {
     userId: number,
     year: number,
     month: number,
+    day: number,
   ): Promise<RequestLogUserDetail> {
     const response = await api.get<RequestLogUserDetail>(
       `/administrator/request-logs/users/${userId}`,
-      { params: { year, month } },
+      { params: { year, month, day } },
     )
     return response.data
   }
@@ -59,5 +68,5 @@ export function useRequestLogs() {
     return response.data
   }
 
-  return { listUsersForMonth, getForUser, get }
+  return { listDaysWithUsersForMonth, getForUser, get }
 }

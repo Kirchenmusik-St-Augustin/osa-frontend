@@ -31,70 +31,53 @@ function makeDetail(entries: RequestLogEntry[]): RequestLogUserDetail {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockQuery = { year: '2026', month: '8' }
+  mockQuery = { year: '2026', month: '8', day: '12' }
 })
 
 describe('RequestLogUserView', () => {
-  it('loads and renders the username and requests for the given year/month', async () => {
+  it('loads and renders the username and requests for the given year/month/day', async () => {
     mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry()]))
     mount(RequestLogUserView, { props: { userId: '7' } })
     await flushPromises()
 
-    expect(mockGetForUser).toHaveBeenCalledWith(7, 2026, 8)
+    expect(mockGetForUser).toHaveBeenCalledWith(7, 2026, 8, 12)
   })
 
-  it('renders the username and each entry method/path', async () => {
+  it('renders the username and each entry method/path directly, no collapsible grouping', async () => {
     mockGetForUser.mockResolvedValueOnce(
       makeDetail([makeEntry({ request_method: 'POST', request_path: '/auth/login' })]),
     )
     const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
     await flushPromises()
-    await wrapper.find('.c-pointer').trigger('click')
 
     expect(wrapper.text()).toContain('SCHINDLER, Margot')
     expect(wrapper.text()).toContain('POST')
     expect(wrapper.text()).toContain('/auth/login')
+    expect(wrapper.find('.c-pointer').exists()).toBe(false)
   })
 
-  it('groups entries by calendar day', async () => {
+  it('renders each entry as its own table row (all entries already belong to one day)', async () => {
     mockGetForUser.mockResolvedValueOnce(
-      makeDetail([
-        makeEntry({ id: 1, created_at: '2026-08-12T09:00:00+00:00' }),
-        makeEntry({ id: 2, created_at: '2026-08-12T15:00:00+00:00' }),
-        makeEntry({ id: 3, created_at: '2026-08-13T09:00:00+00:00' }),
-      ]),
+      makeDetail([makeEntry({ id: 1 }), makeEntry({ id: 2 }), makeEntry({ id: 3 })]),
     )
     const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
     await flushPromises()
 
-    expect(wrapper.findAll('.c-pointer')).toHaveLength(2)
+    expect(wrapper.findAll('tbody tr')).toHaveLength(3)
   })
 
-  it("starts every day group collapsed, 1:1 Legacy's <toggler> default", async () => {
-    mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ request_method: 'POST' })]))
-    const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
-    await flushPromises()
-
-    expect(wrapper.text()).not.toContain('POST')
-
-    await wrapper.find('.c-pointer').trigger('click')
-
-    expect(wrapper.text()).toContain('POST')
-  })
-
-  it('shows the exact Legacy empty-state text when there are none', async () => {
+  it('shows the exact empty-state text when there are none', async () => {
     mockGetForUser.mockResolvedValueOnce(makeDetail([]))
     const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Für diesen Monat wurden keine Log-Einträge gefunden.')
+    expect(wrapper.text()).toContain('Für diesen Tag wurden keine Log-Einträge gefunden.')
   })
 
-  it('links each entry to Show and "zurück" to Index with the same year/month', async () => {
+  it('links each entry to Show and "zurück" to Index with the same year/month/day', async () => {
     mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ id: 99 })]))
     const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
     await flushPromises()
-    await wrapper.find('.c-pointer').trigger('click')
 
     const links = wrapper.findAllComponents(RouterLinkStub)
     const showLink = links.find(
@@ -113,8 +96,25 @@ describe('RequestLogUserView', () => {
     for (const backLink of backLinks) {
       expect(backLink.props('to')).toEqual({
         name: 'administrator-request-logs-index',
-        query: { year: 2026, month: 8 },
+        query: { year: 2026, month: 8, day: 12 },
       })
     }
+  })
+
+  it('reloads the entries when the userId prop changes, without remounting', async () => {
+    // Regression guard for the onMounted -> watch fix: Vue Router recycles
+    // this component instance on a pure :userId change -- onMounted() alone
+    // would only fire once. Same precedent/technique as CoreelementView.vue's
+    // "reloads the list when the type prop changes" test.
+    mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ id: 1 })]))
+    const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
+    await flushPromises()
+    expect(mockGetForUser).toHaveBeenCalledWith(7, 2026, 8, 12)
+
+    mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ id: 2 })]))
+    await wrapper.setProps({ userId: '8' })
+    await flushPromises()
+
+    expect(mockGetForUser).toHaveBeenCalledWith(8, 2026, 8, 12)
   })
 })

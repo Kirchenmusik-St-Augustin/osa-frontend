@@ -17,7 +17,8 @@ onMounted(async () => {
 
 // Legacy's "zurück" returns to IndexUser for the month/user the entry's
 // own created_at/user_id belong to -- not necessarily "now" or the
-// currently logged-in admin.
+// currently logged-in admin. Day-granularity update (2026-08-12): the
+// target view is now day+user-scoped, so the day is extracted here too.
 const backTarget = computed(() => {
   if (!entry.value || entry.value.user_id === null) {
     return { name: 'administrator-request-logs-index' as const }
@@ -26,7 +27,7 @@ const backTarget = computed(() => {
   return {
     name: 'administrator-request-logs-user' as const,
     params: { userId: entry.value.user_id },
-    query: { year: at.getFullYear(), month: at.getMonth() + 1 },
+    query: { year: at.getFullYear(), month: at.getMonth() + 1, day: at.getDate() },
   }
 })
 </script>
