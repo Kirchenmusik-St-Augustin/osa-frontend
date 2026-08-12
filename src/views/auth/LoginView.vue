@@ -128,7 +128,7 @@ async function submitLinkAccount(): Promise<void> {
               <button type="submit" class="btn btn-primary" :disabled="submitting">Anmelden</button>
               <div v-if="googleClientId()" id="google-signin-button-wrapper" class="small mt-3">
                 <GoogleLogin :callback="handleGoogleCredential" />
-                <small v-if="googleError" class="text-danger">{{ googleError }}</small>
+                <small v-if="googleError" class="d-block text-danger mt-2">{{ googleError }}</small>
               </div>
             </div>
           </form>
