@@ -65,7 +65,7 @@ describe('RequestLogShowView', () => {
     expect(preBlocks[1]?.text()).toBe('[]')
   })
 
-  it('links "zurück" to the per-user view for the entry\'s own month', async () => {
+  it('links "zurück" to the per-user view for the entry\'s own day', async () => {
     mockGet.mockResolvedValueOnce(
       makeEntry({ user_id: 7, created_at: '2026-03-15T09:00:00+00:00' }),
     )
@@ -76,7 +76,7 @@ describe('RequestLogShowView', () => {
     expect(backLink.props('to')).toEqual({
       name: 'administrator-request-logs-user',
       params: { userId: 7 },
-      query: { year: 2026, month: 3 },
+      query: { year: 2026, month: 3, day: 15 },
     })
   })
 

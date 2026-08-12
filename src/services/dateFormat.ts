@@ -129,6 +129,37 @@ export function formatDateOnly(iso: string): string {
   return `${date.getDate()}. ${MONTHS_FULL[date.getMonth()]} ${date.getFullYear()}`
 }
 
+// Day-granularity sibling of formatMonthYear() above -- same "D. MMMM
+// YYYY" rendering as formatDateOnly(), built from year/month/day integers
+// directly instead of parsed from an ISO instant. Backs the day-group
+// headings in RequestLogIndexView.vue's CollapsibleSection titles.
+export function formatDayMonthYear(year: number, month: number, day: number): string {
+  return `${day}. ${MONTHS_FULL[month - 1]} ${year}`
+}
+
+// Parses a Pydantic `date`-serialized "YYYY-MM-DD" string into its numeric
+// parts WITHOUT constructing a Date -- `new Date("YYYY-MM-DD")` parses as
+// UTC midnight, and re-reading it via local Date getters can shift the
+// displayed day by one under a negative UTC offset. Same risk class
+// parseWallClock() above already guards against for naive wall-clock time
+// strings; a date-only string carries no time-of-day to anchor a
+// Date-based parse against, so it needs the identical string-split
+// treatment.
+export function parseCalendarDate(iso: string): { year: number; month: number; day: number } {
+  const [year, month, day] = iso.split('-').map(Number)
+  if (
+    year === undefined ||
+    month === undefined ||
+    day === undefined ||
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day)
+  ) {
+    throw new Error(`Unparseable calendar date: ${iso}`)
+  }
+  return { year, month, day }
+}
+
 // Mirrors moment.js's "HH:mm:ss" format used per-row in Legacy's
 // RequestLogs/IndexUser.vue table. UTC-instant input.
 export function formatTimeOnly(iso: string): string {

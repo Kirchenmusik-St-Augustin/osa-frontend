@@ -2,7 +2,7 @@ import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import RequestLogIndexView from '../RequestLogIndexView.vue'
-import type { RequestLogUserSummary } from '@/composables/useRequestLogs'
+import type { RequestLogDayGroup } from '@/composables/useRequestLogs'
 
 let mockQuery: Record<string, string> = {}
 vi.mock('vue-router', async (importOriginal) => ({
@@ -10,13 +10,17 @@ vi.mock('vue-router', async (importOriginal) => ({
   useRoute: () => ({ query: mockQuery }),
 }))
 
-const mockListUsersForMonth = vi.fn()
+const mockListDaysWithUsersForMonth = vi.fn()
 vi.mock('@/composables/useRequestLogs', () => ({
-  useRequestLogs: () => ({ listUsersForMonth: mockListUsersForMonth }),
+  useRequestLogs: () => ({ listDaysWithUsersForMonth: mockListDaysWithUsersForMonth }),
 }))
 
-function makeUser(overrides: Partial<RequestLogUserSummary> = {}): RequestLogUserSummary {
-  return { id: 1, label: 'SCHINDLER, Margot', ...overrides }
+function makeDayGroup(overrides: Partial<RequestLogDayGroup> = {}): RequestLogDayGroup {
+  return {
+    day: '2026-08-12',
+    users: [{ id: 1, label: 'SCHINDLER, Margot' }],
+    ...overrides,
+  }
 }
 
 beforeEach(() => {
@@ -25,27 +29,49 @@ beforeEach(() => {
 })
 
 describe('RequestLogIndexView', () => {
-  it('loads and lists the users with entries in the requested month', async () => {
-    mockListUsersForMonth.mockResolvedValueOnce([makeUser()])
+  it('loads day groups for the requested month (no day argument)', async () => {
+    mockListDaysWithUsersForMonth.mockResolvedValueOnce([makeDayGroup()])
+    mount(RequestLogIndexView)
+    await flushPromises()
+
+    expect(mockListDaysWithUsersForMonth).toHaveBeenCalledWith(2026, 8)
+  })
+
+  it('renders each day group under a collapsible heading', async () => {
+    mockListDaysWithUsersForMonth.mockResolvedValueOnce([makeDayGroup()])
     const wrapper = mount(RequestLogIndexView)
     await flushPromises()
 
-    expect(mockListUsersForMonth).toHaveBeenCalledWith(2026, 8)
+    expect(wrapper.text()).toContain('12. August 2026')
+  })
+
+  it("reveals the day's users only after the caret is toggled", async () => {
+    mockListDaysWithUsersForMonth.mockResolvedValueOnce([makeDayGroup()])
+    const wrapper = mount(RequestLogIndexView)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('SCHINDLER, Margot')
+
+    await wrapper.find('.c-pointer').trigger('click')
+
     expect(wrapper.text()).toContain('SCHINDLER, Margot')
   })
 
   it('shows the exact Legacy empty-state text when there are none', async () => {
-    mockListUsersForMonth.mockResolvedValueOnce([])
+    mockListDaysWithUsersForMonth.mockResolvedValueOnce([])
     const wrapper = mount(RequestLogIndexView)
     await flushPromises()
 
     expect(wrapper.text()).toContain('Für diesen Monat wurden keine Log-Einträge gefunden.')
   })
 
-  it('links each user to the per-user view with the current year/month', async () => {
-    mockListUsersForMonth.mockResolvedValueOnce([makeUser({ id: 42 })])
+  it('links each user to the per-user view with year/month/day from that day group', async () => {
+    mockListDaysWithUsersForMonth.mockResolvedValueOnce([
+      makeDayGroup({ day: '2026-08-12', users: [{ id: 42, label: 'SCHINDLER, Margot' }] }),
+    ])
     const wrapper = mount(RequestLogIndexView)
     await flushPromises()
+    await wrapper.find('.c-pointer').trigger('click')
 
     const userLink = wrapper
       .findAllComponents(RouterLinkStub)
@@ -54,14 +80,33 @@ describe('RequestLogIndexView', () => {
     expect(userLink?.props('to')).toEqual({
       name: 'administrator-request-logs-user',
       params: { userId: 42 },
-      query: { year: 2026, month: 8 },
+      query: { year: 2026, month: 8, day: 12 },
     })
   })
 
-  it('renders the user list as a striped table, 1:1 Legacy (not plain centered links)', async () => {
-    mockListUsersForMonth.mockResolvedValueOnce([makeUser({ id: 1 }), makeUser({ id: 2 })])
+  it('renders one collapsible section per day group', async () => {
+    mockListDaysWithUsersForMonth.mockResolvedValueOnce([
+      makeDayGroup({ day: '2026-08-12' }),
+      makeDayGroup({ day: '2026-08-05' }),
+    ])
     const wrapper = mount(RequestLogIndexView)
     await flushPromises()
+
+    expect(wrapper.findAll('.c-pointer')).toHaveLength(2)
+  })
+
+  it('renders the nested user list as a striped table, 1:1 Legacy style', async () => {
+    mockListDaysWithUsersForMonth.mockResolvedValueOnce([
+      makeDayGroup({
+        users: [
+          { id: 1, label: 'SCHINDLER, Margot' },
+          { id: 2, label: 'AAAMSTETTER, Bernd' },
+        ],
+      }),
+    ])
+    const wrapper = mount(RequestLogIndexView)
+    await flushPromises()
+    await wrapper.find('.c-pointer').trigger('click')
 
     const table = wrapper.find('table')
     expect(table.classes()).toContain('table-striped')

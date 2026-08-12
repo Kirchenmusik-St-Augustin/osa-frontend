@@ -3,9 +3,11 @@ import {
   formatDateOnly,
   formatDateTime,
   formatDateTimeWithWeekday,
+  formatDayMonthYear,
   formatMonthYear,
   formatTimeOnly,
   formatUtcDateTime,
+  parseCalendarDate,
   parseWallClock,
   toWallClockString,
 } from '../dateFormat'
@@ -117,5 +119,33 @@ describe('formatMonthYear', () => {
 
   it('maps month 1 to January', () => {
     expect(formatMonthYear(2026, 1)).toBe('Januar 2026')
+  })
+})
+
+describe('formatDayMonthYear', () => {
+  it('renders day, full month name and year', () => {
+    expect(formatDayMonthYear(2026, 8, 12)).toBe('12. August 2026')
+  })
+
+  it('maps month 1 to January', () => {
+    expect(formatDayMonthYear(2026, 1, 5)).toBe('5. Januar 2026')
+  })
+})
+
+describe('parseCalendarDate', () => {
+  it('splits a "YYYY-MM-DD" string into numeric parts', () => {
+    expect(parseCalendarDate('2026-08-12')).toEqual({ year: 2026, month: 8, day: 12 })
+  })
+
+  it('never goes through a Date construction (no UTC-offset reinterpretation risk)', () => {
+    // Regression guard for the bug class this function exists to avoid --
+    // `new Date('2026-08-12')` parses as UTC midnight and can shift by a
+    // day under a negative browser UTC offset. A pure string-split has no
+    // such risk; this asserts the day survives unchanged either way.
+    expect(parseCalendarDate('2026-01-01').day).toBe(1)
+  })
+
+  it('throws on an unparseable value', () => {
+    expect(() => parseCalendarDate('not-a-date')).toThrow()
   })
 })

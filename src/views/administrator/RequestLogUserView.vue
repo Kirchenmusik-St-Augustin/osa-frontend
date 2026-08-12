@@ -1,42 +1,36 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Administrator/RequestLogs/IndexUser.vue.
-import { computed, onMounted, ref } from 'vue'
+// Day+user-scoped detail page, adapted from Legacy's Content/Administrator/
+// RequestLogs/IndexUser.vue -- Legacy only has month granularity (flat
+// entry list grouped client-side by day); here the backend already scopes
+// to exactly one day, so no client-side day-grouping is needed anymore
+// (User decision 2026-08-12, real functional change).
+import { ref, watch } from 'vue'
 import { useRequestLogs, type RequestLogEntry } from '@/composables/useRequestLogs'
-import { useMonthQuery } from '@/composables/useMonthQuery'
-import { formatDateOnly, formatTimeOnly } from '@/services/dateFormat'
-import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
+import { useDayQuery } from '@/composables/useDayQuery'
+import { formatTimeOnly } from '@/services/dateFormat'
 
 const props = defineProps<{ userId: string }>()
 const { getForUser } = useRequestLogs()
-const { year, month } = useMonthQuery()
+const { year, month, day } = useDayQuery()
 
 const username = ref('')
 const entries = ref<RequestLogEntry[]>([])
 
-onMounted(async () => {
-  const detail = await getForUser(Number(props.userId), year.value, month.value)
-  username.value = detail.username
-  entries.value = detail.entries
-})
-
-// Groups entries by calendar day, preserving the already-ascending order
-// from the backend within each group (1:1 Legacy's lodash groupBy over
-// moment(created_at).format('LL')) -- native Object.groupBy-equivalent, no
-// lodash dependency for a single call. Each CollapsibleSection below starts
-// collapsed (no initShow prop) -- Legacy's own <toggler> defaults closed too.
-const groupedByDay = computed(() => {
-  const groups = new Map<string, RequestLogEntry[]>()
-  for (const entry of entries.value) {
-    const key = formatDateOnly(entry.created_at)
-    const group = groups.get(key)
-    if (group) {
-      group.push(entry)
-    } else {
-      groups.set(key, [entry])
-    }
-  }
-  return groups
-})
+// Vue Router reuses this component instance on a pure query-param change
+// (a different day/user picked from the Index page's day groups) AND on a
+// pure path-param change (:userId) -- onMounted() alone would only fire
+// once, same bug precedent as CoreelementView.vue's
+// watch(() => props.type, ...). userId is included in the watch sources
+// for the same reason, not just year/month/day.
+watch(
+  [year, month, day, () => props.userId],
+  async ([currentYear, currentMonth, currentDay, currentUserId]) => {
+    const detail = await getForUser(Number(currentUserId), currentYear, currentMonth, currentDay)
+    username.value = detail.username
+    entries.value = detail.entries
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -48,46 +42,36 @@ const groupedByDay = computed(() => {
       <div class="text-center mb-4">
         <RouterLink
           class="btn btn-primary"
-          :to="{ name: 'administrator-request-logs-index', query: { year, month } }"
+          :to="{ name: 'administrator-request-logs-index', query: { year, month, day } }"
         >
           zurück
         </RouterLink>
       </div>
 
-      <div v-if="entries.length">
-        <CollapsibleSection
-          v-for="[day, dayEntries] in groupedByDay"
-          :key="day"
-          :title="day"
-          hide-desc
-          hide-border
-        >
-          <div class="table-responsive">
-            <table class="table table-sm table-striped">
-              <tbody>
-                <tr v-for="entry in dayEntries" :key="entry.id">
-                  <td class="text-nowrap">{{ formatTimeOnly(entry.created_at) }}</td>
-                  <td class="text-nowrap">{{ entry.request_method }}</td>
-                  <td class="text-nowrap">{{ entry.request_path }}</td>
-                  <td class="text-nowrap">
-                    <RouterLink
-                      class="fas fa-magnifying-glass text-decoration-none"
-                      :to="{ name: 'administrator-request-logs-show', params: { id: entry.id } }"
-                      title="untersuchen"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </CollapsibleSection>
+      <div v-if="entries.length" class="table-responsive">
+        <table class="table table-sm table-striped">
+          <tbody>
+            <tr v-for="entry in entries" :key="entry.id">
+              <td class="text-nowrap">{{ formatTimeOnly(entry.created_at) }}</td>
+              <td class="text-nowrap">{{ entry.request_method }}</td>
+              <td class="text-nowrap">{{ entry.request_path }}</td>
+              <td class="text-nowrap">
+                <RouterLink
+                  class="fas fa-magnifying-glass text-decoration-none"
+                  :to="{ name: 'administrator-request-logs-show', params: { id: entry.id } }"
+                  title="untersuchen"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div v-else class="text-center">Für diesen Monat wurden keine Log-Einträge gefunden.</div>
+      <div v-else class="text-center">Für diesen Tag wurden keine Log-Einträge gefunden.</div>
 
       <div class="text-center my-4">
         <RouterLink
           class="btn btn-primary"
-          :to="{ name: 'administrator-request-logs-index', query: { year, month } }"
+          :to="{ name: 'administrator-request-logs-index', query: { year, month, day } }"
         >
           zurück
         </RouterLink>
