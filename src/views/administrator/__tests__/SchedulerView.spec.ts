@@ -1,11 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import SchedulerView from '../SchedulerView.vue'
-import type { ScheduledJob } from '@/composables/useScheduler'
+import type { BackupTrigger, ScheduledJob } from '@/composables/useScheduler'
 
 const mockListScheduledJobs = vi.fn()
+const mockTriggerBackup = vi.fn()
 vi.mock('@/composables/useScheduler', () => ({
-  useScheduler: () => ({ listScheduledJobs: mockListScheduledJobs }),
+  useScheduler: () => ({
+    listScheduledJobs: mockListScheduledJobs,
+    triggerBackup: mockTriggerBackup,
+  }),
+}))
+
+let mockAppEnvironment: string | undefined
+vi.mock('@/runtimeConfig', () => ({
+  appEnvironment: () => mockAppEnvironment,
 }))
 
 const mockShowToast = vi.fn()
@@ -17,15 +26,24 @@ function makeJob(overrides: Partial<ScheduledJob> = {}): ScheduledJob {
   return {
     id: 'purge_stale_booking_requests',
     name: 'purge_stale_booking_requests',
-    trigger: 'interval[1:00:00]',
+    trigger: 'cron[minute=0]',
     next_run: '13.08.2026, 15:00',
     description: 'Löscht stündlich offene Buchungsanfragen.',
     ...overrides,
   }
 }
 
+function makeBackupTrigger(overrides: Partial<BackupTrigger> = {}): BackupTrigger {
+  return {
+    backup_name: 'production-2026-08-13_12-00-00-manual.tar.gz',
+    triggered_at: '2026-08-13T12:00:00+00:00',
+    ...overrides,
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  mockAppEnvironment = undefined
 })
 
 describe('SchedulerView', () => {
@@ -40,7 +58,7 @@ describe('SchedulerView', () => {
 
     expect(wrapper.findAll('.card')).toHaveLength(2)
     expect(wrapper.text()).toContain('purge_stale_booking_requests')
-    expect(wrapper.text()).toContain('interval[1:00:00]')
+    expect(wrapper.text()).toContain('cron[minute=0]')
     expect(wrapper.text()).toContain('13.08.2026, 15:00')
   })
 
@@ -81,15 +99,89 @@ describe('SchedulerView', () => {
     expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
   })
 
-  it('renders no trigger button or history link (reduced scope, no run-history/actions)', async () => {
+  it('does not render the backup button outside the production stage', async () => {
+    mockAppEnvironment = 'development'
     mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
 
     const wrapper = mount(SchedulerView)
     await flushPromises()
 
     expect(wrapper.find('button').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Backup jetzt erstellen')
+  })
+
+  it('renders no history/downsync elements regardless of stage', async () => {
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+
     expect(wrapper.text()).not.toContain('Historie')
-    expect(wrapper.text()).not.toContain('Backup')
     expect(wrapper.text()).not.toContain('Downsync')
+  })
+
+  it('renders the backup button on the production stage', async () => {
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+
+    expect(wrapper.find('button').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Backup jetzt erstellen')
+    expect(wrapper.text()).toContain('nach Koofr')
+  })
+
+  it('triggers a backup and shows a success toast with the backup name', async () => {
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+    mockTriggerBackup.mockResolvedValueOnce(makeBackupTrigger())
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    expect(mockTriggerBackup).toHaveBeenCalledOnce()
+    expect(mockShowToast).toHaveBeenCalledWith(
+      expect.stringContaining('production-2026-08-13_12-00-00-manual.tar.gz'),
+    )
+  })
+
+  it('shows an error toast when triggering a backup fails', async () => {
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+    mockTriggerBackup.mockRejectedValueOnce(new Error('upload failed'))
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
+  })
+
+  it('disables the backup button while the request is in flight', async () => {
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+    let resolveTrigger: (value: BackupTrigger) => void = () => {}
+    mockTriggerBackup.mockReturnValueOnce(
+      new Promise<BackupTrigger>((resolve) => {
+        resolveTrigger = resolve
+      }),
+    )
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    const button = wrapper.find('button')
+    await button.trigger('click')
+
+    expect(wrapper.find('button').attributes('disabled')).toBeDefined()
+
+    resolveTrigger(makeBackupTrigger())
+    await flushPromises()
+
+    expect(wrapper.find('button').attributes('disabled')).toBeUndefined()
   })
 })

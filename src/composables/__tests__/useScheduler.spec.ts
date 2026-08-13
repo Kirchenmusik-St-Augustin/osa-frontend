@@ -3,7 +3,7 @@ import { useScheduler } from '../useScheduler'
 import api from '@/services/api'
 
 vi.mock('@/services/api', () => ({
-  default: { get: vi.fn() },
+  default: { get: vi.fn(), post: vi.fn() },
 }))
 
 const mockedApi = vi.mocked(api)
@@ -30,5 +30,19 @@ describe('useScheduler', () => {
 
     expect(mockedApi.get).toHaveBeenCalledWith('/administrator/scheduler/jobs')
     expect(result).toEqual(jobs)
+  })
+
+  it('triggerBackup posts to the backup trigger endpoint', async () => {
+    const trigger = {
+      backup_name: 'production-2026-08-13_12-00-00-manual.tar.gz',
+      triggered_at: '2026-08-13T12:00:00+00:00',
+    }
+    mockedApi.post.mockResolvedValueOnce({ data: trigger })
+    const { triggerBackup } = useScheduler()
+
+    const result = await triggerBackup()
+
+    expect(mockedApi.post).toHaveBeenCalledWith('/administrator/scheduler/backup/trigger')
+    expect(result).toEqual(trigger)
   })
 })
