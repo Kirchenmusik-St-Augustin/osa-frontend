@@ -153,6 +153,20 @@ async function logout(): Promise<void> {
               >
                 <span>Logbuch</span>
               </RouterLink>
+              <RouterLink
+                v-if="authStore.hasPermission('sqlInspectorView')"
+                class="dropdown-item"
+                :to="{ name: 'administrator-sql-inspector' }"
+              >
+                <span>SQL-Einsicht</span>
+              </RouterLink>
+              <RouterLink
+                v-if="authStore.hasPermission('schedulerView')"
+                class="dropdown-item"
+                :to="{ name: 'administrator-scheduler' }"
+              >
+                <span>Scheduler</span>
+              </RouterLink>
             </div>
           </div>
         </li>

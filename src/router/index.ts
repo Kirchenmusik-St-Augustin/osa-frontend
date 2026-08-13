@@ -235,6 +235,28 @@ const router = createRouter({
           },
         },
         {
+          // No Legacy equivalent -- ported from vb-fastapi-vue's SQL-Einsicht.
+          path: 'administrator/sql-inspector',
+          name: 'administrator-sql-inspector',
+          component: () => import('@/views/administrator/SqlInspectorView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'sqlInspectorView',
+            title: 'SQL-Einsicht',
+          },
+        },
+        {
+          // No Legacy equivalent -- ported from vb-fastapi-vue's Scheduler.
+          path: 'administrator/scheduler',
+          name: 'administrator-scheduler',
+          component: () => import('@/views/administrator/SchedulerView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiredPermission: 'schedulerView',
+            title: 'Scheduler',
+          },
+        },
+        {
           // Legacy's Fee/Index.vue lives under content/system/fees, its own
           // dedicated FeeController -- not part of the Coreelement pool
           // (see FeeView.vue's docstring) and gated by role 'disponent'
