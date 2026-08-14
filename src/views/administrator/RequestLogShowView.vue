@@ -3,7 +3,7 @@
 // (LogDetail field list).
 import { computed, onMounted, ref } from 'vue'
 import { useRequestLogs, type RequestLogShow } from '@/composables/useRequestLogs'
-import { formatUtcDateTime } from '@/services/dateFormat'
+import { formatUtcDateTime, parseUtcInstantDate } from '@/services/dateFormat'
 import JsonBlock from '@/components/common/JsonBlock.vue'
 
 const props = defineProps<{ id: string }>()
@@ -23,11 +23,11 @@ const backTarget = computed(() => {
   if (!entry.value || entry.value.user_id === null) {
     return { name: 'administrator-request-logs-index' as const }
   }
-  const at = new Date(entry.value.created_at)
+  const { year, month, day } = parseUtcInstantDate(entry.value.created_at)
   return {
     name: 'administrator-request-logs-user' as const,
     params: { userId: entry.value.user_id },
-    query: { year: at.getFullYear(), month: at.getMonth() + 1, day: at.getDate() },
+    query: { year, month, day },
   }
 })
 </script>

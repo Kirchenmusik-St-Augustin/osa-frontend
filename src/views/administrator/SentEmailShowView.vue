@@ -2,7 +2,7 @@
 // 1:1 port of Legacy's Content/Administrator/SentEmails/Show.vue.
 import { computed, onMounted, ref } from 'vue'
 import { useSentEmails, type SentEmailShow } from '@/composables/useSentEmails'
-import { formatUtcDateTime } from '@/services/dateFormat'
+import { formatUtcDateTime, parseUtcInstantDate } from '@/services/dateFormat'
 
 const props = defineProps<{ id: string }>()
 const { get } = useSentEmails()
@@ -17,10 +17,10 @@ onMounted(async () => {
 // `datetime` (created_at) falls in -- not necessarily "now".
 const backTarget = computed(() => {
   if (!email.value) return { name: 'administrator-sent-emails-index' as const }
-  const at = new Date(email.value.datetime)
+  const { year, month } = parseUtcInstantDate(email.value.datetime)
   return {
     name: 'administrator-sent-emails-index' as const,
-    query: { year: at.getFullYear(), month: at.getMonth() + 1 },
+    query: { year, month },
   }
 })
 
