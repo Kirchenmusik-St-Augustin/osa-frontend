@@ -180,7 +180,7 @@ function reset(): void {
   <h2 class="h2 text-center mb-4">Besetzung bearbeiten</h2>
 
   <div v-if="page" class="row justify-content-center mt-4">
-    <div class="col-md-9 justify-content-center">
+    <div class="col-md-11 col-xl-10 px-0 px-md-3 justify-content-center">
       <PerformanceCard
         :performance="{
           id: page.id,
