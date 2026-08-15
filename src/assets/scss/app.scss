@@ -27,3 +27,19 @@ body {
 .c-pointer {
   cursor: pointer;
 }
+
+.c-grab {
+  cursor: grab;
+}
+
+// Drag-and-drop feedback for SingleCastList.vue's cast-reorder tiles
+// (SortableJS classes, applied via vuedraggable's ghost-class/chosen-class
+// props -- see that component's docstring). Kept to a single property
+// each, deliberately minimal.
+.cast-drag-ghost {
+  opacity: 0.4;
+}
+
+.cast-drag-chosen {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); // same value as Bootstrap's .shadow utility
+}
