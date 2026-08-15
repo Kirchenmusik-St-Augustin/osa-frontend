@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { onUnmounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { Collapse } from 'bootstrap'
 import { useAuthStore } from '@/stores/auth'
 import { COREELEMENT_TYPES } from '@/constants/coreelementTypes'
 import EmailThresholdWarning from '@/components/common/EmailThresholdWarning.vue'
@@ -11,6 +13,17 @@ async function logout(): Promise<void> {
   await authStore.logout()
   await router.push({ name: 'login' })
 }
+
+// Legacy parity (NavigationGuards.vue): Bootstrap's Collapse has no
+// built-in "close on inner link click" behavior -- force the burger menu
+// closed on every navigation. router.afterEach covers both link clicks
+// and back/forward navigation in one hook (Legacy needed a separate
+// popstate listener only because of Inertia's own event system).
+const removeAfterEachHook = router.afterEach(() => {
+  const element = document.getElementById('mainNavBar')
+  if (element) new Collapse(element, { toggle: false }).hide()
+})
+onUnmounted(removeAfterEachHook)
 </script>
 
 <template>

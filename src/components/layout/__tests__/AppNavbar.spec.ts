@@ -3,11 +3,41 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import AppNavbar from '../AppNavbar.vue'
 
-const mockPush = vi.fn().mockResolvedValue(undefined)
+// vi.mock(...) factories are hoisted above plain const declarations --
+// referencing mock functions inside them requires vi.hoisted() (already
+// established project gotcha, see feedback_frontend_gotchas memory),
+// otherwise it's a "Cannot access before initialization" TDZ error.
+const { mockPush, mockAfterEach, mockRemoveAfterEachHook } = vi.hoisted(() => {
+  const mockRemoveAfterEachHook = vi.fn()
+  return {
+    mockPush: vi.fn().mockResolvedValue(undefined),
+    mockRemoveAfterEachHook,
+    mockAfterEach: vi.fn().mockReturnValue(mockRemoveAfterEachHook),
+  }
+})
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof VueRouter>()),
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, afterEach: mockAfterEach }),
 }))
+
+// Bootstrap's real Collapse manipulates DOM classes via CSS transitions
+// jsdom doesn't implement -- stubbed minimally instead (same established
+// pattern as vuedraggable/vue-flatpickr-component elsewhere in this repo),
+// so the afterEach hook's Collapse(...).hide() call can be asserted
+// directly without depending on any real transition behavior.
+const { mockCollapse, mockCollapseHide } = vi.hoisted(() => {
+  const mockCollapseHide = vi.fn()
+  // Called with `new` in AppNavbar.vue -- mockReturnValue doesn't support
+  // that (Vitest requires mockImplementation with a class for constructor
+  // mocks), hence the class expression here instead of a plain factory.
+  const mockCollapse = vi.fn().mockImplementation(
+    class {
+      hide = mockCollapseHide
+    },
+  )
+  return { mockCollapseHide, mockCollapse }
+})
+vi.mock('bootstrap', () => ({ Collapse: mockCollapse }))
 
 const mockLogout = vi.fn()
 let mockAuthState: {
@@ -337,5 +367,29 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).toContain('Kurz-URLs')
     const link = wrapper.findAll('a.btn').find((el) => el.text() === 'Kurz-URLs')
     expect(link).toBeDefined()
+  })
+
+  describe('burger menu closes on navigation (Legacy parity)', () => {
+    it('registers a router.afterEach hook that force-closes #mainNavBar via Bootstrap Collapse', () => {
+      const wrapper = mount(AppNavbar, { attachTo: document.body })
+
+      expect(mockAfterEach).toHaveBeenCalledOnce()
+      const navigationHook = mockAfterEach.mock.calls[0]?.[0] as () => void
+      navigationHook()
+
+      expect(mockCollapse).toHaveBeenCalledWith(document.getElementById('mainNavBar'), {
+        toggle: false,
+      })
+      expect(mockCollapseHide).toHaveBeenCalledOnce()
+      wrapper.unmount()
+    })
+
+    it('unregisters the afterEach hook on unmount', () => {
+      const wrapper = mount(AppNavbar)
+
+      wrapper.unmount()
+
+      expect(mockRemoveAfterEachHook).toHaveBeenCalledOnce()
+    })
   })
 })
