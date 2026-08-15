@@ -326,9 +326,7 @@ describe('SingleCastList', () => {
 
       const emitted = wrapper.emitted('cast-changed')
       const lastEmitted = emitted?.at(-1)?.[0] as CastMember[]
-      const sopranNames = lastEmitted
-        .filter((m) => m.voice_name === 'Sopran')
-        .map((m) => m.name)
+      const sopranNames = lastEmitted.filter((m) => m.voice_name === 'Sopran').map((m) => m.name)
       expect(sopranNames).toEqual(['AAA, Neu', 'ADLER, Bernd', 'MUELLER, Clara'])
     })
 
@@ -433,9 +431,7 @@ describe('SingleCastList', () => {
       await switchInput.setValue(false)
 
       const restored = wrapper.emitted('cast-changed')?.at(-1)?.[0] as CastMember[]
-      expect(restored.map((m) => m.id)).toEqual(
-        original.filter((m) => m.id !== 2).map((m) => m.id),
-      )
+      expect(restored.map((m) => m.id)).toEqual(original.filter((m) => m.id !== 2).map((m) => m.id))
     })
   })
 })

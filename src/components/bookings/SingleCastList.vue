@@ -151,7 +151,11 @@ const voiceGroups = computed<VoiceGroup[]>(() => {
     if (last?.key === key) {
       last.rows.push({ member, index })
     } else {
-      groups.push({ key, label: member.voice_name ?? UNKNOWN_VOICE_LABEL, rows: [{ member, index }] })
+      groups.push({
+        key,
+        label: member.voice_name ?? UNKNOWN_VOICE_LABEL,
+        rows: [{ member, index }],
+      })
     }
   })
   return groups
@@ -283,7 +287,11 @@ function handleAutoSortToggle(value: boolean): void {
                 ></i>
                 <i v-else class="fas fa-arrow-down mx-1" style="color: #ccc"></i>
 
-                <i v-if="index > 0" class="fas fa-arrow-up c-pointer" @click="move(index, 'up')"></i>
+                <i
+                  v-if="index > 0"
+                  class="fas fa-arrow-up c-pointer"
+                  @click="move(index, 'up')"
+                ></i>
                 <i v-else class="fas fa-arrow-up" style="color: #ccc"></i>
               </template>
             </span>
@@ -303,7 +311,11 @@ function handleAutoSortToggle(value: boolean): void {
         >
           <small :class="row.index < required ? ['text-success', 'fw-bold'] : ['text-info']">
             <span class="me-2">
-              <i class="fas fa-times c-pointer" title="entfernen" @click="remove(row.member.id)"></i>
+              <i
+                class="fas fa-times c-pointer"
+                title="entfernen"
+                @click="remove(row.member.id)"
+              ></i>
             </span>
             <span>{{ row.member.name }} ({{ row.member.fee }})</span>
           </small>
