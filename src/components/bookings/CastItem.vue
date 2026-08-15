@@ -47,7 +47,15 @@ const emit = defineEmits<{
 const open = ref(false)
 const castOrig = JSON.parse(JSON.stringify(props.cast)) as CastMember[]
 
+// Mirrors SingleCastList's own switch state via v-model:auto-sort -- stays
+// false for instruments/voices (no switch rendered there at all).
+const autoSortActive = ref(false)
+
 const castChanged = computed(() => JSON.stringify(props.cast) !== JSON.stringify(castOrig))
+// Resetting to the original values is meaningless while auto-sort is
+// active: the order is derived from each member's Voice, not manually set,
+// so the reset link is hidden regardless of castChanged.
+const showReset = computed(() => castChanged.value && !autoSortActive.value)
 
 const badgeClass = computed(() => {
   if (props.cast.length === props.item.quantity) return 'text-bg-success'
@@ -86,6 +94,7 @@ function handleRemoveNotBooked(id: number): void {
       <div class="row">
         <div class="col-sm-7 mt-1">
           <SingleCastList
+            v-model:auto-sort="autoSortActive"
             :cast="cast"
             :required="item.quantity"
             :not-booked="notBooked"
@@ -106,7 +115,7 @@ function handleRemoveNotBooked(id: number): void {
           />
         </div>
       </div>
-      <div class="mt-3 small text-end c-pointer" :class="{ invisible: !castChanged }">
+      <div class="mt-3 small text-end c-pointer" :class="{ invisible: !showReset }">
         <small class="text-black-50" @click="reset">auf derz. Werte zurücksetzen</small>
       </div>
     </div>

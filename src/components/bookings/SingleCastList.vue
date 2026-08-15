@@ -104,7 +104,9 @@ function remove(id: number): void {
 const canReorder = computed(() => props.cast.length > 1)
 
 const UNKNOWN_VOICE_LABEL = 'Stimmlage unbekannt'
-const autoSort = ref(false)
+// Model (not a plain ref) so CastItem can read the switch state too -- it
+// hides its own "auf derz. Werte zurücksetzen" link while auto-sort is on.
+const autoSort = defineModel<boolean>('autoSort', { default: false })
 const autoSortId = useId()
 
 // Type guard (not a loose != null check -- this project's eqeqeq rule

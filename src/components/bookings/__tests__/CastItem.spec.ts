@@ -93,6 +93,29 @@ describe('CastItem', () => {
     wrapper.unmount()
   })
 
+  it('hides the reset link while auto-sort is on, even though the cast changed', async () => {
+    const wrapper = mount(CastItem, {
+      props: {
+        type: 'choirjobs',
+        item: { id: 1, name: 'Chorist', quantity: 1 },
+        cast: [{ id: 1, name: 'A', fee: 80 }],
+        bookable,
+        allBooked: [],
+        notBooked: [],
+        fees,
+      },
+    })
+    await wrapper.find('.d-flex.justify-content-between.c-pointer').trigger('click')
+    await wrapper.setProps({ cast: [] })
+    expect(wrapper.find('.mt-3.small.text-end').classes()).not.toContain('invisible')
+
+    await wrapper.find('input[role="switch"]').setValue(true)
+    expect(wrapper.find('.mt-3.small.text-end').classes()).toContain('invisible')
+
+    await wrapper.find('input[role="switch"]').setValue(false)
+    expect(wrapper.find('.mt-3.small.text-end').classes()).not.toContain('invisible')
+  })
+
   it('passes allow-auto-sort=true to SingleCastList only for type "choirjobs"', () => {
     const instrumentsWrapper = mountItem([], 1)
     expect(instrumentsWrapper.findComponent(SingleCastList).props('allowAutoSort')).toBe(false)
