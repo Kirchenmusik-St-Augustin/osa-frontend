@@ -243,6 +243,17 @@ describe('SingleCastList', () => {
       expect(wrapper.findComponent({ name: 'draggable' }).exists()).toBe(true)
     })
 
+    it('emits update:autoSort so a parent (CastItem) can track the switch state', async () => {
+      const wrapper = mount(SingleCastList, {
+        props: { cast: cast(), required: 1, notBooked: [], allowAutoSort: true },
+      })
+      await wrapper.find('input[role="switch"]').setValue(true)
+      expect(wrapper.emitted('update:autoSort')?.[0]).toEqual([true])
+
+      await wrapper.find('input[role="switch"]').setValue(false)
+      expect(wrapper.emitted('update:autoSort')?.[1]).toEqual([false])
+    })
+
     it('groups and sorts by Voice order then alphabetically within a group, "Stimmlage unbekannt" last', async () => {
       const wrapper = mount(SingleCastList, {
         props: { cast: voicedCast(), required: 5, notBooked: [], allowAutoSort: true },
