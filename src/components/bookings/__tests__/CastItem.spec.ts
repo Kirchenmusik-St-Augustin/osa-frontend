@@ -92,4 +92,22 @@ describe('CastItem', () => {
     expect(wrapper.emitted('remove-not-booked')?.[0]).toEqual([9])
     wrapper.unmount()
   })
+
+  it('passes allow-auto-sort=true to SingleCastList only for type "choirjobs"', () => {
+    const instrumentsWrapper = mountItem([], 1)
+    expect(instrumentsWrapper.findComponent(SingleCastList).props('allowAutoSort')).toBe(false)
+
+    const choirjobsWrapper = mount(CastItem, {
+      props: {
+        type: 'choirjobs',
+        item: { id: 1, name: 'Chorist', quantity: 1 },
+        cast: [],
+        bookable,
+        allBooked: [],
+        notBooked: [],
+        fees,
+      },
+    })
+    expect(choirjobsWrapper.findComponent(SingleCastList).props('allowAutoSort')).toBe(true)
+  })
 })

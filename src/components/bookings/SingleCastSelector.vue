@@ -25,13 +25,20 @@ const props = defineProps<{
   modalId: string
 }>()
 
+// voice_name/voice_order are only ever populated for choirjobs candidates
+// (see booking_service._get_staff) -- carried straight through here so
+// SingleCastList's auto-sort can place a freshly-added chorister into the
+// correct group immediately, without a reload.
+type Candidate = {
+  id: number
+  name: string
+  fee: number
+  voice_name?: string | null
+  voice_order?: number | null
+}
+
 const emit = defineEmits<{
-  'add-to': [
-    payload: {
-      stack: 'cast' | 'notBooked'
-      candidates: { id: number; name: string; fee: number }[]
-    },
-  ]
+  'add-to': [payload: { stack: 'cast' | 'notBooked'; candidates: Candidate[] }]
 }>()
 
 // Default Fee id 3 stays hardcoded -- Phase 1 carries over the exact same
@@ -70,13 +77,19 @@ const selectGroups = computed((): MultiSelectGroup[] => {
   return groups
 })
 
-function candidatesFor(ids: number[]): { id: number; name: string; fee: number }[] {
+function candidatesFor(ids: number[]): Candidate[] {
   const allOptions = [...requestingOptions.value, ...otherOptions.value]
   const fee = props.fees.find((candidate) => candidate.id === selectedFeeId.value)?.amount ?? 0
   return ids
     .map((id) => allOptions.find((option) => option.id === id))
     .filter((option): option is BookableUser => option !== undefined)
-    .map((option) => ({ id: option.id, name: option.name, fee }))
+    .map((option) => ({
+      id: option.id,
+      name: option.name,
+      fee,
+      voice_name: option.voice_name,
+      voice_order: option.voice_order,
+    }))
 }
 
 function addTo(stack: 'cast' | 'notBooked'): void {

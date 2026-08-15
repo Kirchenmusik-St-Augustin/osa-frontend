@@ -14,6 +14,19 @@ import SingleCastSelector from './SingleCastSelector.vue'
 // 1:1 port of Legacy's CastItemComponent.vue -- one collapsible card per
 // Instrument/Voice/Choirjob setup item, combining the current cast list
 // with the candidate selector.
+
+// voice_name/voice_order are only ever set for choirjobs candidates (see
+// SingleCastSelector.vue's candidatesFor()) -- carried through here so a
+// freshly-added chorister can be placed into the correct auto-sort group
+// immediately, without a reload.
+type CastCandidate = {
+  id: number
+  name: string
+  fee: number
+  voice_name?: string | null
+  voice_order?: number | null
+}
+
 const props = defineProps<{
   type: 'instruments' | 'voices' | 'choirjobs'
   item: { id: number; name: string; quantity: number }
@@ -27,11 +40,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'cast-changed': [itemId: number, cast: CastMember[]]
-  'add-to': [
-    itemId: number,
-    stack: 'cast' | 'notBooked',
-    candidates: { id: number; name: string; fee: number }[],
-  ]
+  'add-to': [itemId: number, stack: 'cast' | 'notBooked', candidates: CastCandidate[]]
   'remove-not-booked': [id: number]
 }>()
 
@@ -50,10 +59,7 @@ function handleCastChanged(cast: CastMember[]): void {
   emit('cast-changed', props.item.id, cast)
 }
 
-function handleAddTo(payload: {
-  stack: 'cast' | 'notBooked'
-  candidates: { id: number; name: string; fee: number }[]
-}): void {
+function handleAddTo(payload: { stack: 'cast' | 'notBooked'; candidates: CastCandidate[] }): void {
   if (payload.stack === 'cast') {
     emit('cast-changed', props.item.id, [...props.cast, ...payload.candidates])
   } else {
@@ -83,6 +89,7 @@ function handleRemoveNotBooked(id: number): void {
             :cast="cast"
             :required="item.quantity"
             :not-booked="notBooked"
+            :allow-auto-sort="type === 'choirjobs'"
             @cast-changed="handleCastChanged"
             @remove-not-booked="handleRemoveNotBooked"
           />

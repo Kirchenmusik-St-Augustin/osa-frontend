@@ -20,6 +20,10 @@ export interface CastMember {
   id: number
   name: string
   fee: number
+  // Only ever populated for choirjobs cast members (auto-sort-by-voice
+  // feature) -- instruments/voices members keep both undefined/null.
+  voice_name?: string | null
+  voice_order?: number | null
 }
 
 export interface CastSetupItem {
@@ -47,6 +51,9 @@ export interface CastFormData {
 export interface BookableUser {
   id: number
   name: string
+  // Only ever populated for choirjobs candidates -- see CastMember.
+  voice_name?: string | null
+  voice_order?: number | null
 }
 
 export interface BookableGroup {
