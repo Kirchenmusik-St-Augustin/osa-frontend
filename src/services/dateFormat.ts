@@ -120,13 +120,25 @@ export function formatMonthYear(year: number, month: number): string {
   return `${MONTHS_FULL[month - 1]} ${year}`
 }
 
+// Extracts {year, month, day} from a genuinely UTC-instant timestamp
+// (created_at et al.) using the same browser-local-getter approach as
+// formatUtcDateTime/formatDateOnly above -- for call sites that need the
+// individual calendar parts (e.g. a "back to this record's own
+// month/day" navigation target) rather than a rendered string. Counterpart
+// to parseCalendarDate() below, which is for date-only (no time component)
+// strings instead.
+export function parseUtcInstantDate(iso: string): { year: number; month: number; day: number } {
+  const date = new Date(iso)
+  return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() }
+}
+
 // Mirrors moment.js's localized "LL" format ("D. MMMM YYYY", e.g.
 // "12. Juni 2026") used by Legacy's RequestLogs/IndexUser.vue to group log
 // entries by day. UTC-instant input, same browser-local-getter approach as
 // formatUtcDateTime -- no time component.
 export function formatDateOnly(iso: string): string {
-  const date = new Date(iso)
-  return `${date.getDate()}. ${MONTHS_FULL[date.getMonth()]} ${date.getFullYear()}`
+  const { year, month, day } = parseUtcInstantDate(iso)
+  return `${day}. ${MONTHS_FULL[month - 1]} ${year}`
 }
 
 // Day-granularity sibling of formatMonthYear() above -- same "D. MMMM

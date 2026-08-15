@@ -8,6 +8,7 @@ import {
   formatTimeOnly,
   formatUtcDateTime,
   parseCalendarDate,
+  parseUtcInstantDate,
   parseWallClock,
   toWallClockString,
 } from '../dateFormat'
@@ -83,6 +84,19 @@ describe('formatUtcDateTime', () => {
     const withOffset = '2026-06-15T12:00:00+05:00'
     expect(formatUtcDateTime(zulu)).not.toBe(formatUtcDateTime(withOffset))
     expect(formatDateTime(zulu)).toBe(formatDateTime(withOffset))
+  })
+})
+
+describe('parseUtcInstantDate', () => {
+  it('extracts the same calendar parts for two ISO strings representing the same instant', () => {
+    expect(parseUtcInstantDate('2023-12-28T23:50:00+00:00')).toEqual(
+      parseUtcInstantDate('2023-12-29T01:50:00+02:00'),
+    )
+  })
+
+  it('extracts year/month/day as 1-based month, mirroring parseCalendarDate', () => {
+    const result = parseUtcInstantDate(new Date(2026, 5, 12, 10, 0, 0).toISOString())
+    expect(result).toEqual({ year: 2026, month: 6, day: 12 })
   })
 })
 

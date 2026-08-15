@@ -101,6 +101,32 @@ describe('SingleCastSelector', () => {
     expect(withPopular.find('.fa-star').exists()).toBe(true)
   })
 
+  it('carries voice_name/voice_order through into emitted candidates', async () => {
+    const wrapper = mount(SingleCastSelector, {
+      props: {
+        allBooked: [],
+        notBooked: [],
+        bookable: {
+          requesting: [],
+          other: [{ id: 2, name: 'Other', voice_name: 'Sopran', voice_order: 1 }],
+        },
+        fees,
+        modalId: 'choirjobs-1',
+      },
+    })
+    await openDropdown(wrapper)
+    await wrapper.find('.list-group-item').trigger('click')
+    await wrapper
+      .findAll('button.btn-primary')
+      .find((button) => button.text() === 'hinzufügen')
+      ?.trigger('click')
+
+    const emitted = wrapper.emitted('add-to')
+    expect(emitted?.[0]?.[0]).toMatchObject({
+      candidates: [{ id: 2, name: 'Other', voice_name: 'Sopran', voice_order: 1 }],
+    })
+  })
+
   it('hides the entire panel once nobody is left to pick', () => {
     const wrapper = mount(SingleCastSelector, {
       props: {
