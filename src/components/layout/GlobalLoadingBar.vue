@@ -1,17 +1,19 @@
 <script setup lang="ts">
 // No Legacy equivalent -- ported from the vb-fastapi-vue sister project's
-// global loading bar, adapted from PrimeVue's <ProgressBar> to Bootstrap's
-// own striped/animated progress bar (osa-frontend has no PrimeVue
-// dependency, and Bootstrap already ships the exact animation needed).
+// global loading bar, adapted from PrimeVue's <ProgressBar> to a custom
+// animated bar (osa-frontend has no PrimeVue dependency). Bootstrap's own
+// .progress-bar-striped (a single-hue bar with a semi-transparent white
+// overlay) was tried first but read as too low-contrast in practice (User
+// feedback, 2026-08-21) -- replaced with a two-color stripe pattern using
+// $primary (the navbar's own background color) and $warning (matching the
+// navbar's music-note icon).
 import { useLoadingStore } from '@/stores/loading'
 
 const loadingStore = useLoadingStore()
 </script>
 
 <template>
-  <div v-if="loadingStore.isLoading" class="global-loading-bar progress" role="progressbar">
-    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary w-100"></div>
-  </div>
+  <div v-if="loadingStore.isLoading" class="global-loading-bar" role="progressbar"></div>
 </template>
 
 <style scoped>
@@ -26,6 +28,28 @@ const loadingStore = useLoadingStore()
   right: 0;
   height: 3px;
   z-index: 1035;
-  border-radius: 0;
+  /* --bs-primary/--bs-warning reference the same CSS variables Bootstrap's
+     bg-primary/bg-warning utility classes resolve to, so this stays in
+     sync with the theme automatically instead of hardcoding hex values. */
+  background-image: linear-gradient(
+    45deg,
+    var(--bs-primary) 25%,
+    var(--bs-warning) 25%,
+    var(--bs-warning) 50%,
+    var(--bs-primary) 50%,
+    var(--bs-primary) 75%,
+    var(--bs-warning) 75%
+  );
+  background-size: 20px 20px;
+  animation: global-loading-bar-stripes 1s linear infinite;
+}
+
+@keyframes global-loading-bar-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 20px 0;
+  }
 }
 </style>

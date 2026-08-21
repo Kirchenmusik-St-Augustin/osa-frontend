@@ -15,7 +15,7 @@ describe('GlobalLoadingBar', () => {
     expect(wrapper.find('.global-loading-bar').exists()).toBe(false)
   })
 
-  it('renders the animated progress bar while a request is in flight', async () => {
+  it('renders the bar with a progressbar role while a request is in flight', async () => {
     const loadingStore = useLoadingStore()
     const wrapper = mount(GlobalLoadingBar)
 
@@ -24,7 +24,7 @@ describe('GlobalLoadingBar', () => {
 
     const bar = wrapper.find('.global-loading-bar')
     expect(bar.exists()).toBe(true)
-    expect(bar.find('.progress-bar-striped.progress-bar-animated').exists()).toBe(true)
+    expect(bar.attributes('role')).toBe('progressbar')
   })
 
   it('disappears again once the last in-flight request finishes', async () => {
