@@ -13,10 +13,17 @@ export interface BackupTrigger {
   triggered_at: string
 }
 
+export interface DownsyncTrigger {
+  restored_backup: string
+  triggered_at: string
+}
+
 // UI-independent API layer for the admin-only "Scheduler" overview
 // (GET /administrator/scheduler/jobs) -- a live snapshot of the backend's
 // currently registered APScheduler jobs, no persisted run history -- plus
-// the manual Koofr-backup trigger (POST .../backup/trigger).
+// the manual Koofr-backup trigger (POST .../backup/trigger) and its
+// non-production counterpart, the manual downsync trigger
+// (POST .../downsync/trigger).
 export function useScheduler() {
   async function listScheduledJobs(): Promise<ScheduledJob[]> {
     const response = await api.get<ScheduledJob[]>('/administrator/scheduler/jobs')
@@ -28,5 +35,10 @@ export function useScheduler() {
     return response.data
   }
 
-  return { listScheduledJobs, triggerBackup }
+  async function triggerDownsync(): Promise<DownsyncTrigger> {
+    const response = await api.post<DownsyncTrigger>('/administrator/scheduler/downsync/trigger')
+    return response.data
+  }
+
+  return { listScheduledJobs, triggerBackup, triggerDownsync }
 }
