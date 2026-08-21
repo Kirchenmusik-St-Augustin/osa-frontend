@@ -29,6 +29,10 @@ export interface PositionEntry {
   id: number
   name: string
   quantity: number
+  // Flags a since-archived Instrument/Voice still present in this setup
+  // (osa-only addition, see CLAUDE.md section 3's Phase 1 boundary) --
+  // get_setup() resolves existing rows by id regardless of active status.
+  active: boolean
 }
 
 export interface OrdinariumworkSetup {

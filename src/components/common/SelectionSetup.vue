@@ -27,6 +27,19 @@ const savedValue: SelectableItem[] = model.value.map((item) => ({ ...item }))
 const assignedIds = computed(() => new Set(model.value.map((item) => item.id)))
 const unused = computed(() => props.available.filter((item) => !assignedIds.value.has(item.id)))
 
+// The "assigned" column below must show EVERY item currently in the model,
+// not just the ones still present in `available` -- an item can be
+// assigned-but-missing-from-available for a real reason (e.g. an archived
+// Instrument/Voice/Choirjob, see CLAUDE.md section 3's Phase 1 boundary):
+// `available` is filtered to active-only server-side, but an already-
+// assigned item must stay visible/removable regardless. Anything only in
+// this second half is, by construction, no longer offered -- flagged
+// below without needing a dedicated `active` field on SelectableItem.
+const assignedOnly = computed(() =>
+  model.value.filter((item) => !props.available.some((entry) => entry.id === item.id)),
+)
+const displayItems = computed(() => [...props.available, ...assignedOnly.value])
+
 const selectedUnusedId = ref<number | null>(unused.value[0]?.id ?? null)
 watch(
   unused,
@@ -56,7 +69,7 @@ function resetToSaved(): void {
     <strong v-if="props.title">{{ props.title }}</strong>
     <div class="row border rounded my-2 p-3 bg-light">
       <div class="col-sm-7 mb-3">
-        <div v-for="item in props.available" :key="item.id" class="mb-1">
+        <div v-for="item in displayItems" :key="item.id" class="mb-1">
           <div v-if="assignedIds.has(item.id)" class="row">
             <div class="col-sm-12">
               <i
@@ -65,6 +78,11 @@ function resetToSaved(): void {
                 @click.prevent="remove(item.id)"
               ></i>
               <span>{{ item.name }}</span>
+              <small
+                v-if="!props.available.some((entry) => entry.id === item.id)"
+                class="text-muted ms-1"
+                >(nicht mehr aktiv)</small
+              >
             </div>
           </div>
         </div>

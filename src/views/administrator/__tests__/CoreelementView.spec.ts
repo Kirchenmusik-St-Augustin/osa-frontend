@@ -54,6 +54,7 @@ function makeItem(overrides: Partial<Coreelement> = {}): Coreelement {
     description: null,
     address: null,
     color: null,
+    active: true,
     ...overrides,
   }
 }
@@ -97,6 +98,20 @@ describe('CoreelementView', () => {
     expect(wrapper.text()).toContain('Oboe')
   })
 
+  it('marks an archived item with a badge, but not an active one', async () => {
+    mockItems.value = [
+      makeItem({ id: 1, name: 'Fagott', active: true }),
+      makeItem({ id: 2, name: 'Serpent', active: false }),
+    ]
+    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('archiviert')
+    const rows = wrapper.findAll('.list-group-item')
+    expect(rows[0]?.text()).not.toContain('archiviert')
+    expect(rows[1]?.text()).toContain('archiviert')
+  })
+
   it('only shows label/description fields for the role type', async () => {
     const wrapper = mount(CoreelementView, { props: { type: 'role' } })
     await flushPromises()
@@ -123,6 +138,26 @@ describe('CoreelementView', () => {
     expect(wrapper.find('textarea#coreelement-address').exists()).toBe(false)
   })
 
+  it.each(['instrument', 'voice', 'choirjob'] as const)(
+    'shows the active checkbox for %s',
+    async (type) => {
+      const wrapper = mount(CoreelementView, { props: { type } })
+      await flushPromises()
+
+      expect(wrapper.find('input#coreelement-active').exists()).toBe(true)
+    },
+  )
+
+  it.each(['location', 'role', 'propriumelement'] as const)(
+    'hides the active checkbox for %s',
+    async (type) => {
+      const wrapper = mount(CoreelementView, { props: { type } })
+      await flushPromises()
+
+      expect(wrapper.find('input#coreelement-active').exists()).toBe(false)
+    },
+  )
+
   it('creates a new item via the modal form', async () => {
     mockSave.mockResolvedValueOnce(undefined)
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
@@ -134,7 +169,7 @@ describe('CoreelementView', () => {
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(mockSave).toHaveBeenCalledWith(null, { name: 'Fagott' })
+    expect(mockSave).toHaveBeenCalledWith(null, { name: 'Fagott', active: true })
     expect(mockShowToast).toHaveBeenCalledWith('Element gespeichert')
     expect(mockModalHide).toHaveBeenCalled()
   })
@@ -157,6 +192,22 @@ describe('CoreelementView', () => {
     })
   })
 
+  it('unchecking "Aktiv" archives an existing instrument on save', async () => {
+    mockItems.value = [makeItem({ id: 7, name: 'Fagott', active: true })]
+    mockSave.mockResolvedValueOnce(undefined)
+    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
+    await flushPromises()
+
+    await wrapper.find('button[title="bearbeiten"]').trigger('click')
+    const checkbox = wrapper.find('input#coreelement-active')
+    expect((checkbox.element as HTMLInputElement).checked).toBe(true)
+    await checkbox.setValue(false)
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockSave).toHaveBeenCalledWith(7, { name: 'Fagott', active: false })
+  })
+
   it('pre-fills the form and updates the existing item when editing', async () => {
     mockItems.value = [makeItem({ id: 7, name: 'Fagott' })]
     mockSave.mockResolvedValueOnce(undefined)
@@ -172,7 +223,7 @@ describe('CoreelementView', () => {
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(mockSave).toHaveBeenCalledWith(7, { name: 'Kontrafagott' })
+    expect(mockSave).toHaveBeenCalledWith(7, { name: 'Kontrafagott', active: true })
   })
 
   it('shows field-level validation errors under the matching input', async () => {

@@ -4,6 +4,7 @@ import { createPinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import AppLayout from '../AppLayout.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
+import GlobalLoadingBar from '@/components/layout/GlobalLoadingBar.vue'
 
 // AppNavbar (rendered inside AppLayout) needs a real Pinia instance
 // (useAuthStore()) and a real router instance (useRouter()) -- the global
@@ -21,5 +22,12 @@ describe('AppLayout', () => {
     })
     expect(wrapper.find('#container.container').exists()).toBe(true)
     expect(wrapper.findComponent(AppNavbar).exists()).toBe(true)
+  })
+
+  it('renders GlobalLoadingBar app-wide, ahead of AppNavbar', () => {
+    const wrapper = mount(AppLayout, {
+      global: { plugins: [createPinia(), router] },
+    })
+    expect(wrapper.findComponent(GlobalLoadingBar).exists()).toBe(true)
   })
 })

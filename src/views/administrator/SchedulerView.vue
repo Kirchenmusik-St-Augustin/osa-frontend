@@ -5,17 +5,25 @@
 // manual Koofr-backup trigger, production-only in the UI (1:1 vb-intern's
 // equivalent S3-backed button, adapted to Koofr) -- the backend endpoint
 // itself stays callable in every stage (see useScheduler.ts/backend
-// comments), the `schedulerView` permission is the real guard.
+// comments), the `schedulerView` permission is the real guard. The
+// downsync button is its mirror image: only outside production, where the
+// backend enforces the same boundary as a real 409 (not just UI
+// convenience -- see the backend router's docstring).
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useScheduler, type ScheduledJob } from '@/composables/useScheduler'
 import { appEnvironment } from '@/runtimeConfig'
 import { extractApiErrors } from '@/services/apiErrors'
-import { showToast } from '@/services/notifications'
+import { confirmAction, showToast } from '@/services/notifications'
+import { useAuthStore } from '@/stores/auth'
 
-const { listScheduledJobs, triggerBackup } = useScheduler()
+const { listScheduledJobs, triggerBackup, triggerDownsync } = useScheduler()
+const authStore = useAuthStore()
+const router = useRouter()
 
 const jobs = ref<ScheduledJob[]>([])
 const backupSubmitting = ref(false)
+const downsyncSubmitting = ref(false)
 
 const isProduction = computed(() => appEnvironment() === 'production')
 
@@ -41,6 +49,32 @@ async function onTriggerBackup(): Promise<void> {
     backupSubmitting.value = false
   }
 }
+
+async function onTriggerDownsync(): Promise<void> {
+  const confirmed = await confirmAction(
+    'Downsync ersetzt die lokale Datenbank dieser Stage mit dem aktuellen ' +
+      'Produktivstand. Du wirst danach automatisch abgemeldet. Fortfahren?',
+  )
+  if (!confirmed) return
+
+  downsyncSubmitting.value = true
+  try {
+    const result = await triggerDownsync()
+    showToast(`Downsync abgeschlossen: ${result.restored_backup}`)
+    // The restore replaces the personal_access_tokens table too, so this
+    // stage's own session may already be invalid -- log out proactively
+    // instead of letting the next request surface a confusing 401.
+    await authStore.logout()
+    await router.push({ name: 'login' })
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Downsync konnte nicht durchgeführt werden.',
+      true,
+    )
+  } finally {
+    downsyncSubmitting.value = false
+  }
+}
 </script>
 
 <template>
@@ -63,6 +97,24 @@ async function onTriggerBackup(): Promise<void> {
         <p class="text-muted small mb-0">
           Erstellt sofort ein zusätzliches Backup der Produktivdaten nach Koofr – unabhängig vom
           täglichen automatischen Backup.
+        </p>
+      </div>
+      <div v-else class="mb-4">
+        <button
+          type="button"
+          class="btn btn-primary"
+          :disabled="downsyncSubmitting"
+          @click="onTriggerDownsync"
+        >
+          Downsync jetzt durchführen
+        </button>
+        <p class="text-muted small mt-2 mb-0">
+          Dieser Button steht nur außerhalb der Production-Stage zur Verfügung.
+        </p>
+        <p class="text-muted small mb-0">
+          Ersetzt die lokale Datenbank dieser Stage sofort durch das letzte Production-Backup –
+          unabhängig vom nächtlichen automatischen Downsync. Meldet dich anschließend automatisch
+          ab.
         </p>
       </div>
 

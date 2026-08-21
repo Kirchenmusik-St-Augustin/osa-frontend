@@ -62,6 +62,35 @@ describe('SelectionSetup', () => {
     expect(wrapper.text()).toContain('Auf derz. gesp. Werte zurücksetzen')
   })
 
+  it('still renders and allows removing an assigned item missing from available', async () => {
+    // Regression guard: an item can be assigned-but-missing-from-available
+    // for a real reason (e.g. an archived Instrument/Voice/Choirjob, since
+    // `available` is filtered to active-only server-side). Before the fix,
+    // the left column iterated `available` only, so a since-archived
+    // assignment became invisible and unremovable.
+    const archivedButAssigned = { id: 99, name: 'Serpent' }
+    const wrapper = mount(SelectionSetup, {
+      props: { available, modelValue: [available[0]!, archivedButAssigned] },
+    })
+
+    expect(wrapper.text()).toContain('Serpent')
+    expect(wrapper.text()).toContain('nicht mehr aktiv')
+    const trashIcons = wrapper.findAll('i.fa-trash')
+    expect(trashIcons).toHaveLength(2)
+
+    await trashIcons[1]!.trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([available[0]])
+  })
+
+  it('does not mark a normally-assigned item as "nicht mehr aktiv"', () => {
+    const wrapper = mount(SelectionSetup, {
+      props: { available, modelValue: [available[0]!] },
+    })
+
+    expect(wrapper.text()).not.toContain('nicht mehr aktiv')
+  })
+
   it('resets to the value it was mounted with, not to empty or current', async () => {
     const wrapper = mount(SelectionSetup, {
       props: { available, modelValue: [available[0]!] },

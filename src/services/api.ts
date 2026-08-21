@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { apiBaseUrl } from '@/runtimeConfig'
 import { useAuthStore } from '@/stores/auth'
+import { useLoadingStore } from '@/stores/loading'
 import router from '@/router'
 
 // Central Axios client -- all API calls MUST go through this instance, never
@@ -90,12 +91,22 @@ api.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
+  useLoadingStore().startLoading()
   return config
 })
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    useLoadingStore().stopLoading()
+    return response
+  },
   (error: AxiosError) => {
+    // Stopped before any of the refresh-retry logic below: a queued/
+    // retried request triggers its own start/stop pair through the normal
+    // request cycle, so the bar must not stay visible for the duration of
+    // that retry too.
+    useLoadingStore().stopLoading()
+
     const originalRequest = error.config as RetryableRequestConfig | undefined
 
     if (

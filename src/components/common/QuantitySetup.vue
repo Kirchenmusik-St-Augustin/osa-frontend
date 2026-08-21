@@ -8,6 +8,11 @@ export interface QuantitySetupEntry {
   id: number
   name: string
   quantity: number
+  // Omitted/true = active; explicitly false flags an archived Instrument/
+  // Voice/Choirjob still present in this setup (osa-only addition, see
+  // CLAUDE.md section 3's Phase 1 boundary) -- e.g. copied in from an
+  // Ordinariumwork's own setup, which is deliberately never re-filtered.
+  active?: boolean
 }
 
 withDefaults(
@@ -39,6 +44,7 @@ const emit = defineEmits<{
               @click.prevent="emit('remove', item.id)"
             ></i>
             <span>{{ item.name }}</span>
+            <small v-if="item.active === false" class="text-muted ms-1">(archiviert)</small>
           </td>
           <td class="text-end">
             <span>{{ item.quantity }}</span>

@@ -42,4 +42,19 @@ describe('QuantitySetup', () => {
     expect(wrapper.emitted('modify')?.[0]).toEqual([1, true])
     expect(wrapper.emitted('modify')?.[1]).toEqual([1, false])
   })
+
+  it('marks an archived row, but not an active or unflagged one', () => {
+    const mixedSetup = [
+      { id: 1, name: 'Fagott', quantity: 2, active: true },
+      { id: 2, name: 'Serpent', quantity: 1, active: false },
+      { id: 3, name: 'Oboe', quantity: 1 },
+    ]
+    const wrapper = mount(QuantitySetup, { props: { setup: mixedSetup } })
+
+    expect(wrapper.text()).toContain('archiviert')
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows[0]?.text()).not.toContain('archiviert')
+    expect(rows[1]?.text()).toContain('archiviert')
+    expect(rows[2]?.text()).not.toContain('archiviert')
+  })
 })

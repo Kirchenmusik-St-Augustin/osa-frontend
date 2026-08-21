@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, useTemplateRef, watch } from 'vue'
 import { Modal } from 'bootstrap'
+import FormCheckbox from '@/components/common/FormCheckbox.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import { useCoreelements, type Coreelement } from '@/composables/useCoreelements'
 import { findCoreelementTypeMeta, type CoreelementType } from '@/constants/coreelementTypes'
 import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
+
+// Only these three CoreelementTypes carry the osa-only `active` flag (see
+// CLAUDE.md section 3's Phase 1 boundary) -- they're the ones referenced
+// via the position_type/position_id pattern (bookings/booking_logs/
+// performance_positions/ordinariumwork_positions/user_positions), where
+// "no longer offered for a NEW assignment, but never deletable either"
+// actually applies. Location/Role/Propriumelement don't have it.
+const ACTIVE_FLAG_TYPES: readonly CoreelementType[] = ['instrument', 'voice', 'choirjob']
 
 // Generic replacement for Legacy's six near-identical Instrument/Voice/
 // Choirjob/Location/Role/Propriumelement admin pages -- Legacy itself
@@ -16,6 +25,7 @@ const props = defineProps<{ type: CoreelementType }>()
 
 const typeMeta = computed(() => findCoreelementTypeMeta(props.type))
 const title = computed(() => typeMeta.value?.label ?? props.type)
+const hasActiveFlag = computed(() => ACTIVE_FLAG_TYPES.includes(props.type))
 
 const { items, fetchList, save, remove, move } = useCoreelements(() => props.type)
 
@@ -25,6 +35,7 @@ const editForm = reactive({
   description: '',
   address: '',
   color: '',
+  active: true,
 })
 const editingId = ref<number | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
@@ -61,6 +72,7 @@ function resetForm(): void {
   editForm.description = ''
   editForm.address = ''
   editForm.color = ''
+  editForm.active = true
   fieldErrors.value = {}
 }
 
@@ -77,6 +89,7 @@ function openEditModal(element: Coreelement): void {
   editForm.description = element.description ?? ''
   editForm.address = element.address ?? ''
   editForm.color = element.color ?? ''
+  editForm.active = element.active ?? true
   fieldErrors.value = {}
   modalInstance?.show()
 }
@@ -96,6 +109,7 @@ function buildPayload(): {
   description?: string
   address?: string
   color?: string
+  active?: boolean
 } {
   const payload: {
     name: string
@@ -103,6 +117,7 @@ function buildPayload(): {
     description?: string
     address?: string
     color?: string
+    active?: boolean
   } = { name: editForm.name }
   if (props.type === 'role') {
     payload.label = editForm.label
@@ -111,6 +126,9 @@ function buildPayload(): {
   if (props.type === 'location') {
     payload.address = editForm.address
     payload.color = editForm.color
+  }
+  if (hasActiveFlag.value) {
+    payload.active = editForm.active
   }
   return payload
 }
@@ -209,6 +227,13 @@ async function moveItem(id: number, direction: 'up' | 'down'): Promise<void> {
             required
             :error="fieldErrors['color']"
           />
+          <FormCheckbox
+            v-if="hasActiveFlag"
+            id="coreelement-active"
+            v-model="editForm.active"
+            title="Aktiv"
+            as-switch
+          />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeModal">Schließen</button>
@@ -230,7 +255,15 @@ async function moveItem(id: number, direction: 'up' | 'down'): Promise<void> {
       <div class="list-group">
         <div v-for="(element, index) in items" :key="element.id" class="list-group-item">
           <div class="row">
-            <div class="col-sm-7 text-start text-nowrap">{{ element.name }}</div>
+            <div
+              class="col-sm-7 text-start text-nowrap"
+              :class="{ 'text-muted': element.active === false }"
+            >
+              {{ element.name }}
+              <span v-if="element.active === false" class="badge text-bg-secondary ms-1"
+                >archiviert</span
+              >
+            </div>
             <div class="col-sm-5 text-end text-nowrap">
               <button
                 type="button"

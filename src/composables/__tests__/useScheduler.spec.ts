@@ -45,4 +45,18 @@ describe('useScheduler', () => {
     expect(mockedApi.post).toHaveBeenCalledWith('/administrator/scheduler/backup/trigger')
     expect(result).toEqual(trigger)
   })
+
+  it('triggerDownsync posts to the downsync trigger endpoint', async () => {
+    const trigger = {
+      restored_backup: 'production-2026-08-21_04-00-00.tar.gz',
+      triggered_at: '2026-08-21T04:00:00+00:00',
+    }
+    mockedApi.post.mockResolvedValueOnce({ data: trigger })
+    const { triggerDownsync } = useScheduler()
+
+    const result = await triggerDownsync()
+
+    expect(mockedApi.post).toHaveBeenCalledWith('/administrator/scheduler/downsync/trigger')
+    expect(result).toEqual(trigger)
+  })
 })

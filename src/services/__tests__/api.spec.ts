@@ -17,6 +17,7 @@ vi.mock('@/router', () => ({
 
 import api from '../api'
 import { useAuthStore } from '@/stores/auth'
+import { useLoadingStore } from '@/stores/loading'
 
 function makeResponse(config: InternalAxiosRequestConfig, data: unknown = {}): AxiosResponse {
   return { data, status: 200, statusText: 'OK', headers: {}, config }
@@ -226,5 +227,60 @@ describe('api (axios interceptors)', () => {
     expect(resA.data).toEqual({ url: '/protected/a' })
     expect(resB.data).toEqual({ url: '/protected/b' })
     expect(authStore.accessToken).toBe('new-token')
+  })
+})
+
+describe('api (global loading bar)', () => {
+  it('starts and stops the loading indicator around a successful request', async () => {
+    const loadingStore = useLoadingStore()
+    const startSpy = vi.spyOn(loadingStore, 'startLoading')
+    const stopSpy = vi.spyOn(loadingStore, 'stopLoading')
+    api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => makeResponse(config))
+
+    await api.get('/ping')
+
+    expect(startSpy).toHaveBeenCalledOnce()
+    expect(stopSpy).toHaveBeenCalledOnce()
+  })
+
+  it('stops the loading indicator even when a request fails', async () => {
+    const loadingStore = useLoadingStore()
+    const stopSpy = vi.spyOn(loadingStore, 'stopLoading')
+    api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      throw makeError(config, 500, { detail: 'boom' })
+    })
+
+    await expect(api.get('/broken')).rejects.toBeTruthy()
+
+    expect(stopSpy).toHaveBeenCalledOnce()
+  })
+
+  it('stops the loading indicator before attempting a 401 refresh retry, not after', async () => {
+    const authStore = useAuthStore()
+    authStore.$patch({ accessToken: 'expired-token' })
+    const loadingStore = useLoadingStore()
+    const callOrder: string[] = []
+    vi.spyOn(loadingStore, 'stopLoading').mockImplementation(() => {
+      callOrder.push('stopLoading')
+    })
+
+    let protectedCalls = 0
+    api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      if (config.url === '/auth/refresh') {
+        callOrder.push('refresh-request')
+        return makeResponse(config, { access_token: 'new-token' })
+      }
+      if (config.url === '/protected') {
+        protectedCalls++
+        if (protectedCalls === 1) throw makeError(config, 401, { detail: 'expired' })
+        return makeResponse(config, { ok: true })
+      }
+      throw new Error(`unexpected url ${String(config.url)}`)
+    })
+
+    await api.get('/protected')
+
+    expect(callOrder[0]).toBe('stopLoading')
+    expect(callOrder).toContain('refresh-request')
   })
 })
