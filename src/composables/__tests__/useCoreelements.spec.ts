@@ -17,6 +17,7 @@ const sampleItem = {
   description: null,
   address: null,
   color: null,
+  active: true,
 }
 
 beforeEach(() => {
@@ -57,6 +58,20 @@ describe('useCoreelements', () => {
       address: 'Hauptstraße 1',
       color: 'ff0000',
     })
+  })
+
+  it('save passes the active field through in the payload', async () => {
+    mockedApi.put.mockResolvedValueOnce({ data: { ...sampleItem, active: false } })
+    mockedApi.get.mockResolvedValueOnce({ data: [{ ...sampleItem, active: false }] })
+    const { items, save } = useCoreelements('instrument')
+
+    await save(1, { name: 'Fagott', active: false })
+
+    expect(mockedApi.put).toHaveBeenCalledWith('/coreelements/instrument/1', {
+      name: 'Fagott',
+      active: false,
+    })
+    expect(items.value[0]?.active).toBe(false)
   })
 
   it('remove DELETEs the item and refreshes the list', async () => {

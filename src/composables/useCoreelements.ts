@@ -10,6 +10,9 @@ export interface Coreelement {
   description: string | null
   address: string | null
   color: string | null
+  // null for types without the concept (location/role/propriumelement) --
+  // osa-only addition, see CLAUDE.md section 3's Phase 1 boundary.
+  active: boolean | null
 }
 
 export interface CoreelementPayload {
@@ -18,6 +21,7 @@ export interface CoreelementPayload {
   description?: string
   address?: string
   color?: string
+  active?: boolean
 }
 
 // UI-independent API layer for the generic Coreelement admin pages (CLAUDE.md:
