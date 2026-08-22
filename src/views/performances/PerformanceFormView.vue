@@ -155,6 +155,25 @@ onMounted(() => {
   }
 })
 
+// Reset-baseline key for the instruments/voices QuantityEditor instances.
+// QuantityEditor snapshots its own v-model at creation time to power its
+// "reset to original values" link (see its header comment). Forcing a
+// remount via :key re-triggers that snapshot on demand:
+//  - editing (props.id set): stays constant regardless of Ordinariumwork
+//    swaps, so the baseline stays pinned to the persisted performance's
+//    setup loaded in onMounted -- swapping the Ordinariumwork mid-edit
+//    must NOT change what "reset" means.
+//  - creating (props.id unset): tracks the selected Ordinariumwork's id
+//    (or an "unselected" sentinel before any pick), so every swap
+//    re-anchors the baseline to the newly selected work's setup -- there
+//    is no persisted performance to fall back to yet.
+// choirjobs intentionally has no key: selectOrdinariumwork() never touches
+// form.setup.choirjobs, so it must never re-baseline on Ordinariumwork
+// changes either.
+const setupBaselineKey = computed(() =>
+  props.id ? 'persisted' : (form.ordinariumwork?.id ?? 'unselected'),
+)
+
 async function selectOrdinariumwork(id: number): Promise<void> {
   const [work, setup] = await Promise.all([getOrdinariumwork(id), getSetup(id)])
   form.ordinariumwork = { id: work.id, label: `${work.artist_name}: ${work.name}` }
@@ -376,10 +395,18 @@ async function destroy(): Promise<void> {
         </div>
         <div v-if="showSetup" class="border rounded p-3 bg-info-subtle">
           <strong class="mt-5 d-block mb-3">Instrumente</strong>
-          <QuantityEditor v-model="form.setup.instruments" :available="available.instruments" />
+          <QuantityEditor
+            :key="setupBaselineKey"
+            v-model="form.setup.instruments"
+            :available="available.instruments"
+          />
 
           <strong class="mt-2 d-block mb-3">Stimmen</strong>
-          <QuantityEditor v-model="form.setup.voices" :available="available.voices" />
+          <QuantityEditor
+            :key="setupBaselineKey"
+            v-model="form.setup.voices"
+            :available="available.voices"
+          />
 
           <strong class="mt-2 d-block mb-3">Chor-Aufgaben</strong>
           <QuantityEditor v-model="form.setup.choirjobs" :available="available.choirjobs" />

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import PerformanceFormView from '../PerformanceFormView.vue'
 import SearchTypeahead from '@/components/common/SearchTypeahead.vue'
+import QuantityEditor from '@/components/common/QuantityEditor.vue'
 import type {
   PerformanceAvailableData,
   PerformanceFormData,
@@ -114,6 +115,12 @@ function findSaveButton(wrapper: ReturnType<typeof mount>) {
 
 function findDeleteButton(wrapper: ReturnType<typeof mount>) {
   return wrapper.findAll('button').find((button) => button.text() === 'löschen')
+}
+
+function findSetupToggle(wrapper: ReturnType<typeof mount>) {
+  return wrapper
+    .findAll('div.c-pointer')
+    .find((div) => div.text().includes('Positionskonfiguration'))
 }
 
 beforeEach(() => {
@@ -230,6 +237,87 @@ describe('PerformanceFormView -- create mode', () => {
 
     expect(wrapper.text()).toContain('Ort wurde nicht gefunden.')
   })
+
+  it('resetting after switching Ordinariumwork targets the newly selected work, not the first one', async () => {
+    mockGetOrdinariumwork
+      .mockResolvedValueOnce({
+        id: 5,
+        name: 'Krönungsmesse',
+        description: null,
+        artist_id: 2,
+        artist_name: 'MOZART, Wolfgang',
+        duration: 25,
+        demanding: false,
+      })
+      .mockResolvedValueOnce({
+        id: 6,
+        name: 'Nelsonmesse',
+        description: null,
+        artist_id: 3,
+        artist_name: 'HAYDN, Joseph',
+        duration: 30,
+        demanding: false,
+      })
+    mockGetSetup
+      .mockResolvedValueOnce({
+        instruments: [{ id: 10, name: 'Fagott', quantity: 2, active: true }],
+        voices: [],
+      })
+      .mockResolvedValueOnce({
+        instruments: [{ id: 10, name: 'Fagott', quantity: 5, active: true }],
+        voices: [],
+      })
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+    await findSetupToggle(wrapper)!.trigger('click')
+
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 5)
+    await flushPromises()
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 6)
+    await flushPromises()
+
+    const instrumentsEditor = wrapper.findAllComponents(QuantityEditor)[0]!
+    expect(instrumentsEditor.find('td.text-end span').text()).toBe('5')
+    expect(instrumentsEditor.text()).not.toContain('auf derz. Werte zurücksetzen')
+
+    await instrumentsEditor.find('.fa-plus-circle').trigger('click')
+    expect(instrumentsEditor.find('td.text-end span').text()).toBe('6')
+    expect(instrumentsEditor.text()).toContain('auf derz. Werte zurücksetzen')
+
+    await instrumentsEditor.find('small.text-black-50').trigger('click')
+
+    // Must land on 5 (Nelsonmesse's own setup), not 2 (Krönungsmesse's
+    // stale baseline) and not 6 (the just-added increment).
+    expect(instrumentsEditor.find('td.text-end span').text()).toBe('5')
+  })
+
+  it('shows no reset link right after picking the first Ordinariumwork when the panel was opened empty', async () => {
+    mockGetOrdinariumwork.mockResolvedValueOnce({
+      id: 5,
+      name: 'Krönungsmesse',
+      description: null,
+      artist_id: 2,
+      artist_name: 'MOZART, Wolfgang',
+      duration: 25,
+      demanding: false,
+    })
+    mockGetSetup.mockResolvedValueOnce({
+      instruments: [{ id: 10, name: 'Fagott', quantity: 4, active: true }],
+      voices: [],
+    })
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    await findSetupToggle(wrapper)!.trigger('click')
+    expect(wrapper.text()).not.toContain('auf derz. Werte zurücksetzen')
+
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 5)
+    await flushPromises()
+
+    // If the baseline were still the empty array from the pre-selection
+    // mount, this would incorrectly show the reset link.
+    expect(wrapper.text()).not.toContain('auf derz. Werte zurücksetzen')
+  })
 })
 
 describe('PerformanceFormView -- edit mode', () => {
@@ -277,6 +365,50 @@ describe('PerformanceFormView -- edit mode', () => {
     await flushPromises()
 
     expect(mockUpdate).toHaveBeenCalledWith(1, expect.objectContaining({ location_id: 1 }))
+  })
+
+  it('resetting after switching Ordinariumwork mid-edit still targets the persisted setup', async () => {
+    mockGetFormData.mockResolvedValueOnce(
+      makeFormData({
+        setup: {
+          instruments: [{ id: 10, name: 'Fagott', quantity: 3, active: true }],
+          voices: [],
+          choirjobs: [],
+        },
+      }),
+    )
+    mockGetOrdinariumwork.mockResolvedValueOnce({
+      id: 6,
+      name: 'Nelsonmesse',
+      description: null,
+      artist_id: 3,
+      artist_name: 'HAYDN, Joseph',
+      duration: 30,
+      demanding: false,
+    })
+    mockGetSetup.mockResolvedValueOnce({
+      instruments: [{ id: 10, name: 'Fagott', quantity: 9, active: true }],
+      voices: [],
+    })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+    await findSetupToggle(wrapper)!.trigger('click')
+
+    const instrumentsEditor = wrapper.findAllComponents(QuantityEditor)[0]!
+    expect(instrumentsEditor.find('td.text-end span').text()).toBe('3')
+    expect(instrumentsEditor.text()).not.toContain('auf derz. Werte zurücksetzen')
+
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 6)
+    await flushPromises()
+
+    expect(instrumentsEditor.find('td.text-end span').text()).toBe('9')
+    expect(instrumentsEditor.text()).toContain('auf derz. Werte zurücksetzen')
+
+    await instrumentsEditor.find('small.text-black-50').trigger('click')
+
+    // Must land back on the persisted value (3), not the just-selected
+    // Nelsonmesse's setup (9).
+    expect(instrumentsEditor.find('td.text-end span').text()).toBe('3')
   })
 })
 
