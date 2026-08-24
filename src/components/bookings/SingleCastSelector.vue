@@ -41,8 +41,8 @@ const emit = defineEmits<{
   'add-to': [payload: { stack: 'cast' | 'notBooked'; candidates: Candidate[] }]
 }>()
 
-// Default Fee id 3 stays hardcoded -- Phase 1 carries over the exact same
-// Fee rows (and ids) from the same SQLite source Legacy uses, so this
+// Default Fee id 3 stays hardcoded -- the structural 1:1 DB transfer
+// carries over the exact same Fee rows (and ids) Legacy has, so this
 // mirrors Legacy's own hardcoded selector default 1:1 (see
 // project_osa_migration_plan memory, Schritt 6 plan B.2/B.3).
 const DEFAULT_FEE_ID = 3
