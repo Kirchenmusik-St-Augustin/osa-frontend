@@ -7,7 +7,7 @@
 // options for its existing (lookup-style) call sites (see its own
 // docstring) and doesn't fit here, so "select" is rendered with a small
 // local <select> instead of forcing that contract to also cover raw
-// string values -- CLAUDE.md's AHA principle over a forced abstraction.
+// string values -- a deliberate tradeoff over a forced abstraction.
 import FormInput from '@/components/common/FormInput.vue'
 import type { ScoreFieldConfig } from '@/composables/useScores'
 

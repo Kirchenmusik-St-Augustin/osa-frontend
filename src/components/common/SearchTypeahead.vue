@@ -5,7 +5,7 @@ import { ref } from 'vue'
 // on the Artists/Ordinariumworks/Propriumworks Search pages) -- same UX
 // contract (type -> debounced remote search -> click a result to select),
 // implemented directly instead of pulling in an unmaintained-looking niche
-// dependency for a handful of call sites (CLAUDE.md "schlank"). Legacy's
+// dependency for a handful of call sites. Legacy's
 // `force-item` behavior (free text alone never fires a selection) is
 // preserved: `select()` only ever runs from a click on an actual result.
 export interface SearchResult {

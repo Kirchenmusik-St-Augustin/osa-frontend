@@ -30,7 +30,7 @@ const unused = computed(() => props.available.filter((item) => !assignedIds.valu
 // The "assigned" column below must show EVERY item currently in the model,
 // not just the ones still present in `available` -- an item can be
 // assigned-but-missing-from-available for a real reason (e.g. an archived
-// Instrument/Voice/Choirjob, see CLAUDE.md section 3's Phase 1 boundary):
+// Instrument/Voice/Choirjob, outside the structural 1:1 transfer's scope):
 // `available` is filtered to active-only server-side, but an already-
 // assigned item must stay visible/removable regardless. Anything only in
 // this second half is, by construction, no longer offered -- flagged

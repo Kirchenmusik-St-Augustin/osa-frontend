@@ -27,7 +27,7 @@ export interface PositionEntry {
   name: string
   quantity: number
   // Flags a since-archived Instrument/Voice/Choirjob still present in this
-  // setup (osa-only addition, see CLAUDE.md section 3's Phase 1 boundary)
+  // setup (osa-only addition, outside the structural 1:1 transfer's scope)
   // -- get_setup() resolves existing rows by id regardless of active status.
   active: boolean
 }

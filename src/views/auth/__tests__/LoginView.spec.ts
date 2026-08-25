@@ -131,6 +131,26 @@ describe('LoginView', () => {
 
     expect(mockLoginWithGoogleCredential).toHaveBeenCalledWith('google-credential-token')
     expect(wrapper.text()).toContain('Authentisierung zur Konten-Verknüpfung')
+    // The regular login card is replaced by the link-account card, not
+    // stacked alongside it.
+    expect(wrapper.text()).not.toContain('Anmeldung.')
+    expect(wrapper.find('button[type="submit"]').text()).toBe('Verbinden')
+  })
+
+  it('returns to the regular login card when "Zurück zum Login" is clicked', async () => {
+    mockLoginWithGoogleCredential.mockRejectedValueOnce({
+      response: { status: 404, data: { detail: 'ACCOUNT_NOT_LINKED' } },
+    })
+    const wrapper = mountLoginView()
+
+    await triggerGoogleCallback(wrapper, 'google-credential-token')
+    expect(wrapper.text()).toContain('Authentisierung zur Konten-Verknüpfung')
+
+    await wrapper.find('button.btn-link').trigger('click')
+
+    expect(wrapper.text()).toContain('Anmeldung.')
+    expect(wrapper.text()).not.toContain('Authentisierung zur Konten-Verknüpfung')
+    expect(wrapper.find('#google-signin-button-wrapper').exists()).toBe(true)
   })
 
   it('logs in via Google and redirects home on success', async () => {
@@ -157,7 +177,7 @@ describe('LoginView', () => {
 
     await wrapper.find('input#link-email').setValue('a@example.test')
     await wrapper.find('input#link-password').setValue('secret')
-    await wrapper.findAll('form')[1]?.trigger('submit.prevent')
+    await wrapper.find('form').trigger('submit.prevent')
     await vi.waitFor(() => expect(mockPush).toHaveBeenCalled())
 
     expect(mockLinkGoogleAccount).toHaveBeenCalledWith(
