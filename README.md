@@ -3,8 +3,7 @@
 Vue 3 SPA frontend for **OSA** ("Orchester-Einteilung") — the scheduling/
 casting system for the church musicians of Kirchenmusik St. Augustin.
 Talks to [`osa-backend`](../osa-backend); migrates a legacy Laravel/
-Inertia/Vue application — see [`CLAUDE.md`](../CLAUDE.md) for the full
-migration phasing and coding standards.
+Inertia/Vue application.
 
 ## Tech Stack
 
@@ -123,8 +122,7 @@ on manual dispatch:
 Vue-3-SPA-Frontend für **OSA** ("Orchester-Einteilung") — das
 Dienstplan-/Besetzungssystem für die Kirchenmusiker von Kirchenmusik
 St. Augustin. Spricht mit [`osa-backend`](../osa-backend); migriert eine
-bestehende Laravel/Inertia/Vue-Anwendung — die vollständige Phasenplanung
-und die Coding-Standards stehen in [`CLAUDE.md`](../CLAUDE.md).
+bestehende Laravel/Inertia/Vue-Anwendung.
 
 ## Tech-Stack
 

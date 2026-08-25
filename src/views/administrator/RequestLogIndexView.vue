@@ -25,8 +25,8 @@ watch(
   { immediate: true },
 )
 
-// Pre-shapes day/title/dayNumber per group -- CLAUDE.md's "computed()
-// instead of template logic" rule, kept out of the template entirely
+// Pre-shapes day/title/dayNumber per group -- computed() instead of
+// template logic, kept out of the template entirely
 // rather than calling parseCalendarDate()/formatDayMonthYear() per row
 // inline.
 const dayGroupsView = computed(() =>

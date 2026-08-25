@@ -9,8 +9,8 @@ export interface QuantitySetupEntry {
   name: string
   quantity: number
   // Omitted/true = active; explicitly false flags an archived Instrument/
-  // Voice/Choirjob still present in this setup (osa-only addition, see
-  // CLAUDE.md section 3's Phase 1 boundary) -- e.g. copied in from an
+  // Voice/Choirjob still present in this setup (osa-only addition,
+  // outside the structural 1:1 transfer's scope) -- e.g. copied in from an
   // Ordinariumwork's own setup, which is deliberately never re-filtered.
   active?: boolean
 }

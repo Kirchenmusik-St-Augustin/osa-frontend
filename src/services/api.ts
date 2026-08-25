@@ -6,8 +6,8 @@ import router from '@/router'
 
 // Central Axios client -- all API calls MUST go through this instance, never
 // a scattered fetch()/axios call, so the base URL stays swappable via
-// runtimeConfig.ts (CLAUDE.md: "API-Basis-URL konfigurierbar, nie hart
-// codiert").
+// runtimeConfig.ts (the API base URL must be configurable, never
+// hardcoded).
 const api = axios.create({
   baseURL: apiBaseUrl(),
   withCredentials: true,

@@ -91,13 +91,20 @@ async function submitLinkAccount(): Promise<void> {
     linkFieldErrors.value = generalError ? { email: generalError, ...fe } : fe
   }
 }
+
+function cancelLinkAccount(): void {
+  showLinkForm.value = false
+  pendingCredential.value = null
+  linkPassword.value = ''
+  linkFieldErrors.value = {}
+}
 </script>
 
 <template>
   <h2 class="h2 text-center mb-4">{{ title }}</h2>
   <div class="row justify-content-center">
     <div class="col-md-6">
-      <div class="card text-center">
+      <div v-if="!showLinkForm" class="card text-center">
         <div class="card-header">Anmeldung.</div>
         <div class="card-body">
           <form class="text-start" @submit.prevent="submit">
@@ -152,7 +159,7 @@ async function submitLinkAccount(): Promise<void> {
         </div>
       </div>
 
-      <div v-if="showLinkForm" class="card text-center mt-4">
+      <div v-else class="card text-center">
         <div class="card-header">Authentisierung zur Konten-Verknüpfung</div>
         <div class="card-body">
           <form class="text-start" @submit.prevent="submitLinkAccount">
@@ -179,9 +186,18 @@ async function submitLinkAccount(): Promise<void> {
               />
             </div>
             <div class="text-center">
-              <button type="submit" class="btn btn-primary">Anmelden</button>
+              <button type="submit" class="btn btn-primary">Verbinden</button>
             </div>
           </form>
+        </div>
+        <div class="card-footer text-body-secondary text-center">
+          <button
+            type="button"
+            class="btn btn-link link-secondary text-decoration-none p-0"
+            @click="cancelLinkAccount"
+          >
+            Zurück zum Login
+          </button>
         </div>
       </div>
     </div>

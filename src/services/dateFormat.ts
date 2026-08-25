@@ -2,8 +2,8 @@
 // dates via moment.js's German locale; this project has no date library, and
 // pulling in moment/dayjs just for text formatting (as opposed to the
 // Flatpickr *widget*, which was a deliberate pixel-parity exception) would
-// be exactly the kind of unnecessary dependency CLAUDE.md's "schlank"
-// pillar warns against. These arrays mirror moment's de.js locale tokens
+// be exactly the kind of unnecessary dependency the project's lean/
+// no-over-engineering principle warns against. These arrays mirror moment's de.js locale tokens
 // (`monthsShort`/`months`/`weekdaysMin`) so the rendered text matches
 // Legacy byte for byte.
 const MONTHS_SHORT = [

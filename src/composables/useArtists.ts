@@ -27,8 +27,8 @@ export interface ArtistPayload {
 }
 
 // UI-independent API layer for the Artist (composers/conductors) domain,
-// Schritt 4/Repertoire -- mirrors useCoreelements.ts's shape (CLAUDE.md:
-// API calls must be extracted into testable TypeScript composables).
+// Schritt 4/Repertoire -- mirrors useCoreelements.ts's shape. API calls
+// must be extracted into testable TypeScript composables.
 export function useArtists() {
   async function search(query: string): Promise<ArtistSearchResult[]> {
     const response = await api.get<ArtistSearchResult[]>('/artists/search', {

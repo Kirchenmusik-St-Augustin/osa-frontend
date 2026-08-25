@@ -4,7 +4,7 @@
 // System::UserController's Show page (UserShowView.vue) and Selfadmin's
 // own Profile Show page (ProfileShowView.vue) embed -- Legacy renders both
 // from the exact same `User\Show` resource, so this component is genuinely
-// shared, not a premature abstraction (CLAUDE.md AHA principle).
+// shared, not a premature abstraction.
 import { computed } from 'vue'
 import type { User } from '@/composables/useUsers'
 import { formatUtcDateTime } from '@/services/dateFormat'

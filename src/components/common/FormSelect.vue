@@ -3,7 +3,7 @@
 // simplified for TypeScript: instead of Legacy's dynamic optionsKey/
 // optionsLabel lookup, call sites normalize their data to {id, label}
 // up front (keeps this component fully typed, at the cost of one trivial
-// .map() per call site -- CLAUDE.md's AHA principle over a generic,
+// .map() per call site -- a deliberate tradeoff over a generic,
 // type-unsafe lookup). `readonly`/`small`/`titleSmall` added for Schritt 8
 // (Scores) -- additive, defaults match every existing call site's
 // current look.

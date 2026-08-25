@@ -11,7 +11,7 @@ export interface Coreelement {
   address: string | null
   color: string | null
   // null for types without the concept (location/role/propriumelement) --
-  // osa-only addition, see CLAUDE.md section 3's Phase 1 boundary.
+  // osa-only addition, outside the structural 1:1 transfer's scope.
   active: boolean | null
 }
 
@@ -24,8 +24,8 @@ export interface CoreelementPayload {
   active?: boolean
 }
 
-// UI-independent API layer for the generic Coreelement admin pages (CLAUDE.md:
-// API calls must be extracted into testable TypeScript composables).
+// UI-independent API layer for the generic Coreelement admin pages --
+// API calls must be extracted into testable TypeScript composables.
 // `type` accepts a plain value OR a ref/getter -- Vue Router
 // reuses the same CoreelementView instance across navigations between two
 // `administrator-coreelement` routes (only the `:type` param changes), so

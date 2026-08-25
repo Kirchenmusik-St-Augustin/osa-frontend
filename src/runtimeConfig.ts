@@ -14,8 +14,8 @@ function readRuntimeConfig(key: string): string | undefined {
 }
 
 export function apiBaseUrl(): string {
-  // Default is the SAME-ORIGIN relative path, per CLAUDE.md: "Default im
-  // Same-Domain-Betrieb: relativer Pfad /api". OSA's Caddy split is
+  // Default is the SAME-ORIGIN relative path (default in same-domain
+  // operation: relative path /api). OSA's Caddy split is
   // path-based (not subdomain-based like the vb-fastapi-vue sister
   // project), so this default deliberately differs from there.
   return readRuntimeConfig('API_BASE_URL') || import.meta.env.VITE_API_BASE_URL || '/api'

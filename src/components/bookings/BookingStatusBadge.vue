@@ -9,7 +9,7 @@ import { formatDateTime } from '@/services/dateFormat'
 // driven by the exact same `status` prop and never appear independently in
 // any Legacy template (PerformanceCardComponent.vue always renders them
 // side by side), so splitting them would be a Hasty Abstraction, not less
-// coupling (CLAUDE.md AHA-Prinzip).
+// coupling.
 const props = withDefaults(
   defineProps<{ status: BookingStatus; explainUnbookable?: boolean; interactive?: boolean }>(),
   { explainUnbookable: false, interactive: false },

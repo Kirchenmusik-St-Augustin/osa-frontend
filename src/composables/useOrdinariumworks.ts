@@ -30,7 +30,7 @@ export interface PositionEntry {
   name: string
   quantity: number
   // Flags a since-archived Instrument/Voice still present in this setup
-  // (osa-only addition, see CLAUDE.md section 3's Phase 1 boundary) --
+  // (osa-only addition, outside the structural 1:1 transfer's scope) --
   // get_setup() resolves existing rows by id regardless of active status.
   active: boolean
 }
@@ -60,8 +60,8 @@ export interface OrdinariumworkPayload {
 }
 
 // UI-independent API layer for the Ordinariumwork domain, Schritt 4/
-// Repertoire -- mirrors useCoreelements.ts/useArtists.ts's shape (CLAUDE.md:
-// API calls must be extracted into testable TypeScript composables).
+// Repertoire -- mirrors useCoreelements.ts/useArtists.ts's shape. API
+// calls must be extracted into testable TypeScript composables.
 export function useOrdinariumworks() {
   async function search(query: string): Promise<OrdinariumworkSearchResult[]> {
     const response = await api.get<OrdinariumworkSearchResult[]>('/ordinariumworks/search', {
