@@ -98,7 +98,7 @@ describe('CastView', () => {
     // above each position-type's list (verified via Playwright against
     // osa.dev.schimpl.cc/content/music/performances/758/cast) -- kept as a
     // header row here rather than a literal HTML table (see
-    // CastView.vue's docstring / project_osa_migration_plan memory).
+    // CastView.vue's docstring).
     expect(wrapper.text()).toContain('Name')
     expect(wrapper.text()).toContain('gebucht')
     // ...but only for types that actually have items -- Legacy omits the

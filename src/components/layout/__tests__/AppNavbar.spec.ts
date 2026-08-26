@@ -4,9 +4,8 @@ import { mount } from '@vue/test-utils'
 import AppNavbar from '../AppNavbar.vue'
 
 // vi.mock(...) factories are hoisted above plain const declarations --
-// referencing mock functions inside them requires vi.hoisted() (already
-// established project gotcha, see feedback_frontend_gotchas memory),
-// otherwise it's a "Cannot access before initialization" TDZ error.
+// referencing mock functions inside them requires vi.hoisted(), otherwise
+// it's a "Cannot access before initialization" TDZ error.
 const { mockPush, mockAfterEach, mockRemoveAfterEachHook } = vi.hoisted(() => {
   const mockRemoveAfterEachHook = vi.fn()
   return {

@@ -11,7 +11,7 @@ import { confirmAction, showToast } from '@/services/notifications'
 // generic Coreelement mechanism -- see app/db/models/fee.py's docstring).
 // Kept as a standalone copy of CoreelementView.vue's pattern rather than
 // forcing Fee into COREELEMENT_CONFIG, which has no `order` column to move
-// (see project_osa_migration_plan memory, Schritt 6 plan B.3). Lives under
+// (Schritt 6 plan B.3). Lives under
 // views/system/ (not views/administrator/), matching Legacy's own page
 // location and FeePolicy::maintain()'s role-'disponent' gate -- corrected
 // 2026-07-31 (User-reported: was wrongly wired under /administrator/fees

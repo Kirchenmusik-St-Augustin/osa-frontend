@@ -22,8 +22,7 @@ export default defineConfig({
   },
   server: {
     // Vite 5+ rejects unrecognized Host headers by default -- Caddy proxies
-    // the dev domain straight through, so it must be allowlisted here (see
-    // vb-intern's identical need for intern.vindobona2.at.dev.schimpl.cc).
+    // the dev domain straight through, so it must be allowlisted here.
     allowedHosts: ['einteilung.hochamt.at.dev.schimpl.cc'],
   },
   build: { sourcemap: false, chunkSizeWarningLimit: 1000 },

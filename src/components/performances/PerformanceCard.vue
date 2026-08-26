@@ -15,9 +15,9 @@ import PropriumSetup from './PropriumSetup.vue'
 // page, 1:1 Legacy's dual-purpose PerformanceCardComponent.vue. `user_booking`
 // is optional -- only the calendar (PerformanceCalendarItem) carries it,
 // Cast/Billing/RequestsAndBookings/MessageToCast's own PerformanceShortBase
-// don't need the self-service badge on their own card (see
-// project_osa_migration_plan memory, Schritt 6 plan B.4 correction: Legacy's
-// Show.vue passes neither with-status nor booking-trigger either).
+// don't need the self-service badge on their own card (Schritt 6 plan B.4
+// correction: Legacy's Show.vue passes neither with-status nor
+// booking-trigger either).
 export interface PerformanceCardData {
   id: number
   schedule: string

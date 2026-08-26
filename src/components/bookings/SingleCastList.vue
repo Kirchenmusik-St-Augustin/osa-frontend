@@ -11,13 +11,12 @@ import FormCheckbox from '@/components/common/FormCheckbox.vue'
 // Legacy equivalent, so no pixel-parity constraint applies to this
 // interaction). Purely client-side array manipulation: unlike
 // Coreelement's move (one API call per click), the whole cast+not_booked
-// payload is only sent once, on CastView's "speichern" (see
-// project_osa_migration_plan memory, Schritt 6 plan B.2/B.3). `not_booked`
-// itself is performance-wide, not per-position data (see
-// app.schemas.booking.CastFormData) -- but Legacy still renders the same
-// list redundantly under EVERY position's own box (verified live against
-// osa.dev.schimpl.cc/content/music/performances/{id}/cast), not once at
-// the bottom of the page, so that's what this component does too.
+// payload is only sent once, on CastView's "speichern" (Schritt 6 plan
+// B.2/B.3). `not_booked` itself is performance-wide, not per-position
+// data (see app.schemas.booking.CastFormData) -- but Legacy still renders
+// the same list redundantly under EVERY position's own box (verified live
+// against osa.dev.schimpl.cc/content/music/performances/{id}/cast), not
+// once at the bottom of the page, so that's what this component does too.
 //
 // Choirjobs-only "autom. Sortierung" (no Legacy equivalent, real-user
 // request): when active, the cast list is grouped/sorted by each member's

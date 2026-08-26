@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// New admin-only, read-only DB table browser (no Legacy equivalent --
-// ported from the vb-fastapi-vue sister project's SQL-Einsicht view). Not
+// New admin-only, read-only DB table browser (no Legacy equivalent). Not
 // a free-text SQL console: the only user-chosen input is a table name from
 // a backend-provided list, validated again server-side against a live
 // schema allowlist.

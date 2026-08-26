@@ -1,9 +1,3 @@
-// Template ported from the vb-fastapi-vue sister project. References
-// ./vite.config, which doesn't exist yet — wire this up once the actual
-// Vite/Vue scaffold is created; the coverage include-paths/thresholds
-// below assume the same src/ layout (components, views, stores,
-// composables, services, utils) and should be adjusted if osa-frontend's
-// structure ends up differing.
 import { fileURLToPath } from 'node:url'
 import { mergeConfig, defineConfig, configDefaults } from 'vitest/config'
 import viteConfig from './vite.config'

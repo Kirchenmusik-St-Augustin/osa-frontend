@@ -101,6 +101,14 @@ Two separate mechanisms, not to be confused (see
   [Maintaining secrets](../osa-deploy/README.md#maintaining-secrets)
   section.
 
+`GOOGLE_CLIENT_ID` is optional on both sides (frontend and
+[backend](../osa-backend/README.md#environment-variables)) — leave it
+empty/unset on a stage where Google's Developer Console isn't (or can't
+be) configured, and the Google Sign-In button simply doesn't render on
+that stage (`googleClientId()` in `src/runtimeConfig.ts`, checked by
+`LoginView.vue`'s `v-if`). No separate feature-flag variable needed; the
+client ID itself is the switch.
+
 ## Branching
 
 - `main` — protected, merge via PR only
@@ -235,6 +243,15 @@ Zwei getrennte Mechanismen, nicht zu verwechseln (siehe
   `secrets/<stage>/osa-frontend.env.j2`, siehe den Abschnitt
   [Secrets pflegen](../osa-deploy/README.md#secrets-pflegen) in dessen
   README.
+
+`GOOGLE_CLIENT_ID` ist auf beiden Seiten optional (Frontend und
+[Backend](../osa-backend/README.md#umgebungsvariablen)) — auf einer Stage,
+auf der die Google Developer Console nicht (oder bewusst nicht)
+konfiguriert ist, einfach leer/unset lassen, dann rendert der
+Google-Sign-In-Button auf dieser Stage schlichtweg nicht
+(`googleClientId()` in `src/runtimeConfig.ts`, geprüft von `LoginView.vue`s
+`v-if`). Keine eigene Feature-Flag-Variable nötig — die Client-ID selbst
+ist der Schalter.
 
 ## Branching
 

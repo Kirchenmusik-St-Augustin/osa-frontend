@@ -20,9 +20,9 @@ import { parseWallClock } from '@/services/dateFormat'
 // type as a literal (nested-table) HTML <table> with "Name"/"gebucht"
 // column headers -- ported here as a plain header row above a list-group
 // instead of a real <table> (verified live against
-// osa.dev.schimpl.cc/content/music/performances/{id}/cast, see
-// project_osa_migration_plan memory): same visible information and column
-// labels, without copying Legacy's table-inside-a-table-cell markup.
+// osa.dev.schimpl.cc/content/music/performances/{id}/cast): same visible
+// information and column labels, without copying Legacy's
+// table-inside-a-table-cell markup.
 const props = defineProps<{ id: string }>()
 const performanceId = computed(() => Number(props.id))
 

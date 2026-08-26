@@ -5,10 +5,9 @@ import type { PopularItem } from '@/composables/useBookings'
 import { formatDateTime } from '@/services/dateFormat'
 
 // Purely presentational -- Legacy's ⭐ "populäre Buchungen" dialog is a
-// rein informativer Vorschlags-Dialog, NOT a promote button (see
-// project_osa_migration_plan memory, Schritt 6 plan): all its data already
-// arrived with the initial Cast page load, no API call happens when this
-// opens.
+// rein informativer Vorschlags-Dialog, NOT a promote button: all its data
+// already arrived with the initial Cast page load, no API call happens
+// when this opens.
 defineProps<{ modalId: string; popular: PopularItem }>()
 
 const modalElement = useTemplateRef<HTMLDivElement>('modalElement')

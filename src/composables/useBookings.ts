@@ -13,8 +13,7 @@ export type { BookingStatus, PositionRef }
 // Field names are snake_case throughout (matching the backend's
 // app/schemas/booking.py 1:1) -- unlike usePerformances.ts, there is no
 // Legacy camelCase wire format to stay compatible with here, both sides of
-// this API are built from scratch in Schritt 6 (see project_osa_migration_plan
-// memory, Schritt 6 plan A.3/B.1).
+// this API are built from scratch in Schritt 6 (Schritt 6 plan A.3/B.1).
 
 export interface CastMember {
   id: number

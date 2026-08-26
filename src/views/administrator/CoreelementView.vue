@@ -19,8 +19,7 @@ const ACTIVE_FLAG_TYPES: readonly CoreelementType[] = ['instrument', 'voice', 'c
 // Generic replacement for Legacy's six near-identical Instrument/Voice/
 // Choirjob/Location/Role/Propriumelement admin pages -- Legacy itself
 // already renders all six through a single `type`-prop-driven
-// Coreelement/Index.vue, this is the same idea ported to Vue3 (see
-// project_osa_migration_plan memory, Schritt 3).
+// Coreelement/Index.vue, this is the same idea ported to Vue3 (Schritt 3).
 const props = defineProps<{ type: CoreelementType }>()
 
 const typeMeta = computed(() => findCoreelementTypeMeta(props.type))

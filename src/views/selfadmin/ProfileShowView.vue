@@ -1,8 +1,7 @@
 <script setup lang="ts">
 // 1:1 port of Legacy's Content/Common/Selfadmin/Profile/Show.vue, plus a
-// deployment-environment footer ported from the vb-fastapi-vue sister
-// project's ProfileView.vue (no Legacy equivalent -- pure dev/ops aid, not
-// a parity concern).
+// deployment-environment footer (no Legacy equivalent -- pure dev/ops aid,
+// not a parity concern).
 import { onMounted, ref } from 'vue'
 import UserDataCard from '@/components/common/UserDataCard.vue'
 import { useProfile } from '@/composables/useProfile'

@@ -49,8 +49,7 @@ async function submit(): Promise<void> {
 }
 
 // Google Sign-In: ID-token ("credential") flow via Google Identity Services
-// (vue3-google-login, same package/methodology as the vb-fastapi-vue sister
-// project's vb-intern), not Legacy's server-redirect Socialite dance (see
+// (vue3-google-login), not Legacy's server-redirect Socialite dance (see
 // the backend's google_callback endpoint docstring for the full reasoning)
 // -- same business capability (log in if already linked, link via local
 // password if not linked yet), leaner mechanism given this backend is
