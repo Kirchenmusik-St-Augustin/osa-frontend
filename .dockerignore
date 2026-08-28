@@ -7,5 +7,4 @@ coverage
 .env.example
 Dockerfile
 *.md
-deploy
 src/**/__tests__
