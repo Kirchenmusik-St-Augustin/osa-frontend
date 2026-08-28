@@ -11,7 +11,8 @@ Inertia/Vue application.
   Vue Router
 - **UI:** Bootstrap 5, FontAwesome, SweetAlert2, flatpickr
 - **Prod serving:** nginx (static build), Podman Quadlets (rootless
-  systemd) — production quadlets live in [`osa-deploy`](../osa-deploy)
+  systemd) — quadlets for every stage, including local dev, live in
+  [`osa-deploy`](../osa-deploy)
 
 ## Runtime configuration model
 
@@ -38,7 +39,9 @@ without a rebuild — only the container's env vars change.
 
 - Node.js (see `package.json`'s `engines.node`)
 - Podman with the `osa-frontend` container running for the containerized
-  dev workflow (see Quadlet config under
+  dev workflow — see
+  [`osa-deploy`'s README](../osa-deploy/README.md#local-development-environment)
+  for how to set this up from a fresh clone (Quadlet config ends up under
   `~/.config/containers/systemd/osa/osa-frontend/` on the dev host)
 
 ### After cloning
@@ -93,7 +96,18 @@ Two separate mechanisms, not to be confused (see
   the public browser bundle.
 - **Non-`VITE_`** (`API_BASE_URL`, `APP_ENVIRONMENT`, `GOOGLE_CLIENT_ID`)
   — runtime-only, read by the running prod container, set via
-  [`osa-deploy`](../osa-deploy)'s `secrets/osa-frontend.env`.
+  [`osa-deploy`](../osa-deploy)'s `secrets/<stage>/osa-frontend.env.j2`,
+  see its README's
+  [Maintaining secrets](../osa-deploy/README.md#maintaining-secrets)
+  section.
+
+`GOOGLE_CLIENT_ID` is optional on both sides (frontend and
+[backend](../osa-backend/README.md#environment-variables)) — leave it
+empty/unset on a stage where Google's Developer Console isn't (or can't
+be) configured, and the Google Sign-In button simply doesn't render on
+that stage (`googleClientId()` in `src/runtimeConfig.ts`, checked by
+`LoginView.vue`'s `v-if`). No separate feature-flag variable needed; the
+client ID itself is the switch.
 
 ## Branching
 
@@ -115,6 +129,11 @@ on manual dispatch:
    `ghcr.io/kirchenmusik-st-augustin/osa-frontend:latest` and
    `:${{ github.sha }}`
 
+A pushed image reaches a running stage on its own, via
+`podman-auto-update.timer` — or immediately, via `--tags deploy-frontend`.
+See [`osa-deploy`'s README](../osa-deploy/README.md) for that full deploy
+flow; this repo doesn't run it.
+
 ---
 
 # Deutsch
@@ -130,8 +149,8 @@ bestehende Laravel/Inertia/Vue-Anwendung.
   Pinia, Vue Router
 - **UI:** Bootstrap 5, FontAwesome, SweetAlert2, flatpickr
 - **Auslieferung in Prod:** nginx (statischer Build), Podman Quadlets
-  (rootless systemd) — die Produktions-Quadlets liegen in
-  [`osa-deploy`](../osa-deploy)
+  (rootless systemd) — die Quadlets für jede Stage, inklusive lokaler
+  Entwicklung, liegen in [`osa-deploy`](../osa-deploy)
 
 ## Runtime-Konfigurationsmodell
 
@@ -161,7 +180,10 @@ ohne Neubau — nur die Env-Vars des Containers ändern sich.
 
 - Node.js (siehe `package.json`s `engines.node`)
 - Podman mit laufendem `osa-frontend`-Container für den containerisierten
-  Dev-Workflow (siehe Quadlet-Konfiguration unter
+  Dev-Workflow — wie das von einem frischen Checkout aus aufgesetzt wird,
+  steht in
+  [`osa-deploy`s README](../osa-deploy/README.md#lokale-entwicklungsumgebung)
+  (die Quadlet-Konfiguration landet dabei unter
   `~/.config/containers/systemd/osa/osa-frontend/` auf der Dev-Umgebung)
 
 ### Nach dem Klonen
@@ -218,7 +240,18 @@ Zwei getrennte Mechanismen, nicht zu verwechseln (siehe
 - **Ohne `VITE_`-Präfix** (`API_BASE_URL`, `APP_ENVIRONMENT`,
   `GOOGLE_CLIENT_ID`) — nur zur Laufzeit, gelesen vom laufenden
   Prod-Container, gesetzt über [`osa-deploy`](../osa-deploy)s
-  `secrets/osa-frontend.env`.
+  `secrets/<stage>/osa-frontend.env.j2`, siehe den Abschnitt
+  [Secrets pflegen](../osa-deploy/README.md#secrets-pflegen) in dessen
+  README.
+
+`GOOGLE_CLIENT_ID` ist auf beiden Seiten optional (Frontend und
+[Backend](../osa-backend/README.md#umgebungsvariablen)) — auf einer Stage,
+auf der die Google Developer Console nicht (oder bewusst nicht)
+konfiguriert ist, einfach leer/unset lassen, dann rendert der
+Google-Sign-In-Button auf dieser Stage schlichtweg nicht
+(`googleClientId()` in `src/runtimeConfig.ts`, geprüft von `LoginView.vue`s
+`v-if`). Keine eigene Feature-Flag-Variable nötig — die Client-ID selbst
+ist der Schalter.
 
 ## Branching
 
@@ -239,3 +272,9 @@ CodeQL-Refresh) und bei manuellem Dispatch:
    PRs oder dem geplanten Lauf), pusht
    `ghcr.io/kirchenmusik-st-augustin/osa-frontend:latest` und
    `:${{ github.sha }}`
+
+Ein gepushtes Image erreicht eine laufende Stage von selbst, über
+`podman-auto-update.timer` — oder sofort, über `--tags deploy-frontend`.
+Den vollständigen Deploy-Flow dazu beschreibt
+[`osa-deploy`s README](../osa-deploy/README.md); dieses Repo führt ihn
+nicht selbst aus.

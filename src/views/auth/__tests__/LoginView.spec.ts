@@ -27,8 +27,8 @@ vi.mock('@/runtimeConfig', () => ({
   googleClientId: () => mockGoogleClientId,
 }))
 
-// GoogleLogin (vue3-google-login) is stubbed everywhere, same as vb-intern's
-// own LoginView.spec.ts -- mounting the real component would call out to
+// GoogleLogin (vue3-google-login) is stubbed everywhere -- mounting the
+// real component would call out to
 // window.google/Google's GSI script loader, which isn't available in jsdom.
 // Stubbing it lets us grab its `callback` prop and invoke it directly to
 // simulate a real Google sign-in response.

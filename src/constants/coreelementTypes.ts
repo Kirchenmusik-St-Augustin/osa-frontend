@@ -1,9 +1,8 @@
 // Legacy already treats Instrument/Voice/Choirjob/Location/Role/
 // Propriumelement as ONE generic "Coreelement" pool (six identical
-// controllers rendering a single `type`-prop-driven Vue page, see
-// project_osa_migration_plan memory, Schritt 3) -- this registry is the
-// frontend's single source of truth for that pool, mirroring the
-// backend's COREELEMENT_CONFIG/`_PERMISSION_BY_TYPE` (app/services/
+// controllers rendering a single `type`-prop-driven Vue page, Schritt 3)
+// -- this registry is the frontend's single source of truth for that pool,
+// mirroring the backend's COREELEMENT_CONFIG/`_PERMISSION_BY_TYPE` (app/services/
 // coreelement_service.py, app/api/router_includes/coreelement.py).
 // Shared by the router (permission guard), AppNavbar (dropdown items +
 // labels), and CoreelementView (page title).

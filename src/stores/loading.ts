@@ -4,8 +4,7 @@ import { computed, ref } from 'vue'
 // Backs the global loading bar (components/layout/GlobalLoadingBar.vue),
 // driven by services/api.ts's request/response interceptors. Counter-based
 // (not a plain boolean) so overlapping in-flight requests don't make the
-// bar disappear before the slowest one actually finishes -- 1:1 the
-// vb-fastapi-vue sister project's stores/loading.ts.
+// bar disappear before the slowest one actually finishes.
 export const useLoadingStore = defineStore('loading', () => {
   const activeRequests = ref(0)
 

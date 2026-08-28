@@ -235,7 +235,7 @@ const router = createRouter({
           },
         },
         {
-          // No Legacy equivalent -- ported from vb-fastapi-vue's SQL-Einsicht.
+          // No Legacy equivalent -- new admin-only tooling.
           path: 'administrator/sql-inspector',
           name: 'administrator-sql-inspector',
           component: () => import('@/views/administrator/SqlInspectorView.vue'),
@@ -246,7 +246,7 @@ const router = createRouter({
           },
         },
         {
-          // No Legacy equivalent -- ported from vb-fastapi-vue's Scheduler.
+          // No Legacy equivalent -- new admin-only tooling.
           path: 'administrator/scheduler',
           name: 'administrator-scheduler',
           component: () => import('@/views/administrator/SchedulerView.vue'),

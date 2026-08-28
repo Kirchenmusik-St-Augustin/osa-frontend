@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// No Legacy equivalent -- ported from the vb-fastapi-vue sister project's
-// global loading bar, adapted from PrimeVue's <ProgressBar> to a custom
-// animated bar (osa-frontend has no PrimeVue dependency). Bootstrap's own
+// No Legacy equivalent -- adapted from PrimeVue's <ProgressBar> concept to
+// a custom animated bar (osa-frontend has no PrimeVue dependency).
+// Bootstrap's own
 // .progress-bar-striped (a single-hue bar with a semi-transparent white
 // overlay) was tried first but read as too low-contrast in practice (User
 // feedback, 2026-08-21) -- replaced with a two-color stripe pattern using

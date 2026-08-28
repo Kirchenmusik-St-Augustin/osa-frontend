@@ -1,11 +1,10 @@
 <script setup lang="ts">
 // Admin-only overview of the backend's currently registered scheduled jobs
-// (no Legacy equivalent -- ported from the vb-fastapi-vue sister project's
-// Scheduler view). Live snapshot only: no persisted run history. Plus a
-// manual Koofr-backup trigger, production-only in the UI (1:1 vb-intern's
-// equivalent S3-backed button, adapted to Koofr) -- the backend endpoint
-// itself stays callable in every stage (see useScheduler.ts/backend
-// comments), the `schedulerView` permission is the real guard. The
+// (no Legacy equivalent). Live snapshot only: no persisted run history.
+// Plus a manual Koofr-backup trigger, production-only in the UI -- the
+// backend endpoint itself stays callable in every stage (see
+// useScheduler.ts/backend comments), the `schedulerView` permission is
+// the real guard. The
 // downsync button is its mirror image: only outside production, where the
 // backend enforces the same boundary as a real 409 (not just UI
 // convenience -- see the backend router's docstring).

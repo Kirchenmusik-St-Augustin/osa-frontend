@@ -28,8 +28,7 @@ export function useProfile() {
   }
 
   // Existing endpoint from Schritt 1/2 (Google-Login linking), IDOR-fixed
-  // there already -- was never actually called from the frontend until now
-  // (see project_osa_migration_plan memory).
+  // there already -- was never actually called from the frontend until now.
   async function disconnectOauth2(bindingId: number): Promise<void> {
     await api.delete(`/auth/oauth2/${bindingId}`)
   }

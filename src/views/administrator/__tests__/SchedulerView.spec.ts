@@ -28,8 +28,7 @@ vi.mock('@/services/notifications', () => ({
 }))
 
 // vi.mock(...) factories are hoisted above plain const declarations --
-// referencing mock functions inside them requires vi.hoisted() (established
-// project gotcha, see feedback_frontend_gotchas memory).
+// referencing mock functions inside them requires vi.hoisted().
 const { mockPush } = vi.hoisted(() => ({ mockPush: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof VueRouter>()),

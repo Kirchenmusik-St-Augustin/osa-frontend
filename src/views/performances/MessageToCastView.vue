@@ -24,7 +24,7 @@ import { useAuthStore } from '@/stores/auth'
 // genuinely dead, unreachable code that no real Legacy user has ever seen,
 // so there is no observable pixel parity to preserve for it. Kept as a
 // working INLINE textarea+Senden instead (see
-// booking_service.send_message_to_cast, project_osa_migration_plan memory).
+// booking_service.send_message_to_cast).
 const props = defineProps<{ id: string }>()
 const performanceId = computed(() => Number(props.id))
 
