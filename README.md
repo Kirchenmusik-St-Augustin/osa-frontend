@@ -2,8 +2,7 @@
 
 Vue 3 SPA frontend for **OSA** ("Orchester-Einteilung") — the scheduling/
 casting system for the church musicians of Kirchenmusik St. Augustin.
-Talks to [`osa-backend`](https://github.com/Kirchenmusik-St-Augustin/osa-backend); migrates a legacy Laravel/
-Inertia/Vue application.
+Talks to [`osa-backend`](https://github.com/Kirchenmusik-St-Augustin/osa-backend).
 
 ## Tech Stack
 
@@ -140,8 +139,7 @@ flow; this repo doesn't run it.
 
 Vue-3-SPA-Frontend für **OSA** ("Orchester-Einteilung") — das
 Dienstplan-/Besetzungssystem für die Kirchenmusiker von Kirchenmusik
-St. Augustin. Spricht mit [`osa-backend`](https://github.com/Kirchenmusik-St-Augustin/osa-backend); migriert eine
-bestehende Laravel/Inertia/Vue-Anwendung.
+St. Augustin. Spricht mit [`osa-backend`](https://github.com/Kirchenmusik-St-Augustin/osa-backend).
 
 ## Tech-Stack
 
