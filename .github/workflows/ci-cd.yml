@@ -45,9 +45,74 @@ jobs:
           languages: javascript-typescript
       - uses: github/codeql-action/analyze@v4
 
+  container-readonly-smoke-test:
+    name: Read-only Rootfs Smoke Test
+    needs: [lint, quality, security]
+    runs-on: ubuntu-latest
+    # Same osa-frontend.container restrictions planned for production (see
+    # osa-deploy): a read-only rootfs can't be exercised by the normal
+    # vitest suite, so this is that verification -- it must gate
+    # release-image, not just run alongside it.
+    env:
+      RUN_RESTRICTIONS: >-
+        --read-only --tmpfs /run:mode=1777 --tmpfs /var/cache/nginx:mode=1777
+        --security-opt no-new-privileges --cap-drop=all
+        --cap-add=CAP_NET_BIND_SERVICE --user 101:101
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          load: true
+          tags: osa-frontend:smoke-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run container under production restrictions
+        run: |
+          docker run -d --name osa-frontend-smoke $RUN_RESTRICTIONS \
+            -p 8080:80 -e API_BASE_URL=/api -e APP_ENVIRONMENT=test \
+            osa-frontend:smoke-test
+
+      - name: Poll health endpoint and verify runtime config generation
+        run: |
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8080/ > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8080/ > /dev/null || {
+            echo "::error::Container never became healthy under a read-only rootfs"
+            docker logs osa-frontend-smoke
+            exit 1
+          }
+          curl -sf http://127.0.0.1:8080/config.js | grep -q API_BASE_URL || {
+            echo "::error::config.js was not generated correctly"
+            exit 1
+          }
+          # The unprocessed template must never be servable as-is.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/config.template.js)" = "404"
+
+      - name: Check container logs for read-only rootfs violations
+        run: |
+          docker logs osa-frontend-smoke > smoke.log 2>&1
+          docker stop osa-frontend-smoke
+          cat smoke.log
+          # "can not modify ... (read-only file system?)" at info level is
+          # nginx's own official entrypoint gracefully skipping an
+          # unneeded rewrite -- expected and harmless, not a violation.
+          if grep -iE "read-only file system|EROFS|permission denied" smoke.log \
+              | grep -v "^10-listen-on-ipv6-by-default.sh: info:"; then
+            echo "::error::Container hit a read-only rootfs violation"
+            exit 1
+          fi
+
   release-image:
     name: Build & Push Image
-    needs: [lint, quality, security]
+    needs: [lint, quality, security, container-readonly-smoke-test]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:

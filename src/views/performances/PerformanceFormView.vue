@@ -66,6 +66,8 @@ const available = ref<PerformanceAvailableData>({
   choirjobs: [],
   locations: [],
   propriumelements: [],
+  default_location_id: null,
+  default_conductor_id: null,
 })
 
 const locationOptions = computed<FormSelectOption[]>(() =>
@@ -133,6 +135,8 @@ onMounted(async () => {
     backYear.value = queryYear
     backMonth.value = queryMonth
     form.schedule = nextSundayElevenAm(queryYear, queryMonth)
+    form.location_id = available.value.default_location_id
+    form.artist_id = available.value.default_conductor_id
   }
   ready.value = true
 })

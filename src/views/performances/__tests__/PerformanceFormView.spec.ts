@@ -83,6 +83,8 @@ function makeAvailable(
     choirjobs: [{ id: 30, name: 'Kantor' }],
     locations: [{ id: 1, name: 'Augustinerkirche', color: '336699', address: null }],
     propriumelements: [{ id: 40, name: 'Introitus' }],
+    default_location_id: 1,
+    default_conductor_id: 9,
     ...overrides,
   }
 }
@@ -318,6 +320,39 @@ describe('PerformanceFormView -- create mode', () => {
     // mount, this would incorrectly show the reset link.
     expect(wrapper.text()).not.toContain('auf derz. Werte zurücksetzen')
   })
+
+  it('preselects the default location and conductor from available data', async () => {
+    mockGetOrdinariumwork.mockResolvedValueOnce({
+      id: 5,
+      name: 'Krönungsmesse',
+      description: null,
+      artist_id: 2,
+      artist_name: 'MOZART, Wolfgang',
+      duration: 25,
+      demanding: false,
+    })
+    mockGetSetup.mockResolvedValueOnce({ instruments: [], voices: [] })
+    mockCreate.mockResolvedValueOnce({
+      id: 99,
+      schedule: '2026-09-06T11:00:00',
+    } as PerformanceResponse)
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 5)
+    await flushPromises()
+
+    // Deliberately does NOT set select#performance-location or a
+    // conductor -- the point of this test is that both are already
+    // preselected from available data's default_location_id/
+    // default_conductor_id, unlike the sibling "creates a performance"
+    // test above which sets the location explicitly.
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ location_id: 1, artist_id: 9 }),
+    )
+  })
 })
 
 describe('PerformanceFormView -- edit mode', () => {
@@ -409,6 +444,33 @@ describe('PerformanceFormView -- edit mode', () => {
     // Must land back on the persisted value (3), not the just-selected
     // Nelsonmesse's setup (9).
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('3')
+  })
+
+  it("does not overwrite the loaded performance's location/conductor with the available-data defaults", async () => {
+    mockGetAvailableData.mockResolvedValueOnce(
+      makeAvailable({
+        locations: [
+          { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
+          { id: 2, name: 'Domkirche', color: '336699', address: null },
+        ],
+        conductors: [
+          { id: 9, name: 'ORTNER, Erwin' },
+          { id: 7, name: 'HAYDN, Joseph' },
+        ],
+      }),
+    )
+    mockGetFormData.mockResolvedValueOnce(makeFormData({ location_id: 2, artist_id: 7 }))
+    mockUpdate.mockResolvedValueOnce({ id: 1, schedule: '2026-08-02T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ location_id: 2, artist_id: 7 }),
+    )
   })
 })
 

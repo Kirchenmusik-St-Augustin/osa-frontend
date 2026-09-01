@@ -121,6 +121,8 @@ export interface PerformanceAvailableData {
   choirjobs: AvailablePosition[]
   locations: PerformanceLocation[]
   propriumelements: AvailablePosition[]
+  default_location_id: number | null
+  default_conductor_id: number | null
 }
 
 export interface PositionInput {
