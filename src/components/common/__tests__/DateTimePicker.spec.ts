@@ -62,7 +62,10 @@ describe('DateTimePicker', () => {
     // internal watcher, which is what dropped every date change made
     // through this picker (both the performance's own schedule and each
     // rehearsal's own schedule use this component).
-    const iso = toWallClockString(new Date(2026, 8, 6, 11, 0, 0))
+    const future = new Date()
+    future.setDate(future.getDate() + 30)
+    future.setHours(11, 0, 0, 0)
+    const iso = toWallClockString(future)
     const wrapper = mount(DateTimePicker, { props: { modelValue: iso } })
 
     await wrapper.find('.flatpickr-stub').setValue('2026-09-08 14:30:00')
