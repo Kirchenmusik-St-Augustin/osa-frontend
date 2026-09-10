@@ -9,11 +9,12 @@ import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 // Only these three CoreelementTypes carry the osa-only `active` flag
-// (outside the structural 1:1 transfer's scope) -- they're the ones referenced
-// via the position_type/position_id pattern (bookings/booking_logs/
-// performance_positions/ordinariumwork_positions/user_positions), where
-// "no longer offered for a NEW assignment, but never deletable either"
-// actually applies. Location/Role/Propriumelement don't have it.
+// (outside the structural 1:1 transfer's scope) -- they're the ones
+// referenced via instrument_id/voice_id/choirjob_id foreign keys
+// (bookings/booking_logs/performance_positions/ordinariumwork_positions/
+// user_positions), where "no longer offered for a NEW assignment, but
+// never deletable either" actually applies. Location/Role/Propriumelement
+// don't have it.
 const ACTIVE_FLAG_TYPES: readonly CoreelementType[] = ['instrument', 'voice', 'choirjob']
 
 // Generic replacement for Legacy's six near-identical Instrument/Voice/
