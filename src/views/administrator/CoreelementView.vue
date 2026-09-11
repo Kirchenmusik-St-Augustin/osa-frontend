@@ -37,7 +37,7 @@ const editForm = reactive({
   color: '',
   active: true,
 })
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 
@@ -160,7 +160,7 @@ async function deleteItem(element: Coreelement): Promise<void> {
   }
 }
 
-async function moveItem(id: number, direction: 'up' | 'down'): Promise<void> {
+async function moveItem(id: string, direction: 'up' | 'down'): Promise<void> {
   try {
     await move(id, direction)
   } catch {

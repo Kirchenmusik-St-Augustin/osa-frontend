@@ -8,11 +8,11 @@
 // (Scores) -- additive, defaults match every existing call site's
 // current look.
 export interface FormSelectOption {
-  id: number
+  id: string
   label: string
 }
 
-const model = defineModel<number | null>({ required: true })
+const model = defineModel<string | null>({ required: true })
 
 withDefaults(
   defineProps<{

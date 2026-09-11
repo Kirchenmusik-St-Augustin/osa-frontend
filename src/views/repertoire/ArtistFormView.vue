@@ -25,7 +25,7 @@ const submitting = ref(false)
 
 onMounted(async () => {
   if (!props.id) return
-  const artist = await get(Number(props.id))
+  const artist = await get(props.id)
   form.givenname = artist.givenname
   form.surname = artist.surname
   form.description = artist.description
@@ -57,7 +57,7 @@ async function save(): Promise<void> {
   }
 
   try {
-    const artist = props.id ? await update(Number(props.id), payload) : await create(payload)
+    const artist = props.id ? await update(props.id, payload) : await create(payload)
     showToast('gespeichert.')
     await router.push({ name: 'repertoire-artists-show', params: { id: artist.id } })
   } catch (error) {

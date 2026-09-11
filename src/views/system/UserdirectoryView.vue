@@ -27,7 +27,7 @@ const { getAbilities, listUsers } = useUserdirectory()
 
 const abilities = ref<DirectoryAbilities | null>(null)
 const users = ref<DirectoryEntry[]>([])
-const selectedUserIds = ref<number[]>([])
+const selectedUserIds = ref<string[]>([])
 const checkAllStatus = ref(false)
 // Legacy's SelectorComponent.vue defaults to 'all' with an `immediate:
 // true` watcher, fetching the full list right on mount -- no manual
@@ -54,7 +54,7 @@ async function loadUsers(): Promise<void> {
     return
   }
   const [type, idText] = selectedAbility.value.split('@') as [DirectoryPositionType, string]
-  users.value = await listUsers(type, Number(idText))
+  users.value = await listUsers(type, idText)
 }
 
 onMounted(async () => {
@@ -74,7 +74,7 @@ function toggleCheckAll(): void {
     : []
 }
 
-function toggleUser(id: number): void {
+function toggleUser(id: string): void {
   selectedUserIds.value = selectedUserIds.value.includes(id)
     ? selectedUserIds.value.filter((candidateId) => candidateId !== id)
     : [...selectedUserIds.value, id]

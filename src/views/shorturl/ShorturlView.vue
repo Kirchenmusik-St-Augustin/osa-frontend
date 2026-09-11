@@ -17,7 +17,7 @@ import { formatUtcDateTime } from '@/services/dateFormat'
 const { items, urlprefix, fetchList, save, remove } = useShorturls()
 
 const editForm = reactive({ path: '', target: '' })
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 

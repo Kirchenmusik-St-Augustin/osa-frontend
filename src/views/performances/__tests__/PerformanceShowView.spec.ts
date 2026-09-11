@@ -14,10 +14,10 @@ vi.mock('@/stores/auth', () => ({
 
 function makeShow(overrides: Partial<PerformanceShow> = {}): PerformanceShow {
   return {
-    id: 1,
+    id: '1',
     schedule: '2026-08-02T11:00:00',
-    location: { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
-    ordinariumwork_id: 5,
+    location: { id: '1', name: 'Augustinerkirche', color: '336699', address: null },
+    ordinariumwork_id: '5',
     ordinariumwork_name: 'Krönungsmesse',
     ordinariumwork_artist_name: 'MOZART, Wolfgang',
     ordinariumwork_artist_description: null,
@@ -45,7 +45,7 @@ describe('PerformanceShowView', () => {
     const wrapper = mount(PerformanceShowView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGetDetail).toHaveBeenCalledWith(1)
+    expect(mockGetDetail).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('Krönungsmesse')
   })
 

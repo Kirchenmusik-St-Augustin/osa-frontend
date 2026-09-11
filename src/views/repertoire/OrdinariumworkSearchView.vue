@@ -6,7 +6,7 @@ import { useOrdinariumworks } from '@/composables/useOrdinariumworks'
 const router = useRouter()
 const { search } = useOrdinariumworks()
 
-function onSelect(id: number): void {
+function onSelect(id: string): void {
   void router.push({ name: 'repertoire-ordinariumworks-show', params: { id } })
 }
 </script>

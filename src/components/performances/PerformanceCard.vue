@@ -19,7 +19,7 @@ import PropriumSetup from './PropriumSetup.vue'
 // correction: Legacy's Show.vue passes neither with-status nor
 // booking-trigger either).
 export interface PerformanceCardData {
-  id: number
+  id: string
   schedule: string
   location: { name: string; color: string }
   ordinariumwork_name: string

@@ -31,7 +31,7 @@ watch(
 // status, see useBookings.ts's changeBookingStatus() docstring) -- a full
 // list refresh afterward mirrors Legacy's own Inertia GET-visit to this
 // same page, which reloads every card's `user_booking` in one go.
-async function handleChangeStatus(performanceId: number): Promise<void> {
+async function handleChangeStatus(performanceId: string): Promise<void> {
   const confirmed = await confirmAction()
   if (!confirmed) return
 

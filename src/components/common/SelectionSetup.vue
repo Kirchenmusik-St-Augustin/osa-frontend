@@ -9,7 +9,7 @@
 import { computed, ref, watch } from 'vue'
 
 export interface SelectableItem {
-  id: number
+  id: string
   name: string
 }
 
@@ -40,7 +40,7 @@ const assignedOnly = computed(() =>
 )
 const displayItems = computed(() => [...props.available, ...assignedOnly.value])
 
-const selectedUnusedId = ref<number | null>(unused.value[0]?.id ?? null)
+const selectedUnusedId = ref<string | null>(unused.value[0]?.id ?? null)
 watch(
   unused,
   () => {
@@ -49,7 +49,7 @@ watch(
   { immediate: true },
 )
 
-function remove(id: number): void {
+function remove(id: string): void {
   model.value = model.value.filter((item) => item.id !== id)
 }
 

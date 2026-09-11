@@ -20,7 +20,7 @@ const subtitle = computed(() =>
 )
 
 onMounted(async () => {
-  user.value = await get(Number(props.id))
+  user.value = await get(props.id)
 })
 
 async function destroy(): Promise<void> {
@@ -28,7 +28,7 @@ async function destroy(): Promise<void> {
   if (!confirmed) return
 
   try {
-    await remove(Number(props.id))
+    await remove(props.id)
     showToast('gelöscht.')
     await router.push({ name: 'system-users-search' })
   } catch (error) {

@@ -17,7 +17,7 @@ vi.mock('@/composables/useRequestLogs', () => ({
 
 function makeEntry(overrides: Partial<RequestLogEntry> = {}): RequestLogEntry {
   return {
-    id: 1,
+    id: '1',
     created_at: '2026-08-12T09:05:03+00:00',
     request_method: 'GET',
     request_path: '/some/path',
@@ -40,7 +40,7 @@ describe('RequestLogUserView', () => {
     mount(RequestLogUserView, { props: { userId: '7' } })
     await flushPromises()
 
-    expect(mockGetForUser).toHaveBeenCalledWith(7, 2026, 8, 12)
+    expect(mockGetForUser).toHaveBeenCalledWith('7', 2026, 8, 12)
   })
 
   it('renders the username and each entry method/path directly, no collapsible grouping', async () => {
@@ -58,7 +58,7 @@ describe('RequestLogUserView', () => {
 
   it('renders each entry as its own table row (all entries already belong to one day)', async () => {
     mockGetForUser.mockResolvedValueOnce(
-      makeDetail([makeEntry({ id: 1 }), makeEntry({ id: 2 }), makeEntry({ id: 3 })]),
+      makeDetail([makeEntry({ id: '1' }), makeEntry({ id: '2' }), makeEntry({ id: '3' })]),
     )
     const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
     await flushPromises()
@@ -75,7 +75,7 @@ describe('RequestLogUserView', () => {
   })
 
   it('links each entry to Show and "zurück" to Index with the same year/month/day', async () => {
-    mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ id: 99 })]))
+    mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ id: '99' })]))
     const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
     await flushPromises()
 
@@ -85,7 +85,7 @@ describe('RequestLogUserView', () => {
     )
     expect(showLink?.props('to')).toEqual({
       name: 'administrator-request-logs-show',
-      params: { id: 99 },
+      params: { id: '99' },
     })
 
     // Legacy shows the "zurück" button both above and below the log list.
@@ -106,15 +106,15 @@ describe('RequestLogUserView', () => {
     // this component instance on a pure :userId change -- onMounted() alone
     // would only fire once. Same precedent/technique as CoreelementView.vue's
     // "reloads the list when the type prop changes" test.
-    mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ id: 1 })]))
+    mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ id: '1' })]))
     const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
     await flushPromises()
-    expect(mockGetForUser).toHaveBeenCalledWith(7, 2026, 8, 12)
+    expect(mockGetForUser).toHaveBeenCalledWith('7', 2026, 8, 12)
 
-    mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ id: 2 })]))
+    mockGetForUser.mockResolvedValueOnce(makeDetail([makeEntry({ id: '2' })]))
     await wrapper.setProps({ userId: '8' })
     await flushPromises()
 
-    expect(mockGetForUser).toHaveBeenCalledWith(8, 2026, 8, 12)
+    expect(mockGetForUser).toHaveBeenCalledWith('8', 2026, 8, 12)
   })
 })

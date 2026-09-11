@@ -30,25 +30,25 @@ vi.mock('@/stores/auth', () => ({
 
 function makePage(overrides: Partial<PerformanceCastPage> = {}): PerformanceCastPage {
   return {
-    id: 1,
+    id: '1',
     ordinariumwork_name: 'Krönungsmesse',
     ordinariumwork_artist_name: 'MOZART, Wolfgang',
     artist_name: null,
     schedule: '2026-08-02T11:00:00',
     rehearsals: [],
-    location: { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
+    location: { id: '1', name: 'Augustinerkirche', color: '336699', address: null },
     demanding_proprium: false,
     setup: {
-      instruments: [{ id: 10, name: 'Fagott', quantity: 1 }],
+      instruments: [{ id: '10', name: 'Fagott', quantity: 1 }],
       voices: [],
       choirjobs: [],
     },
     staff: {
       instruments: [
         {
-          id: 10,
+          id: '10',
           name: 'Fagott',
-          bookable: { requesting: [], other: [{ id: 7, name: 'NEU, Kandidat' }] },
+          bookable: { requesting: [], other: [{ id: '7', name: 'NEU, Kandidat' }] },
         },
       ],
       voices: [],
@@ -56,15 +56,17 @@ function makePage(overrides: Partial<PerformanceCastPage> = {}): PerformanceCast
     },
     form_data: {
       cast: {
-        instruments: [{ id: 10, name: 'Fagott', cast: [{ id: 5, name: 'HUBER, Franz', fee: 60 }] }],
+        instruments: [
+          { id: '10', name: 'Fagott', cast: [{ id: '5', name: 'HUBER, Franz', fee: 60 }] },
+        ],
         voices: [],
         choirjobs: [],
       },
       not_booked: [],
     },
     fees: [
-      { id: 1, name: 'Chor', amount: 0 },
-      { id: 3, name: 'Instrumentalist', amount: 60 },
+      { id: '1', name: 'Chor', amount: 0 },
+      { id: '3', name: 'Instrumentalist', amount: 60 },
     ],
     popular: { instruments: {}, voices: {}, choirjobs: {} },
     ...overrides,
@@ -88,7 +90,7 @@ describe('CastView', () => {
     const wrapper = mount(CastView, { props: { id: '1' }, attachTo: document.body })
     await flushPromises()
 
-    expect(mockGetCastPage).toHaveBeenCalledWith(1)
+    expect(mockGetCastPage).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('Fagott')
     const castEntry = wrapper
       .findAll('small')
@@ -174,7 +176,7 @@ describe('CastView', () => {
     // NOT stay on the same page showing a refreshed snapshot.
     mockGetCastPage.mockResolvedValueOnce(makePage())
     mockSaveCast.mockResolvedValueOnce({
-      cast: { instruments: [{ id: 10, name: 'Fagott', cast: [] }], voices: [], choirjobs: [] },
+      cast: { instruments: [{ id: '10', name: 'Fagott', cast: [] }], voices: [], choirjobs: [] },
       not_booked: [],
     })
     const wrapper = mount(CastView, { props: { id: '1' } })
@@ -186,8 +188,8 @@ describe('CastView', () => {
     await saveButton?.trigger('click')
     await flushPromises()
 
-    expect(mockSaveCast).toHaveBeenCalledWith(1, {
-      cast: { instruments: [{ id: 10, cast: [] }], voices: [], choirjobs: [] },
+    expect(mockSaveCast).toHaveBeenCalledWith('1', {
+      cast: { instruments: [{ id: '10', cast: [] }], voices: [], choirjobs: [] },
       not_booked: [],
     })
     expect(mockShowToast).toHaveBeenCalledWith('gespeichert.')
@@ -239,16 +241,16 @@ describe('CastView', () => {
       makePage({
         setup: {
           instruments: [
-            { id: 10, name: 'Fagott', quantity: 1 },
-            { id: 11, name: 'Oboe', quantity: 1 },
+            { id: '10', name: 'Fagott', quantity: 1 },
+            { id: '11', name: 'Oboe', quantity: 1 },
           ],
           voices: [],
           choirjobs: [],
         },
         staff: {
           instruments: [
-            { id: 10, name: 'Fagott', bookable: { requesting: [], other: [] } },
-            { id: 11, name: 'Oboe', bookable: { requesting: [], other: [] } },
+            { id: '10', name: 'Fagott', bookable: { requesting: [], other: [] } },
+            { id: '11', name: 'Oboe', bookable: { requesting: [], other: [] } },
           ],
           voices: [],
           choirjobs: [],
@@ -256,13 +258,13 @@ describe('CastView', () => {
         form_data: {
           cast: {
             instruments: [
-              { id: 10, name: 'Fagott', cast: [] },
-              { id: 11, name: 'Oboe', cast: [] },
+              { id: '10', name: 'Fagott', cast: [] },
+              { id: '11', name: 'Oboe', cast: [] },
             ],
             voices: [],
             choirjobs: [],
           },
-          not_booked: [{ id: 99, name: 'REJECTED, Kandidat' }],
+          not_booked: [{ id: '99', name: 'REJECTED, Kandidat' }],
         },
       }),
     )
@@ -272,7 +274,7 @@ describe('CastView', () => {
     const lists = wrapper.findAllComponents(SingleCastList)
     expect(lists).toHaveLength(2)
     for (const list of lists) {
-      expect(list.props('notBooked')).toEqual([{ id: 99, name: 'REJECTED, Kandidat' }])
+      expect(list.props('notBooked')).toEqual([{ id: '99', name: 'REJECTED, Kandidat' }])
       expect(list.text()).toContain('REJECTED, Kandidat')
     }
   })

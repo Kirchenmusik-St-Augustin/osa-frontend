@@ -1,7 +1,7 @@
 import api from '@/services/api'
 
 export interface Artist {
-  id: number
+  id: string
   surname: string
   givenname: string
   description: string | null
@@ -12,7 +12,7 @@ export interface Artist {
 }
 
 export interface ArtistSearchResult {
-  id: number
+  id: string
   label: string
 }
 
@@ -42,7 +42,7 @@ export function useArtists() {
     return response.data
   }
 
-  async function get(id: number): Promise<Artist> {
+  async function get(id: string): Promise<Artist> {
     const response = await api.get<Artist>(`/artists/${id}`)
     return response.data
   }
@@ -52,12 +52,12 @@ export function useArtists() {
     return response.data
   }
 
-  async function update(id: number, payload: ArtistPayload): Promise<Artist> {
+  async function update(id: string, payload: ArtistPayload): Promise<Artist> {
     const response = await api.put<Artist>(`/artists/${id}`, payload)
     return response.data
   }
 
-  async function remove(id: number): Promise<void> {
+  async function remove(id: string): Promise<void> {
     await api.delete(`/artists/${id}`)
   }
 

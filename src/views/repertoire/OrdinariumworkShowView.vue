@@ -27,10 +27,7 @@ const fields = computed(() => {
 })
 
 onMounted(async () => {
-  const [loadedWork, loadedSetup] = await Promise.all([
-    get(Number(props.id)),
-    getSetup(Number(props.id)),
-  ])
+  const [loadedWork, loadedSetup] = await Promise.all([get(props.id), getSetup(props.id)])
   work.value = loadedWork
   setup.value = loadedSetup
 })
@@ -40,7 +37,7 @@ async function destroy(): Promise<void> {
   if (!confirmed) return
 
   try {
-    await remove(Number(props.id))
+    await remove(props.id)
     showToast('gelöscht.')
     await router.push({ name: 'repertoire-ordinariumworks-search' })
   } catch (error) {

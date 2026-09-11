@@ -6,7 +6,7 @@ import { usePropriumworks } from '@/composables/usePropriumworks'
 const router = useRouter()
 const { search } = usePropriumworks()
 
-function onSelect(id: number): void {
+function onSelect(id: string): void {
   void router.push({ name: 'repertoire-propriumworks-show', params: { id } })
 }
 </script>

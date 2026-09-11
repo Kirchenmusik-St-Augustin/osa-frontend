@@ -6,7 +6,7 @@ import { useArtists } from '@/composables/useArtists'
 const router = useRouter()
 const { search } = useArtists()
 
-function onSelect(id: number): void {
+function onSelect(id: string): void {
   void router.push({ name: 'repertoire-artists-show', params: { id } })
 }
 </script>

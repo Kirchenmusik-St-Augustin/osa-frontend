@@ -1,16 +1,16 @@
 import api from '@/services/api'
 
 export interface PerformanceLocation {
-  id: number
+  id: string
   name: string
   color: string
   address: string | null
 }
 
 export interface PerformancePropriumItem {
-  propriumelement_id: number
+  propriumelement_id: string
   propriumelement_name: string
-  propriumwork_id: number
+  propriumwork_id: string
   propriumwork_name: string
   artist_name: string
   description: string | null
@@ -23,7 +23,7 @@ export interface PerformanceRehearsal {
 }
 
 export interface PositionEntry {
-  id: number
+  id: string
   name: string
   quantity: number
   // Flags a since-archived Instrument/Voice/Choirjob still present in this
@@ -39,7 +39,7 @@ export interface PerformanceSetup {
 }
 
 export interface PositionRef {
-  id: number
+  id: string
   name: string
 }
 
@@ -56,10 +56,10 @@ export interface BookingStatus {
 }
 
 export interface PerformanceCalendarItem {
-  id: number
+  id: string
   schedule: string
   location: PerformanceLocation
-  ordinariumwork_id: number
+  ordinariumwork_id: string
   ordinariumwork_name: string
   ordinariumwork_artist_name: string
   ordinariumwork_demanding: boolean
@@ -71,16 +71,16 @@ export interface PerformanceCalendarItem {
 }
 
 export interface PerformanceShow {
-  id: number
+  id: string
   schedule: string
   location: PerformanceLocation
-  ordinariumwork_id: number
+  ordinariumwork_id: string
   ordinariumwork_name: string
   ordinariumwork_artist_name: string
   ordinariumwork_artist_description: string | null
   ordinariumwork_description: string | null
   ordinariumwork_demanding: boolean
-  artist_id: number | null
+  artist_id: string | null
   artist_name: string | null
   artist_description: string | null
   description: string | null
@@ -91,12 +91,12 @@ export interface PerformanceShow {
 }
 
 export interface PerformanceFormData {
-  id: number
+  id: string
   schedule: string
-  location_id: number
-  ordinariumwork_id: number
+  location_id: string
+  ordinariumwork_id: string
   ordinariumwork_label: string
-  artist_id: number | null
+  artist_id: string | null
   description: string | null
   choirjob_defaultfee: number
   instrument_defaultfee: number
@@ -110,7 +110,7 @@ export interface PerformanceFormData {
 }
 
 export interface AvailablePosition {
-  id: number
+  id: string
   name: string
 }
 
@@ -121,12 +121,12 @@ export interface PerformanceAvailableData {
   choirjobs: AvailablePosition[]
   locations: PerformanceLocation[]
   propriumelements: AvailablePosition[]
-  default_location_id: number | null
-  default_conductor_id: number | null
+  default_location_id: string | null
+  default_conductor_id: string | null
 }
 
 export interface PositionInput {
-  id: number
+  id: string
   quantity: number
 }
 
@@ -137,8 +137,8 @@ export interface PerformanceSetupInput {
 }
 
 export interface PerformancePropriumEntryInput {
-  propriumelement_id: number
-  propriumwork_id: number
+  propriumelement_id: string
+  propriumwork_id: string
 }
 
 export interface PerformanceRehearsalInput {
@@ -148,9 +148,9 @@ export interface PerformanceRehearsalInput {
 
 export interface PerformancePayload {
   schedule: string
-  location_id: number
-  ordinariumwork_id: number
-  artist_id: number | null
+  location_id: string
+  ordinariumwork_id: string
+  artist_id: string | null
   description: string | null
   choirjob_defaultfee: number
   instrument_defaultfee: number
@@ -163,11 +163,11 @@ export interface PerformancePayload {
 }
 
 export interface PerformanceResponse {
-  id: number
+  id: string
   schedule: string
-  location_id: number
-  ordinariumwork_id: number
-  artist_id: number | null
+  location_id: string
+  ordinariumwork_id: string
+  artist_id: string | null
   description: string | null
   choirjob_defaultfee: number
   instrument_defaultfee: number
@@ -192,12 +192,12 @@ export function usePerformances() {
     return response.data
   }
 
-  async function getDetail(id: number): Promise<PerformanceShow> {
+  async function getDetail(id: string): Promise<PerformanceShow> {
     const response = await api.get<PerformanceShow>(`/performances/${id}`)
     return response.data
   }
 
-  async function getFormData(id: number): Promise<PerformanceFormData> {
+  async function getFormData(id: string): Promise<PerformanceFormData> {
     const response = await api.get<PerformanceFormData>(`/performances/${id}/form`)
     return response.data
   }
@@ -207,12 +207,12 @@ export function usePerformances() {
     return response.data
   }
 
-  async function update(id: number, payload: PerformancePayload): Promise<PerformanceResponse> {
+  async function update(id: string, payload: PerformancePayload): Promise<PerformanceResponse> {
     const response = await api.put<PerformanceResponse>(`/performances/${id}`, payload)
     return response.data
   }
 
-  async function remove(id: number): Promise<void> {
+  async function remove(id: string): Promise<void> {
     await api.delete(`/performances/${id}`)
   }
 

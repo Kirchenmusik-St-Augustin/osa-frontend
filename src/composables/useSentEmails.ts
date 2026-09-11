@@ -1,14 +1,14 @@
 import api from '@/services/api'
 
 export interface SentEmailShort {
-  id: number
+  id: string
   datetime: string
   to: string | null
   subject: string | null
 }
 
 export interface SentEmailShow {
-  id: number
+  id: string
   mailer: string | null
   datetime: string
   from: string | null
@@ -28,7 +28,7 @@ export function useSentEmails() {
     return response.data
   }
 
-  async function get(id: number): Promise<SentEmailShow> {
+  async function get(id: string): Promise<SentEmailShow> {
     const response = await api.get<SentEmailShow>(`/administrator/sent-emails/${id}`)
     return response.data
   }

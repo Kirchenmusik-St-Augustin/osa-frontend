@@ -41,9 +41,9 @@ const showBilling = ref(false)
 
 const form = reactive({
   schedule: '',
-  location_id: null as number | null,
-  ordinariumwork: null as { id: number; label: string } | null,
-  artist_id: null as number | null,
+  location_id: null as string | null,
+  ordinariumwork: null as { id: string; label: string } | null,
+  artist_id: null as string | null,
   description: '' as string | null,
   choirjob_defaultfee: 35 as number | string,
   instrument_defaultfee: 60 as number | string,
@@ -106,7 +106,7 @@ onMounted(async () => {
 
   if (props.id) {
     try {
-      const formData = await getFormData(Number(props.id))
+      const formData = await getFormData(props.id)
       deletable.value = formData.deletable
       form.schedule = formData.schedule
       form.location_id = formData.location_id
@@ -178,7 +178,7 @@ const setupBaselineKey = computed(() =>
   props.id ? 'persisted' : (form.ordinariumwork?.id ?? 'unselected'),
 )
 
-async function selectOrdinariumwork(id: number): Promise<void> {
+async function selectOrdinariumwork(id: string): Promise<void> {
   const [work, setup] = await Promise.all([getOrdinariumwork(id), getSetup(id)])
   form.ordinariumwork = { id: work.id, label: `${work.artist_name}: ${work.name}` }
   // Choirjobs are deliberately left untouched -- Ordinariumworks have no
@@ -206,7 +206,7 @@ const unusedPropriumelements = computed(() =>
     (element) => !form.proprium.some((item) => item.propriumelement_id === element.id),
   ),
 )
-const selectedPropriumelementId = ref<number | null>(null)
+const selectedPropriumelementId = ref<string | null>(null)
 const selectedPropriumwork = ref<Propriumwork | null>(null)
 
 function openPropriumModal(): void {
@@ -221,7 +221,7 @@ function resetPropriumModal(): void {
   propriumModalInstance?.hide()
 }
 
-async function onSelectPropriumwork(id: number): Promise<void> {
+async function onSelectPropriumwork(id: string): Promise<void> {
   selectedPropriumwork.value = await getPropriumwork(id)
 }
 
@@ -265,7 +265,7 @@ function toNullableNumber(value: number | string | null): number | null {
 function buildPayload(): PerformancePayload {
   return {
     schedule: form.schedule,
-    location_id: form.location_id as number,
+    location_id: form.location_id as string,
     ordinariumwork_id: form.ordinariumwork!.id,
     artist_id: form.artist_id,
     description: form.description || null,
@@ -298,7 +298,7 @@ async function save(): Promise<void> {
   fieldErrors.value = {}
   try {
     const payload = buildPayload()
-    const saved = props.id ? await update(Number(props.id), payload) : await create(payload)
+    const saved = props.id ? await update(props.id, payload) : await create(payload)
     showToast('gespeichert.')
     const savedDate = parseWallClock(saved.schedule)
     await router.push({
@@ -319,7 +319,7 @@ async function destroy(): Promise<void> {
   if (!confirmed) return
 
   try {
-    await remove(Number(props.id))
+    await remove(props.id)
     showToast('gelöscht.')
     await router.push({ name: 'home', query: { year: backYear.value, month: backMonth.value } })
   } catch {

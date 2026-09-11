@@ -77,24 +77,24 @@ function makeAvailable(
   overrides: Partial<PerformanceAvailableData> = {},
 ): PerformanceAvailableData {
   return {
-    conductors: [{ id: 9, name: 'ORTNER, Erwin' }],
-    instruments: [{ id: 10, name: 'Fagott' }],
-    voices: [{ id: 20, name: 'Sopran' }],
-    choirjobs: [{ id: 30, name: 'Kantor' }],
-    locations: [{ id: 1, name: 'Augustinerkirche', color: '336699', address: null }],
-    propriumelements: [{ id: 40, name: 'Introitus' }],
-    default_location_id: 1,
-    default_conductor_id: 9,
+    conductors: [{ id: '9', name: 'ORTNER, Erwin' }],
+    instruments: [{ id: '10', name: 'Fagott' }],
+    voices: [{ id: '20', name: 'Sopran' }],
+    choirjobs: [{ id: '30', name: 'Kantor' }],
+    locations: [{ id: '1', name: 'Augustinerkirche', color: '336699', address: null }],
+    propriumelements: [{ id: '40', name: 'Introitus' }],
+    default_location_id: '1',
+    default_conductor_id: '9',
     ...overrides,
   }
 }
 
 function makeFormData(overrides: Partial<PerformanceFormData> = {}): PerformanceFormData {
   return {
-    id: 1,
+    id: '1',
     schedule: '2026-08-02T11:00:00',
-    location_id: 1,
-    ordinariumwork_id: 5,
+    location_id: '1',
+    ordinariumwork_id: '5',
     ordinariumwork_label: 'MOZART, Wolfgang: Krönungsmesse',
     artist_id: null,
     description: null,
@@ -150,28 +150,28 @@ describe('PerformanceFormView -- create mode', () => {
 
   it('selecting an Ordinariumwork fills the label and instrument/voice setup, leaving choirjobs untouched', async () => {
     const work: Ordinariumwork = {
-      id: 5,
+      id: '5',
       name: 'Krönungsmesse',
       description: null,
-      artist_id: 2,
+      artist_id: '2',
       artist_name: 'MOZART, Wolfgang',
       duration: 25,
       demanding: false,
     }
     const setup: OrdinariumworkSetup = {
-      instruments: [{ id: 10, name: 'Fagott', quantity: 2 }],
-      voices: [{ id: 20, name: 'Sopran', quantity: 4 }],
+      instruments: [{ id: '10', name: 'Fagott', quantity: 2 }],
+      voices: [{ id: '20', name: 'Sopran', quantity: 4 }],
     }
     mockGetOrdinariumwork.mockResolvedValueOnce(work)
     mockGetSetup.mockResolvedValueOnce(setup)
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 5)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
     await flushPromises()
 
-    expect(mockGetOrdinariumwork).toHaveBeenCalledWith(5)
-    expect(mockGetSetup).toHaveBeenCalledWith(5)
+    expect(mockGetOrdinariumwork).toHaveBeenCalledWith('5')
+    expect(mockGetSetup).toHaveBeenCalledWith('5')
     expect(wrapper.text()).toContain('MOZART, Wolfgang: Krönungsmesse')
     expect(findSaveButton(wrapper)?.attributes('disabled')).toBeUndefined()
     // Regression guard: the modal instance must actually be wired to the
@@ -182,22 +182,22 @@ describe('PerformanceFormView -- create mode', () => {
 
   it("creates a performance and navigates to the saved schedule's calendar month", async () => {
     mockGetOrdinariumwork.mockResolvedValueOnce({
-      id: 5,
+      id: '5',
       name: 'Krönungsmesse',
       description: null,
-      artist_id: 2,
+      artist_id: '2',
       artist_name: 'MOZART, Wolfgang',
       duration: 25,
       demanding: false,
     })
     mockGetSetup.mockResolvedValueOnce({ instruments: [], voices: [] })
     mockCreate.mockResolvedValueOnce({
-      id: 99,
+      id: '99',
       schedule: '2026-09-06T11:00:00',
     } as PerformanceResponse)
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 5)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
     await flushPromises()
 
     await wrapper.find('select#performance-location').setValue('1')
@@ -205,7 +205,7 @@ describe('PerformanceFormView -- create mode', () => {
     await flushPromises()
 
     expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ location_id: 1, ordinariumwork_id: 5 }),
+      expect.objectContaining({ location_id: '1', ordinariumwork_id: '5' }),
     )
     expect(mockShowToast).toHaveBeenCalledWith('gespeichert.')
     expect(mockPush).toHaveBeenCalledWith({ name: 'home', query: { year: 2026, month: 9 } })
@@ -213,10 +213,10 @@ describe('PerformanceFormView -- create mode', () => {
 
   it('shows a field-level validation error returned by the backend', async () => {
     mockGetOrdinariumwork.mockResolvedValueOnce({
-      id: 5,
+      id: '5',
       name: 'Krönungsmesse',
       description: null,
-      artist_id: 2,
+      artist_id: '2',
       artist_name: 'MOZART, Wolfgang',
       duration: 25,
       demanding: false,
@@ -231,7 +231,7 @@ describe('PerformanceFormView -- create mode', () => {
     })
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 5)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
     await flushPromises()
 
     await findSaveButton(wrapper)?.trigger('click')
@@ -243,39 +243,39 @@ describe('PerformanceFormView -- create mode', () => {
   it('resetting after switching Ordinariumwork targets the newly selected work, not the first one', async () => {
     mockGetOrdinariumwork
       .mockResolvedValueOnce({
-        id: 5,
+        id: '5',
         name: 'Krönungsmesse',
         description: null,
-        artist_id: 2,
+        artist_id: '2',
         artist_name: 'MOZART, Wolfgang',
         duration: 25,
         demanding: false,
       })
       .mockResolvedValueOnce({
-        id: 6,
+        id: '6',
         name: 'Nelsonmesse',
         description: null,
-        artist_id: 3,
+        artist_id: '3',
         artist_name: 'HAYDN, Joseph',
         duration: 30,
         demanding: false,
       })
     mockGetSetup
       .mockResolvedValueOnce({
-        instruments: [{ id: 10, name: 'Fagott', quantity: 2, active: true }],
+        instruments: [{ id: '10', name: 'Fagott', quantity: 2, active: true }],
         voices: [],
       })
       .mockResolvedValueOnce({
-        instruments: [{ id: 10, name: 'Fagott', quantity: 5, active: true }],
+        instruments: [{ id: '10', name: 'Fagott', quantity: 5, active: true }],
         voices: [],
       })
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
     await findSetupToggle(wrapper)!.trigger('click')
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 5)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
     await flushPromises()
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 6)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '6')
     await flushPromises()
 
     const instrumentsEditor = wrapper.findAllComponents(QuantityEditor)[0]!
@@ -295,16 +295,16 @@ describe('PerformanceFormView -- create mode', () => {
 
   it('shows no reset link right after picking the first Ordinariumwork when the panel was opened empty', async () => {
     mockGetOrdinariumwork.mockResolvedValueOnce({
-      id: 5,
+      id: '5',
       name: 'Krönungsmesse',
       description: null,
-      artist_id: 2,
+      artist_id: '2',
       artist_name: 'MOZART, Wolfgang',
       duration: 25,
       demanding: false,
     })
     mockGetSetup.mockResolvedValueOnce({
-      instruments: [{ id: 10, name: 'Fagott', quantity: 4, active: true }],
+      instruments: [{ id: '10', name: 'Fagott', quantity: 4, active: true }],
       voices: [],
     })
     const wrapper = mount(PerformanceFormView, { props: {} })
@@ -313,7 +313,7 @@ describe('PerformanceFormView -- create mode', () => {
     await findSetupToggle(wrapper)!.trigger('click')
     expect(wrapper.text()).not.toContain('auf derz. Werte zurücksetzen')
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 5)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
     await flushPromises()
 
     // If the baseline were still the empty array from the pre-selection
@@ -323,22 +323,22 @@ describe('PerformanceFormView -- create mode', () => {
 
   it('preselects the default location and conductor from available data', async () => {
     mockGetOrdinariumwork.mockResolvedValueOnce({
-      id: 5,
+      id: '5',
       name: 'Krönungsmesse',
       description: null,
-      artist_id: 2,
+      artist_id: '2',
       artist_name: 'MOZART, Wolfgang',
       duration: 25,
       demanding: false,
     })
     mockGetSetup.mockResolvedValueOnce({ instruments: [], voices: [] })
     mockCreate.mockResolvedValueOnce({
-      id: 99,
+      id: '99',
       schedule: '2026-09-06T11:00:00',
     } as PerformanceResponse)
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 5)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
     await flushPromises()
 
     // Deliberately does NOT set select#performance-location or a
@@ -350,7 +350,7 @@ describe('PerformanceFormView -- create mode', () => {
     await flushPromises()
 
     expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ location_id: 1, artist_id: 9 }),
+      expect.objectContaining({ location_id: '1', artist_id: '9' }),
     )
   })
 })
@@ -361,7 +361,7 @@ describe('PerformanceFormView -- edit mode', () => {
     const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGetFormData).toHaveBeenCalledWith(1)
+    expect(mockGetFormData).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('MOZART, Wolfgang: Krönungsmesse')
   })
 
@@ -377,7 +377,7 @@ describe('PerformanceFormView -- edit mode', () => {
     await deleteButton?.trigger('click')
     await flushPromises()
 
-    expect(mockRemove).toHaveBeenCalledWith(1)
+    expect(mockRemove).toHaveBeenCalledWith('1')
     expect(mockShowToast).toHaveBeenCalledWith('gelöscht.')
     expect(mockPush).toHaveBeenCalledWith({ name: 'home', query: { year: 2026, month: 8 } })
   })
@@ -392,37 +392,37 @@ describe('PerformanceFormView -- edit mode', () => {
 
   it('updates via the id-scoped endpoint on save', async () => {
     mockGetFormData.mockResolvedValueOnce(makeFormData())
-    mockUpdate.mockResolvedValueOnce({ id: 1, schedule: '2026-08-02T11:00:00' })
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
     const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
     await flushPromises()
 
     await findSaveButton(wrapper)?.trigger('click')
     await flushPromises()
 
-    expect(mockUpdate).toHaveBeenCalledWith(1, expect.objectContaining({ location_id: 1 }))
+    expect(mockUpdate).toHaveBeenCalledWith('1', expect.objectContaining({ location_id: '1' }))
   })
 
   it('resetting after switching Ordinariumwork mid-edit still targets the persisted setup', async () => {
     mockGetFormData.mockResolvedValueOnce(
       makeFormData({
         setup: {
-          instruments: [{ id: 10, name: 'Fagott', quantity: 3, active: true }],
+          instruments: [{ id: '10', name: 'Fagott', quantity: 3, active: true }],
           voices: [],
           choirjobs: [],
         },
       }),
     )
     mockGetOrdinariumwork.mockResolvedValueOnce({
-      id: 6,
+      id: '6',
       name: 'Nelsonmesse',
       description: null,
-      artist_id: 3,
+      artist_id: '3',
       artist_name: 'HAYDN, Joseph',
       duration: 30,
       demanding: false,
     })
     mockGetSetup.mockResolvedValueOnce({
-      instruments: [{ id: 10, name: 'Fagott', quantity: 9, active: true }],
+      instruments: [{ id: '10', name: 'Fagott', quantity: 9, active: true }],
       voices: [],
     })
     const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
@@ -433,7 +433,7 @@ describe('PerformanceFormView -- edit mode', () => {
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('3')
     expect(instrumentsEditor.text()).not.toContain('auf derz. Werte zurücksetzen')
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 6)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '6')
     await flushPromises()
 
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('9')
@@ -450,17 +450,17 @@ describe('PerformanceFormView -- edit mode', () => {
     mockGetAvailableData.mockResolvedValueOnce(
       makeAvailable({
         locations: [
-          { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
-          { id: 2, name: 'Domkirche', color: '336699', address: null },
+          { id: '1', name: 'Augustinerkirche', color: '336699', address: null },
+          { id: '2', name: 'Domkirche', color: '336699', address: null },
         ],
         conductors: [
-          { id: 9, name: 'ORTNER, Erwin' },
-          { id: 7, name: 'HAYDN, Joseph' },
+          { id: '9', name: 'ORTNER, Erwin' },
+          { id: '7', name: 'HAYDN, Joseph' },
         ],
       }),
     )
-    mockGetFormData.mockResolvedValueOnce(makeFormData({ location_id: 2, artist_id: 7 }))
-    mockUpdate.mockResolvedValueOnce({ id: 1, schedule: '2026-08-02T11:00:00' })
+    mockGetFormData.mockResolvedValueOnce(makeFormData({ location_id: '2', artist_id: '7' }))
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
     const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
     await flushPromises()
 
@@ -468,8 +468,8 @@ describe('PerformanceFormView -- edit mode', () => {
     await flushPromises()
 
     expect(mockUpdate).toHaveBeenCalledWith(
-      1,
-      expect.objectContaining({ location_id: 2, artist_id: 7 }),
+      '1',
+      expect.objectContaining({ location_id: '2', artist_id: '7' }),
     )
   })
 })
@@ -478,10 +478,10 @@ describe('PerformanceFormView -- Proprium editor', () => {
   it('adds a Proprium entry ordered by the propriumelements canon, then removes it', async () => {
     mockGetFormData.mockResolvedValueOnce(makeFormData())
     const propriumwork: Propriumwork = {
-      id: 7,
+      id: '7',
       name: 'Gregorianik I',
       description: 'Feierlich',
-      artist_id: 3,
+      artist_id: '3',
       artist_name: 'HAYDN, Joseph',
       duration: null,
       demanding: false,
@@ -494,7 +494,7 @@ describe('PerformanceFormView -- Proprium editor', () => {
     expect(mockModalShow).toHaveBeenCalled()
     // Two modals each embed their own SearchTypeahead (Ordinarium + Proprium)
     // -- scope to #propriumModal so this doesn't accidentally hit the other.
-    await wrapper.find('#propriumModal').findComponent(SearchTypeahead).vm.$emit('select', 7)
+    await wrapper.find('#propriumModal').findComponent(SearchTypeahead).vm.$emit('select', '7')
     await flushPromises()
     const addButton = wrapper.findAll('button').find((button) => button.text() === 'Hinzufügen')
     await addButton?.trigger('click')

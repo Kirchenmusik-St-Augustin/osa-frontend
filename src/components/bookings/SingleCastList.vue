@@ -34,7 +34,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'cast-changed': [cast: CastMember[]]
-  'remove-not-booked': [id: number]
+  'remove-not-booked': [id: string]
 }>()
 
 // SortableJS long-press tuning for touch: `delay` is how long a touch must
@@ -78,7 +78,7 @@ function handleReorder(next: CastMember[]): void {
   emit('cast-changed', next)
 }
 
-function removeNotBooked(id: number): void {
+function removeNotBooked(id: string): void {
   emit('remove-not-booked', id)
 }
 
@@ -90,7 +90,7 @@ function move(index: number, direction: 'up' | 'down'): void {
   emit('cast-changed', next)
 }
 
-function remove(id: number): void {
+function remove(id: string): void {
   emit(
     'cast-changed',
     props.cast.filter((item) => item.id !== id),

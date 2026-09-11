@@ -28,7 +28,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeUser(overrides: Partial<UserAdministrationDetail> = {}): UserAdministrationDetail {
   return {
-    id: 1,
+    id: '1',
     surname: 'MUSTER',
     givenname: 'Max',
     email: 'max@example.com',
@@ -58,7 +58,7 @@ describe('UserAdministrationShowView', () => {
     const wrapper = mount(UserAdministrationShowView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('MUSTER, Max')
     expect(wrapper.text()).toContain('max@example.com')
   })
@@ -99,7 +99,7 @@ describe('UserAdministrationShowView', () => {
       ?.trigger('click')
     await flushPromises()
 
-    expect(mockRestore).toHaveBeenCalledWith(1)
+    expect(mockRestore).toHaveBeenCalledWith('1')
     expect(mockShowToast).toHaveBeenCalledWith('Aktion durchgeführt')
     expect(wrapper.text()).toContain('nein')
   })
@@ -115,7 +115,7 @@ describe('UserAdministrationShowView', () => {
     await button?.trigger('click')
     await flushPromises()
 
-    expect(mockUnlock).toHaveBeenCalledWith(1)
+    expect(mockUnlock).toHaveBeenCalledWith('1')
   })
 
   it('shows "setze ein generiertes Passwort" for an unlocked account and displays the one-time password', async () => {
@@ -130,7 +130,7 @@ describe('UserAdministrationShowView', () => {
     await button?.trigger('click')
     await flushPromises()
 
-    expect(mockSetPassword).toHaveBeenCalledWith(1)
+    expect(mockSetPassword).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('Neues Passwort')
     expect(wrapper.text()).toContain('aB3xY9kLmQ')
     expect(wrapper.text()).toContain('wird nur einmal angezeigt!')

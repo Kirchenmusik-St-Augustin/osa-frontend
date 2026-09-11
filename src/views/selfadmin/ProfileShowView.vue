@@ -30,7 +30,7 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
-async function removeOauth2(bindingId: number): Promise<void> {
+async function removeOauth2(bindingId: string): Promise<void> {
   const confirmed = await confirmAction('Soll diese Binding tatsächlich entfernt werden?')
   if (!confirmed) return
 

@@ -14,12 +14,12 @@ vi.mock('@/stores/auth', () => ({
 
 function makeBilling(overrides: Partial<PerformanceBilling['billing']> = {}): PerformanceBilling {
   return {
-    id: 1,
+    id: '1',
     ordinariumwork_name: 'Krönungsmesse',
     ordinariumwork_artist_name: 'MOZART, Wolfgang',
     artist_name: null,
     schedule: '2026-08-02T11:00:00',
-    location: { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
+    location: { id: '1', name: 'Augustinerkirche', color: '336699', address: null },
     user_booking: { status: 0, position: null, at: null },
     proprium: [],
     demanding_proprium: false,
@@ -28,10 +28,10 @@ function makeBilling(overrides: Partial<PerformanceBilling['billing']> = {}): Pe
       instruments: {
         items: [
           {
-            id: 10,
+            id: '10',
             name: 'Fagott',
             quantity: 1,
-            positions: [{ id: 5, name: 'HUBER, Franz', fee: 60 }],
+            positions: [{ id: '5', name: 'HUBER, Franz', fee: 60 }],
             sum: 60,
           },
         ],
@@ -58,7 +58,7 @@ describe('BillingView', () => {
     const wrapper = mount(BillingView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGetBilling).toHaveBeenCalledWith(1)
+    expect(mockGetBilling).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('Fagott')
     expect(wrapper.text()).toContain('HUBER, Franz')
     expect(wrapper.text()).toContain('90')
@@ -70,7 +70,7 @@ describe('BillingView', () => {
         instruments: {
           items: [
             {
-              id: 10,
+              id: '10',
               name: 'Fagott',
               quantity: 1,
               positions: [{ id: null, name: 'N. N.', fee: 60 }],

@@ -24,7 +24,7 @@ import { parseWallClock } from '@/services/dateFormat'
 // information and column labels, without copying Legacy's
 // table-inside-a-table-cell markup.
 const props = defineProps<{ id: string }>()
-const performanceId = computed(() => Number(props.id))
+const performanceId = computed(() => props.id)
 
 const router = useRouter()
 const { getCastPage, saveCast } = useBookings()
@@ -73,8 +73,8 @@ const backTarget = computed(() => {
   }
 })
 
-const allBooked = computed((): { id: number; name: string }[] => {
-  const all: { id: number; name: string }[] = []
+const allBooked = computed((): { id: string; name: string }[] => {
+  const all: { id: string; name: string }[] = []
   for (const type of POSITION_TYPES) {
     for (const item of form.cast[type]) {
       for (const member of item.cast) all.push({ id: member.id, name: member.name })
@@ -84,7 +84,7 @@ const allBooked = computed((): { id: number; name: string }[] => {
 })
 
 interface DisplayItem {
-  id: number
+  id: string
   name: string
   quantity: number
   cast: CastMember[]
@@ -101,17 +101,17 @@ function itemsFor(type: PositionType): DisplayItem[] {
   }))
 }
 
-function bookableFor(type: PositionType, itemId: number): BookableGroup {
+function bookableFor(type: PositionType, itemId: string): BookableGroup {
   const fallback: BookableGroup = { requesting: [], other: [] }
   return page.value?.staff[type].find((entry) => entry.id === itemId)?.bookable ?? fallback
 }
 
-function popularFor(type: PositionType, itemId: number) {
+function popularFor(type: PositionType, itemId: string) {
   if (type === 'choirjobs') return undefined // always empty, see backend booking_service._get_popular
-  return page.value?.popular[type][String(itemId)]
+  return page.value?.popular[type][itemId]
 }
 
-function handleCastChanged(type: PositionType, itemId: number, cast: CastMember[]): void {
+function handleCastChanged(type: PositionType, itemId: string, cast: CastMember[]): void {
   const section = form.cast[type]
   const index = section.findIndex((item) => item.id === itemId)
   if (index === -1) return
@@ -119,9 +119,9 @@ function handleCastChanged(type: PositionType, itemId: number, cast: CastMember[
 }
 
 function handleAddTo(
-  _itemId: number,
+  _itemId: string,
   stack: 'cast' | 'notBooked',
-  candidates: { id: number; name: string; fee: number }[],
+  candidates: { id: string; name: string; fee: number }[],
 ): void {
   if (stack !== 'notBooked') return
   for (const candidate of candidates) {
@@ -131,7 +131,7 @@ function handleAddTo(
   }
 }
 
-function removeNotBooked(id: number): void {
+function removeNotBooked(id: string): void {
   form.not_booked = form.not_booked.filter((entry) => entry.id !== id)
 }
 

@@ -31,10 +31,10 @@ vi.mock('@/services/notifications', () => ({
 
 function makeWork(overrides: Partial<Propriumwork> = {}): Propriumwork {
   return {
-    id: 1,
+    id: '1',
     name: 'Introitus',
     description: null,
-    artist_id: 2,
+    artist_id: '2',
     artist_name: 'HAYDN, Joseph',
     duration: 5,
     demanding: false,
@@ -48,12 +48,12 @@ beforeEach(() => {
   // when several async composable mocks are chained per test.
   vi.resetAllMocks()
   mockConfirmAction.mockResolvedValue(true)
-  mockListComposers.mockResolvedValue([{ id: 2, label: 'HAYDN, Joseph' }])
+  mockListComposers.mockResolvedValue([{ id: '2', label: 'HAYDN, Joseph' }])
 })
 
 describe('PropriumworkFormView', () => {
   it('does not fetch an existing work when creating', async () => {
-    mockCreate.mockResolvedValueOnce(makeWork({ id: 9 }))
+    mockCreate.mockResolvedValueOnce(makeWork({ id: '9' }))
     const wrapper = mount(PropriumworkFormView, { props: {} })
     await flushPromises()
 
@@ -63,7 +63,7 @@ describe('PropriumworkFormView', () => {
   })
 
   it('creates a new work on save', async () => {
-    mockCreate.mockResolvedValueOnce(makeWork({ id: 9 }))
+    mockCreate.mockResolvedValueOnce(makeWork({ id: '9' }))
     const wrapper = mount(PropriumworkFormView, { props: {} })
     await flushPromises()
 
@@ -76,14 +76,14 @@ describe('PropriumworkFormView', () => {
     expect(mockCreate).toHaveBeenCalledWith({
       name: 'Graduale',
       description: null,
-      artist_id: 2,
+      artist_id: '2',
       duration: 10,
       demanding: false,
     })
     expect(mockShowToast).toHaveBeenCalledWith('gespeichert.')
     expect(mockPush).toHaveBeenCalledWith({
       name: 'repertoire-propriumworks-show',
-      params: { id: 9 },
+      params: { id: '9' },
     })
   })
 
@@ -93,7 +93,7 @@ describe('PropriumworkFormView', () => {
     const wrapper = mount(PropriumworkFormView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
     expect((wrapper.find('input#propriumwork-name').element as HTMLInputElement).value).toBe(
       'Introitus',
     )
@@ -101,7 +101,7 @@ describe('PropriumworkFormView', () => {
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(mockUpdate).toHaveBeenCalledWith(1, expect.objectContaining({ name: 'Introitus' }))
+    expect(mockUpdate).toHaveBeenCalledWith('1', expect.objectContaining({ name: 'Introitus' }))
   })
 
   it('shows field-level validation errors under the matching input', async () => {

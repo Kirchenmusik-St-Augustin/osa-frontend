@@ -16,7 +16,7 @@ export type { BookingStatus, PositionRef }
 // this API are built from scratch in Schritt 6 (Schritt 6 plan A.3/B.1).
 
 export interface CastMember {
-  id: number
+  id: string
   name: string
   fee: number
   // Only ever populated for choirjobs cast members (auto-sort-by-voice
@@ -26,7 +26,7 @@ export interface CastMember {
 }
 
 export interface CastSetupItem {
-  id: number
+  id: string
   name: string
   cast: CastMember[]
 }
@@ -38,7 +38,7 @@ export interface CastSection {
 }
 
 export interface NotBookedEntry {
-  id: number
+  id: string
   name: string
 }
 
@@ -48,7 +48,7 @@ export interface CastFormData {
 }
 
 export interface BookableUser {
-  id: number
+  id: string
   name: string
   // Only ever populated for choirjobs candidates -- see CastMember.
   voice_name?: string | null
@@ -61,7 +61,7 @@ export interface BookableGroup {
 }
 
 export interface StaffItem {
-  id: number
+  id: string
   name: string
   bookable: BookableGroup
 }
@@ -73,13 +73,13 @@ export interface StaffSection {
 }
 
 export interface PopularFrequentUser {
-  id: number
+  id: string
   name: string
   total: number
 }
 
 export interface PopularRecentUser {
-  id: number
+  id: string
   name: string
   booked: string
 }
@@ -89,9 +89,9 @@ export interface PopularItem {
   recent: PopularRecentUser[]
 }
 
-// JSON serializes the backend's dict[int, PopularItemOutput] keys as
+// JSON serializes the backend's dict[uuid.UUID, PopularItemOutput] keys as
 // strings -- the Instrument/Voice/Choirjob id is still the intended key,
-// just accessed as `popular.instruments[String(instrumentId)]`.
+// just accessed as `popular.instruments[instrumentId]`.
 export interface PopularSection {
   instruments: Record<string, PopularItem>
   voices: Record<string, PopularItem>
@@ -99,7 +99,7 @@ export interface PopularSection {
 }
 
 export interface Fee {
-  id: number
+  id: string
   name: string
   amount: number
 }
@@ -110,7 +110,7 @@ export interface Fee {
 // PerformanceShortBase here to avoid a churny rename of this file's other
 // PerformanceShortBase-derived types.
 export interface PerformanceShortBase {
-  id: number
+  id: string
   ordinariumwork_name: string
   ordinariumwork_artist_name: string
   artist_name: string | null
@@ -123,7 +123,7 @@ export interface PerformanceShortBase {
 }
 
 export interface PerformanceCastPage {
-  id: number
+  id: string
   ordinariumwork_name: string
   ordinariumwork_artist_name: string
   artist_name: string | null
@@ -139,12 +139,12 @@ export interface PerformanceCastPage {
 }
 
 export interface CastMemberInput {
-  id: number
+  id: string
   fee: number
 }
 
 export interface CastSetupItemInput {
-  id: number
+  id: string
   cast: CastMemberInput[]
 }
 
@@ -156,17 +156,17 @@ export interface CastSectionInput {
 
 export interface CastSavePayload {
   cast: CastSectionInput
-  not_booked: { id: number }[]
+  not_booked: { id: string }[]
 }
 
 export interface BillingPosition {
-  id: number | null
+  id: string | null
   name: string
   fee: number
 }
 
 export interface BillingItem {
-  id: number
+  id: string
   name: string
   quantity: number
   positions: BillingPosition[]
@@ -204,7 +204,7 @@ export interface PerformanceBilling extends PerformanceShortBase {
 }
 
 export interface RequestOrBookingEntry {
-  id: number
+  id: string
   name: string
   status: BookingStatus
 }
@@ -218,7 +218,7 @@ export interface PerformanceMessageToCast extends PerformanceShortBase {
 }
 
 export interface MessageRecipient {
-  id: number
+  id: string
   surname: string
   givenname: string
   has_email: boolean
@@ -241,37 +241,37 @@ export function nextActionFor(status: number): 'request' | 'cancel' | null {
 // mirrors usePerformances.ts's shape, kept as its OWN composable per that
 // file's own "separate composable" note.
 export function useBookings() {
-  async function getCastPage(performanceId: number): Promise<PerformanceCastPage> {
+  async function getCastPage(performanceId: string): Promise<PerformanceCastPage> {
     const response = await api.get<PerformanceCastPage>(`/performances/${performanceId}/cast`)
     return response.data
   }
 
-  async function saveCast(performanceId: number, payload: CastSavePayload): Promise<CastFormData> {
+  async function saveCast(performanceId: string, payload: CastSavePayload): Promise<CastFormData> {
     const response = await api.post<CastFormData>(`/performances/${performanceId}/cast`, payload)
     return response.data
   }
 
   // No status parameter -- the server computes the user's current status
   // and dispatches the transition itself.
-  async function changeBookingStatus(performanceId: number): Promise<BookingStatus> {
+  async function changeBookingStatus(performanceId: string): Promise<BookingStatus> {
     const response = await api.post<BookingStatus>(`/performances/${performanceId}/booking-status`)
     return response.data
   }
 
-  async function getMyBookingStatus(performanceId: number): Promise<BookingStatus> {
+  async function getMyBookingStatus(performanceId: string): Promise<BookingStatus> {
     const response = await api.get<BookingStatus>(
       `/performances/${performanceId}/my-booking-status`,
     )
     return response.data
   }
 
-  async function getBilling(performanceId: number): Promise<PerformanceBilling> {
+  async function getBilling(performanceId: string): Promise<PerformanceBilling> {
     const response = await api.get<PerformanceBilling>(`/performances/${performanceId}/billing`)
     return response.data
   }
 
   async function getRequestsAndBookings(
-    performanceId: number,
+    performanceId: string,
   ): Promise<PerformanceRequestsAndBookings> {
     const response = await api.get<PerformanceRequestsAndBookings>(
       `/performances/${performanceId}/requests-and-bookings`,
@@ -279,7 +279,7 @@ export function useBookings() {
     return response.data
   }
 
-  async function getMessageToCastPage(performanceId: number): Promise<PerformanceMessageToCast> {
+  async function getMessageToCastPage(performanceId: string): Promise<PerformanceMessageToCast> {
     const response = await api.get<PerformanceMessageToCast>(
       `/performances/${performanceId}/message-to-cast`,
     )
@@ -287,9 +287,9 @@ export function useBookings() {
   }
 
   async function getMessageRecipients(
-    performanceId: number,
+    performanceId: string,
     type: string | null,
-    id: number | null,
+    id: string | null,
   ): Promise<MessageRecipient[]> {
     const response = await api.get<MessageRecipient[]>(
       `/performances/${performanceId}/message-to-cast/recipients`,
@@ -299,8 +299,8 @@ export function useBookings() {
   }
 
   async function sendMessageToCast(
-    performanceId: number,
-    recipientIds: number[],
+    performanceId: string,
+    recipientIds: string[],
     message: string,
   ): Promise<void> {
     await api.post(`/performances/${performanceId}/message-to-cast/send`, {

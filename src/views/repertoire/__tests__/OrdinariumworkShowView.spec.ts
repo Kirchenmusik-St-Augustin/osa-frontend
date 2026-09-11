@@ -26,10 +26,10 @@ vi.mock('@/services/notifications', () => ({
 
 function makeWork(overrides: Partial<Ordinariumwork> = {}): Ordinariumwork {
   return {
-    id: 1,
+    id: '1',
     name: 'Krönungsmesse',
     description: null,
-    artist_id: 2,
+    artist_id: '2',
     artist_name: 'MOZART, Wolfgang',
     duration: null,
     demanding: false,
@@ -52,8 +52,8 @@ describe('OrdinariumworkShowView', () => {
     const wrapper = mount(OrdinariumworkShowView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
-    expect(mockGetSetup).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
+    expect(mockGetSetup).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('Krönungsmesse')
     expect(wrapper.text()).toContain('MOZART, Wolfgang')
     expect(wrapper.text()).toContain('25 Minuten')
@@ -72,7 +72,7 @@ describe('OrdinariumworkShowView', () => {
   it('renders the instruments/voices setup tables only when non-empty', async () => {
     mockGet.mockResolvedValueOnce(makeWork())
     mockGetSetup.mockResolvedValueOnce(
-      makeSetup({ instruments: [{ id: 1, name: 'Fagott', quantity: 2 }] }),
+      makeSetup({ instruments: [{ id: '1', name: 'Fagott', quantity: 2 }] }),
     )
     const wrapper = mount(OrdinariumworkShowView, { props: { id: '1' } })
     await flushPromises()

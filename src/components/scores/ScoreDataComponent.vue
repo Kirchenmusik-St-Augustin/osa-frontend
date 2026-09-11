@@ -3,7 +3,7 @@
 import { formatUtcDateTime } from '@/services/dateFormat'
 
 defineProps<{
-  score?: { id: number; created_at: string | null; updated_at: string | null } | null
+  score?: { id: string; created_at: string | null; updated_at: string | null } | null
 }>()
 </script>
 

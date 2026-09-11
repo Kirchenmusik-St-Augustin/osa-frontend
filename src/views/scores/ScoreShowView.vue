@@ -18,7 +18,7 @@ const fields = reactive<ScoreFieldsPayload>({})
 const fieldsConfig = ref<Record<string, ScoreFieldConfig>>({})
 
 onMounted(async () => {
-  const [scoreData, config] = await Promise.all([get(Number(props.id)), getFieldsConfig()])
+  const [scoreData, config] = await Promise.all([get(props.id), getFieldsConfig()])
   score.value = scoreData
   Object.assign(fields, scoreData.fields)
   fieldsConfig.value = config

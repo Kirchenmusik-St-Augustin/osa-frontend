@@ -1,19 +1,19 @@
 import api from '@/services/api'
 
 export interface UserAdministrationSearchResult {
-  id: number
+  id: string
   label: string
 }
 
 export interface UserAdministrationDeletedEntry {
-  id: number
+  id: string
   surname: string
   givenname: string
   email: string | null
 }
 
 export interface UserAdministrationDetail {
-  id: number
+  id: string
   surname: string
   givenname: string
   email: string | null
@@ -46,26 +46,26 @@ export function useUserAdministration() {
     return response.data
   }
 
-  async function get(id: number): Promise<UserAdministrationActionResult> {
+  async function get(id: string): Promise<UserAdministrationActionResult> {
     const response = await api.get<UserAdministrationActionResult>(`/administrator/users/${id}`)
     return response.data
   }
 
-  async function restore(id: number): Promise<UserAdministrationActionResult> {
+  async function restore(id: string): Promise<UserAdministrationActionResult> {
     const response = await api.post<UserAdministrationActionResult>(
       `/administrator/users/${id}/restore`,
     )
     return response.data
   }
 
-  async function unlock(id: number): Promise<UserAdministrationActionResult> {
+  async function unlock(id: string): Promise<UserAdministrationActionResult> {
     const response = await api.post<UserAdministrationActionResult>(
       `/administrator/users/${id}/unlock`,
     )
     return response.data
   }
 
-  async function setPassword(id: number): Promise<UserAdministrationActionResult> {
+  async function setPassword(id: string): Promise<UserAdministrationActionResult> {
     const response = await api.post<UserAdministrationActionResult>(
       `/administrator/users/${id}/set-password`,
     )

@@ -30,7 +30,7 @@ const props = defineProps<{
 // SingleCastList's auto-sort can place a freshly-added chorister into the
 // correct group immediately, without a reload.
 type Candidate = {
-  id: number
+  id: string
   name: string
   fee: number
   voice_name?: string | null
@@ -41,19 +41,20 @@ const emit = defineEmits<{
   'add-to': [payload: { stack: 'cast' | 'notBooked'; candidates: Candidate[] }]
 }>()
 
-// Default Fee id 3 stays hardcoded -- the structural 1:1 DB transfer
-// carries over the exact same Fee rows (and ids) Legacy has, so this
-// mirrors Legacy's own hardcoded selector default 1:1 (Schritt 6 plan
-// B.2/B.3).
-const DEFAULT_FEE_ID = 3
+// Default Fee looked up by name (unique per fees_name_key) -- mirrors
+// Legacy's own hardcoded selector default (`find(props.fees, ["id", 3])`),
+// but a stable business key instead of a raw PK: since the UUIDv7
+// migration, a Fee's id is server-generated and unpredictable, so there is
+// no literal id left to hardcode a default against.
+const DEFAULT_FEE_NAME = 'Instrumentalist'
 
-const selectedFeeId = ref<number>(
-  props.fees.find((fee) => fee.id === DEFAULT_FEE_ID)?.id ?? props.fees[0]?.id ?? 0,
+const selectedFeeId = ref<string>(
+  props.fees.find((fee) => fee.name === DEFAULT_FEE_NAME)?.id ?? props.fees[0]?.id ?? '',
 )
-const selectedCandidateIds = ref<number[]>([])
+const selectedCandidateIds = ref<string[]>([])
 
 const excludedIds = computed(() => {
-  const ids = new Set<number>()
+  const ids = new Set<string>()
   for (const user of props.allBooked) ids.add(user.id)
   for (const user of props.notBooked) ids.add(user.id)
   return ids
@@ -77,7 +78,7 @@ const selectGroups = computed((): MultiSelectGroup[] => {
   return groups
 })
 
-function candidatesFor(ids: number[]): Candidate[] {
+function candidatesFor(ids: string[]): Candidate[] {
   const allOptions = [...requestingOptions.value, ...otherOptions.value]
   const fee = props.fees.find((candidate) => candidate.id === selectedFeeId.value)?.amount ?? 0
   return ids
@@ -119,7 +120,7 @@ function addTo(stack: 'cast' | 'notBooked'): void {
     <div class="my-2">ausgewählte Personen:</div>
     <div class="mb-2">Entweder um</div>
     <div class="mb-2">
-      <select v-model.number="selectedFeeId" class="form-select form-select-sm">
+      <select v-model="selectedFeeId" class="form-select form-select-sm">
         <option v-for="fee in fees" :key="fee.id" :value="fee.id">
           {{ fee.amount }},- ({{ fee.name }})
         </option>

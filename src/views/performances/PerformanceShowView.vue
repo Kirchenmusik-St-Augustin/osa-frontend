@@ -21,7 +21,7 @@ const backQuery = computed(() => {
 })
 
 onMounted(async () => {
-  performance.value = await getDetail(Number(props.id))
+  performance.value = await getDetail(props.id)
 })
 </script>
 

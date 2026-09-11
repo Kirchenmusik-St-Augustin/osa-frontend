@@ -28,7 +28,7 @@ const ready = ref(false)
 
 async function loadInitialFields(): Promise<ScoreFieldsPayload> {
   if (!props.id) return getDefaults()
-  score.value = await get(Number(props.id))
+  score.value = await get(props.id)
   return score.value.fields
 }
 
@@ -46,7 +46,7 @@ async function save(): Promise<void> {
   submitting.value = true
   fieldErrors.value = {}
   try {
-    const saved = props.id ? await update(Number(props.id), fields) : await create(fields)
+    const saved = props.id ? await update(props.id, fields) : await create(fields)
     showToast('gespeichert.')
     await router.push({ name: 'repertoire-scores-show', params: { id: saved.id } })
   } catch (error) {

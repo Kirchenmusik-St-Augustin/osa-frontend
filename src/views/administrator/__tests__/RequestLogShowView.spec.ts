@@ -10,11 +10,11 @@ vi.mock('@/composables/useRequestLogs', () => ({
 
 function makeEntry(overrides: Partial<RequestLogShow> = {}): RequestLogShow {
   return {
-    id: 1,
+    id: '1',
     client_ip: '203.0.113.1',
     client_ips: ['203.0.113.1', '198.51.100.1'],
     client_user_agent_string: 'pytest-agent/1.0',
-    user_id: 7,
+    user_id: '7',
     user_name: 'SCHINDLER, Margot',
     request_method: 'POST',
     request_path: '/auth/login',
@@ -37,7 +37,7 @@ describe('RequestLogShowView', () => {
     const wrapper = mount(RequestLogShowView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('SCHINDLER, Margot (ID: 7)')
     expect(wrapper.text()).toContain('203.0.113.1 (203.0.113.1 / 198.51.100.1)')
     expect(wrapper.text()).toContain('pytest-agent/1.0')
@@ -67,7 +67,7 @@ describe('RequestLogShowView', () => {
 
   it('links "zurück" to the per-user view for the entry\'s own day', async () => {
     mockGet.mockResolvedValueOnce(
-      makeEntry({ user_id: 7, created_at: '2026-03-15T09:00:00+00:00' }),
+      makeEntry({ user_id: '7', created_at: '2026-03-15T09:00:00+00:00' }),
     )
     const wrapper = mount(RequestLogShowView, { props: { id: '1' } })
     await flushPromises()
@@ -75,7 +75,7 @@ describe('RequestLogShowView', () => {
     const backLink = wrapper.findComponent(RouterLinkStub)
     expect(backLink.props('to')).toEqual({
       name: 'administrator-request-logs-user',
-      params: { userId: 7 },
+      params: { userId: '7' },
       query: { year: 2026, month: 3, day: 15 },
     })
   })

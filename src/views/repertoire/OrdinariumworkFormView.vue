@@ -22,7 +22,7 @@ const { get, getSetup, getAvailablePositions, create, update } = useOrdinariumwo
 const form = reactive({
   name: '',
   description: '' as string | null,
-  artist_id: null as number | null,
+  artist_id: null as string | null,
   duration: null as number | string | null,
   demanding: false,
   setup: {
@@ -50,7 +50,7 @@ onMounted(async () => {
   available.value = availablePositions
 
   if (props.id) {
-    const [work, setup] = await Promise.all([get(Number(props.id)), getSetup(Number(props.id))])
+    const [work, setup] = await Promise.all([get(props.id), getSetup(props.id)])
     form.name = work.name
     form.description = work.description
     form.artist_id = work.artist_id
@@ -76,7 +76,7 @@ async function save(): Promise<void> {
   const payload = {
     name: form.name,
     description: form.description || null,
-    artist_id: form.artist_id as number,
+    artist_id: form.artist_id as string,
     duration: toNullableNumber(form.duration),
     demanding: form.demanding,
     setup: {
@@ -86,7 +86,7 @@ async function save(): Promise<void> {
   }
 
   try {
-    const work = props.id ? await update(Number(props.id), payload) : await create(payload)
+    const work = props.id ? await update(props.id, payload) : await create(payload)
     showToast('gespeichert.')
     await router.push({ name: 'repertoire-ordinariumworks-show', params: { id: work.id } })
   } catch (error) {

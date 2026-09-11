@@ -23,7 +23,7 @@ onMounted(load)
 // Mirrors PerformanceCalendarView.vue's handler: server computes the actual
 // transition itself, a full reload afterward mirrors Legacy's own
 // Inertia GET-revisit.
-async function handleChangeStatus(performanceId: number): Promise<void> {
+async function handleChangeStatus(performanceId: string): Promise<void> {
   const confirmed = await confirmAction()
   if (!confirmed) return
 

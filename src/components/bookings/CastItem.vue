@@ -20,7 +20,7 @@ import SingleCastSelector from './SingleCastSelector.vue'
 // freshly-added chorister can be placed into the correct auto-sort group
 // immediately, without a reload.
 type CastCandidate = {
-  id: number
+  id: string
   name: string
   fee: number
   voice_name?: string | null
@@ -29,7 +29,7 @@ type CastCandidate = {
 
 const props = defineProps<{
   type: 'instruments' | 'voices' | 'choirjobs'
-  item: { id: number; name: string; quantity: number }
+  item: { id: string; name: string; quantity: number }
   cast: CastMember[]
   bookable: BookableGroup
   allBooked: BookableUser[]
@@ -39,9 +39,9 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'cast-changed': [itemId: number, cast: CastMember[]]
-  'add-to': [itemId: number, stack: 'cast' | 'notBooked', candidates: CastCandidate[]]
-  'remove-not-booked': [id: number]
+  'cast-changed': [itemId: string, cast: CastMember[]]
+  'add-to': [itemId: string, stack: 'cast' | 'notBooked', candidates: CastCandidate[]]
+  'remove-not-booked': [id: string]
 }>()
 
 const open = ref(false)
@@ -79,7 +79,7 @@ function reset(): void {
   emit('cast-changed', props.item.id, JSON.parse(JSON.stringify(castOrig)) as CastMember[])
 }
 
-function handleRemoveNotBooked(id: number): void {
+function handleRemoveNotBooked(id: string): void {
   emit('remove-not-booked', id)
 }
 </script>

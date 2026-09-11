@@ -35,7 +35,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeScore(overrides: Partial<Score> = {}): Score {
   return {
-    id: 1,
+    id: '1',
     created_at: '2026-01-01T10:00:00+00:00',
     updated_at: null,
     fields: { werk: 'Requiem', kasten: 'A' },
@@ -67,7 +67,7 @@ describe('ScoreFormView', () => {
     const wrapper = mount(ScoreFormView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
     expect(mockGetDefaults).not.toHaveBeenCalled()
     expect(wrapper.findComponent(ScoreFieldsComponent).props('modelValue')).toEqual({
       werk: 'Requiem',
@@ -91,7 +91,7 @@ describe('ScoreFormView', () => {
   it('creates the score, toasts, and navigates to its show page on success', async () => {
     mockGetDefaults.mockResolvedValueOnce({ werk: 'Requiem' })
     mockConfirmAction.mockResolvedValueOnce(true)
-    mockCreate.mockResolvedValueOnce(makeScore({ id: 9 }))
+    mockCreate.mockResolvedValueOnce(makeScore({ id: '9' }))
     const wrapper = mount(ScoreFormView)
     await flushPromises()
 
@@ -102,21 +102,21 @@ describe('ScoreFormView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('gespeichert.')
     expect(mockPush).toHaveBeenCalledWith({
       name: 'repertoire-scores-show',
-      params: { id: 9 },
+      params: { id: '9' },
     })
   })
 
   it('updates the score when editing', async () => {
-    mockGet.mockResolvedValueOnce(makeScore({ id: 3 }))
+    mockGet.mockResolvedValueOnce(makeScore({ id: '3' }))
     mockConfirmAction.mockResolvedValueOnce(true)
-    mockUpdate.mockResolvedValueOnce(makeScore({ id: 3 }))
+    mockUpdate.mockResolvedValueOnce(makeScore({ id: '3' }))
     const wrapper = mount(ScoreFormView, { props: { id: '3' } })
     await flushPromises()
 
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(mockUpdate).toHaveBeenCalledWith(3, { werk: 'Requiem', kasten: 'A' })
+    expect(mockUpdate).toHaveBeenCalledWith('3', { werk: 'Requiem', kasten: 'A' })
   })
 
   it('shows field errors and a generic toast when saving fails', async () => {
@@ -154,7 +154,7 @@ describe('ScoreFormView', () => {
     const createBackLink = createWrapper.findComponent(RouterLinkStub)
     expect(createBackLink.props('to')).toEqual({ name: 'repertoire-scores-search' })
 
-    mockGet.mockResolvedValueOnce(makeScore({ id: 4 }))
+    mockGet.mockResolvedValueOnce(makeScore({ id: '4' }))
     const editWrapper = mount(ScoreFormView, { props: { id: '4' } })
     await flushPromises()
     const editBackLink = editWrapper.findComponent(RouterLinkStub)

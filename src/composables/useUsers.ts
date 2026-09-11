@@ -2,24 +2,24 @@ import api from '@/services/api'
 import type { PerformanceShortBase } from '@/composables/useBookings'
 
 export interface RoleRef {
-  id: number
+  id: string
   name: string
   label: string
 }
 
 export interface Oauth2Binding {
-  id: number
+  id: string
   provider: string
   remote_name: string
 }
 
 export interface PositionRef {
-  id: number
+  id: string
   name: string
 }
 
 export interface UserSearchResult {
-  id: number
+  id: string
   label: string
 }
 
@@ -34,7 +34,7 @@ export interface UserFormOptions {
 // UserResponse (app/schemas/user.py), same pattern as useArtists.ts's
 // Artist type.
 export interface User {
-  id: number
+  id: string
   surname: string
   givenname: string
   email: string | null
@@ -57,10 +57,10 @@ export interface UserPayload {
   email: string | null
   phone: string | null
   auth_locked: boolean
-  instruments: number[]
-  voices: number[]
-  choirjobs: number[]
-  roles: number[]
+  instruments: string[]
+  voices: string[]
+  choirjobs: string[]
+  roles: string[]
   administrator: boolean
 }
 
@@ -79,7 +79,7 @@ export function useUsers() {
     return response.data
   }
 
-  async function get(id: number): Promise<User> {
+  async function get(id: string): Promise<User> {
     const response = await api.get<User>(`/users/${id}`)
     return response.data
   }
@@ -89,12 +89,12 @@ export function useUsers() {
     return response.data
   }
 
-  async function update(id: number, payload: UserPayload): Promise<User> {
+  async function update(id: string, payload: UserPayload): Promise<User> {
     const response = await api.put<User>(`/users/${id}`, payload)
     return response.data
   }
 
-  async function remove(id: number): Promise<void> {
+  async function remove(id: string): Promise<void> {
     await api.delete(`/users/${id}`)
   }
 
@@ -102,7 +102,7 @@ export function useUsers() {
   // same backend function, scoped to an arbitrary user id (Legacy's
   // "Anfragen und Buchungen für dieses Konto einsehen" link on the Show
   // page).
-  async function getRequestsAndBookings(id: number): Promise<PerformanceShortBase[]> {
+  async function getRequestsAndBookings(id: string): Promise<PerformanceShortBase[]> {
     const response = await api.get<PerformanceShortBase[]>(`/users/${id}/requests-and-bookings`)
     return response.data
   }

@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import api from '@/services/api'
 
 export interface Fee {
-  id: number
+  id: string
   name: string
   amount: number
 }
@@ -24,7 +24,7 @@ export function useFees() {
     items.value = response.data
   }
 
-  async function save(id: number | null, payload: FeePayload): Promise<void> {
+  async function save(id: string | null, payload: FeePayload): Promise<void> {
     if (id === null) {
       await api.post<Fee>('/fees', payload)
     } else {
@@ -33,7 +33,7 @@ export function useFees() {
     await fetchList()
   }
 
-  async function remove(id: number): Promise<void> {
+  async function remove(id: string): Promise<void> {
     await api.delete(`/fees/${id}`)
     await fetchList()
   }

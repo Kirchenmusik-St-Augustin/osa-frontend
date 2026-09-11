@@ -18,7 +18,7 @@ const user = ref<UserAdministrationDetail | null>(null)
 const newPassword = ref<string | null>(null)
 
 onMounted(async () => {
-  const result = await get(Number(props.id))
+  const result = await get(props.id)
   user.value = result.user
 })
 
@@ -28,7 +28,7 @@ const ACTION_LABELS: Record<ActionName, string> = {
   unlock: 'entsperren',
   setPassword: 'setze ein generiertes Passwort',
 }
-const ACTIONS: Record<ActionName, (id: number) => ReturnType<typeof restore>> = {
+const ACTIONS: Record<ActionName, (id: string) => ReturnType<typeof restore>> = {
   restore,
   unlock,
   setPassword,
@@ -40,7 +40,7 @@ async function doAction(action: ActionName): Promise<void> {
 
   newPassword.value = null
   try {
-    const result = await ACTIONS[action](Number(props.id))
+    const result = await ACTIONS[action](props.id)
     user.value = result.user
     showToast('Aktion durchgeführt')
     if (result.newpw) newPassword.value = result.newpw

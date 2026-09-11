@@ -1,22 +1,22 @@
 import api from '@/services/api'
 
 export interface Ordinariumwork {
-  id: number
+  id: string
   name: string
   description: string | null
-  artist_id: number
+  artist_id: string
   artist_name: string
   duration: number | null
   demanding: boolean
 }
 
 export interface OrdinariumworkSearchResult {
-  id: number
+  id: string
   label: string
 }
 
 export interface AvailablePosition {
-  id: number
+  id: string
   name: string
 }
 
@@ -26,7 +26,7 @@ export interface AvailablePositions {
 }
 
 export interface PositionEntry {
-  id: number
+  id: string
   name: string
   quantity: number
   // Flags a since-archived Instrument/Voice still present in this setup
@@ -41,7 +41,7 @@ export interface OrdinariumworkSetup {
 }
 
 export interface PositionInput {
-  id: number
+  id: string
   quantity: number
 }
 
@@ -53,7 +53,7 @@ export interface OrdinariumworkSetupInput {
 export interface OrdinariumworkPayload {
   name: string
   description: string | null
-  artist_id: number
+  artist_id: string
   duration: number | null
   demanding: boolean
   setup: OrdinariumworkSetupInput
@@ -70,12 +70,12 @@ export function useOrdinariumworks() {
     return response.data
   }
 
-  async function get(id: number): Promise<Ordinariumwork> {
+  async function get(id: string): Promise<Ordinariumwork> {
     const response = await api.get<Ordinariumwork>(`/ordinariumworks/${id}`)
     return response.data
   }
 
-  async function getSetup(id: number): Promise<OrdinariumworkSetup> {
+  async function getSetup(id: string): Promise<OrdinariumworkSetup> {
     const response = await api.get<OrdinariumworkSetup>(`/ordinariumworks/${id}/setup`)
     return response.data
   }
@@ -90,12 +90,12 @@ export function useOrdinariumworks() {
     return response.data
   }
 
-  async function update(id: number, payload: OrdinariumworkPayload): Promise<Ordinariumwork> {
+  async function update(id: string, payload: OrdinariumworkPayload): Promise<Ordinariumwork> {
     const response = await api.put<Ordinariumwork>(`/ordinariumworks/${id}`, payload)
     return response.data
   }
 
-  async function remove(id: number): Promise<void> {
+  async function remove(id: string): Promise<void> {
     await api.delete(`/ordinariumworks/${id}`)
   }
 

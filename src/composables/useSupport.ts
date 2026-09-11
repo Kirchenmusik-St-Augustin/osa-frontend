@@ -7,14 +7,14 @@ import type { PerformanceShortBase } from '@/composables/useBookings'
 // backend's PerformanceShortOutput (see app/schemas/booking.py).
 
 export interface ContactUser {
-  id: number
+  id: string
   givenname: string
   surname: string
   has_email: boolean
 }
 
 export interface RoleWithContacts {
-  id: number
+  id: string
   name: string
   label: string
   description: string | null
@@ -36,7 +36,7 @@ export function useSupport() {
   // unverified recipient (1:1 Legacy quirk, see support_service.
   // send_message_to_contactperson's docstring), the caller never learns
   // whether a real send happened.
-  async function sendMessageToContactperson(recipientId: number, message: string): Promise<void> {
+  async function sendMessageToContactperson(recipientId: string, message: string): Promise<void> {
     await api.post('/support/message-to-contactperson', {
       recipient_id: recipientId,
       message,

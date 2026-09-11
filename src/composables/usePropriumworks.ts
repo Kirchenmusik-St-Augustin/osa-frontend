@@ -1,24 +1,24 @@
 import api from '@/services/api'
 
 export interface Propriumwork {
-  id: number
+  id: string
   name: string
   description: string | null
-  artist_id: number
+  artist_id: string
   artist_name: string
   duration: number | null
   demanding: boolean
 }
 
 export interface PropriumworkSearchResult {
-  id: number
+  id: string
   label: string
 }
 
 export interface PropriumworkPayload {
   name: string
   description: string | null
-  artist_id: number
+  artist_id: string
   duration: number | null
   demanding: boolean
 }
@@ -34,7 +34,7 @@ export function usePropriumworks() {
     return response.data
   }
 
-  async function get(id: number): Promise<Propriumwork> {
+  async function get(id: string): Promise<Propriumwork> {
     const response = await api.get<Propriumwork>(`/propriumworks/${id}`)
     return response.data
   }
@@ -44,12 +44,12 @@ export function usePropriumworks() {
     return response.data
   }
 
-  async function update(id: number, payload: PropriumworkPayload): Promise<Propriumwork> {
+  async function update(id: string, payload: PropriumworkPayload): Promise<Propriumwork> {
     const response = await api.put<Propriumwork>(`/propriumworks/${id}`, payload)
     return response.data
   }
 
-  async function remove(id: number): Promise<void> {
+  async function remove(id: string): Promise<void> {
     await api.delete(`/propriumworks/${id}`)
   }
 
