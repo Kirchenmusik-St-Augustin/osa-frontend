@@ -39,7 +39,7 @@ const emptyOptions: UserFormOptions = { instruments: [], voices: [], choirjobs: 
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: 1,
+    id: '1',
     surname: 'SCHINDLER',
     givenname: 'Margot',
     email: null,
@@ -67,7 +67,7 @@ beforeEach(() => {
 
 describe('UserFormView', () => {
   it('starts empty and creates a new user on save', async () => {
-    mockCreate.mockResolvedValueOnce(makeUser({ id: 9 }))
+    mockCreate.mockResolvedValueOnce(makeUser({ id: '9' }))
     const wrapper = mount(UserFormView, { props: {} })
     await flushPromises()
 
@@ -91,7 +91,7 @@ describe('UserFormView', () => {
       administrator: false,
     })
     expect(mockShowToast).toHaveBeenCalledWith('gespeichert.')
-    expect(mockPush).toHaveBeenCalledWith({ name: 'system-users-show', params: { id: 9 } })
+    expect(mockPush).toHaveBeenCalledWith({ name: 'system-users-show', params: { id: '9' } })
   })
 
   it('shows the "Pflichtfeld" hint while email is empty', async () => {
@@ -113,7 +113,7 @@ describe('UserFormView', () => {
   it('pre-fills the form and shows the verified-at hint when editing an untouched email', async () => {
     mockGet.mockResolvedValueOnce(
       makeUser({
-        id: 5,
+        id: '5',
         email: 'margot@example.com',
         email_verified_at: '2023-12-28T16:50:00+00:00',
       }),
@@ -121,7 +121,7 @@ describe('UserFormView', () => {
     const wrapper = mount(UserFormView, { props: { id: '5' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(5)
+    expect(mockGet).toHaveBeenCalledWith('5')
     expect((wrapper.find('input#user-surname').element as HTMLInputElement).value).toBe('SCHINDLER')
     expect(wrapper.text()).toContain('E-Mail verifiziert:')
   })
@@ -129,7 +129,7 @@ describe('UserFormView', () => {
   it('switches to "nicht verifiziert" once the pre-filled email is edited', async () => {
     mockGet.mockResolvedValueOnce(
       makeUser({
-        id: 5,
+        id: '5',
         email: 'margot@example.com',
         email_verified_at: '2023-12-28T16:50:00+00:00',
       }),
@@ -144,7 +144,7 @@ describe('UserFormView', () => {
   })
 
   it('shows both the name and the "Benutzerkonto erstellen" subtitle when editing (1:1 Legacy quirk)', async () => {
-    mockGet.mockResolvedValueOnce(makeUser({ id: 5 }))
+    mockGet.mockResolvedValueOnce(makeUser({ id: '5' }))
     const wrapper = mount(UserFormView, { props: { id: '5' } })
     await flushPromises()
 
@@ -158,7 +158,7 @@ describe('UserFormView', () => {
       instruments: [],
       voices: [],
       choirjobs: [],
-      roles: [{ id: 1, name: 'disponent', label: 'Disponent' }],
+      roles: [{ id: '1', name: 'disponent', label: 'Disponent' }],
     })
     const wrapper = mount(UserFormView, { props: {} })
     await flushPromises()
@@ -172,7 +172,7 @@ describe('UserFormView', () => {
       instruments: [],
       voices: [],
       choirjobs: [],
-      roles: [{ id: 1, name: 'disponent', label: 'Disponent' }],
+      roles: [{ id: '1', name: 'disponent', label: 'Disponent' }],
     })
     const wrapper = mount(UserFormView, { props: {} })
     await flushPromises()
@@ -190,7 +190,7 @@ describe('UserFormView', () => {
 
   it('shows the Administrator checkbox for an administrator and includes it in the save payload', async () => {
     mockIsAdministrator = true
-    mockCreate.mockResolvedValueOnce(makeUser({ id: 9 }))
+    mockCreate.mockResolvedValueOnce(makeUser({ id: '9' }))
     const wrapper = mount(UserFormView, { props: {} })
     await flushPromises()
 
@@ -208,7 +208,7 @@ describe('UserFormView', () => {
 
   it('pre-fills the Administrator checkbox when editing an existing administrator-eligible user', async () => {
     mockIsAdministrator = true
-    mockGet.mockResolvedValueOnce(makeUser({ id: 5, administrator: true }))
+    mockGet.mockResolvedValueOnce(makeUser({ id: '5', administrator: true }))
     const wrapper = mount(UserFormView, { props: { id: '5' } })
     await flushPromises()
 

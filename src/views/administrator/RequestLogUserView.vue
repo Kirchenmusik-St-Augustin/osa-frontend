@@ -25,7 +25,7 @@ const entries = ref<RequestLogEntry[]>([])
 watch(
   [year, month, day, () => props.userId],
   async ([currentYear, currentMonth, currentDay, currentUserId]) => {
-    const detail = await getForUser(Number(currentUserId), currentYear, currentMonth, currentDay)
+    const detail = await getForUser(currentUserId, currentYear, currentMonth, currentDay)
     username.value = detail.username
     entries.value = detail.entries
   },

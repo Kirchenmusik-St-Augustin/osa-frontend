@@ -39,10 +39,10 @@ vi.mock('@/services/notifications', () => ({
 
 function makeWork(overrides: Partial<Ordinariumwork> = {}): Ordinariumwork {
   return {
-    id: 1,
+    id: '1',
     name: 'Krönungsmesse',
     description: null,
-    artist_id: 2,
+    artist_id: '2',
     artist_name: 'MOZART, Wolfgang',
     duration: 25,
     demanding: false,
@@ -70,16 +70,16 @@ beforeEach(() => {
   // consumed here instead of the one this test just configured.
   vi.resetAllMocks()
   mockConfirmAction.mockResolvedValue(true)
-  mockListComposers.mockResolvedValue([{ id: 2, label: 'MOZART, Wolfgang' }])
+  mockListComposers.mockResolvedValue([{ id: '2', label: 'MOZART, Wolfgang' }])
   mockGetAvailablePositions.mockResolvedValue({
-    instruments: [{ id: 10, name: 'Fagott' }],
-    voices: [{ id: 20, name: 'Sopran' }],
+    instruments: [{ id: '10', name: 'Fagott' }],
+    voices: [{ id: '20', name: 'Sopran' }],
   })
 })
 
 describe('OrdinariumworkFormView', () => {
   it('does not fetch an existing work when creating', async () => {
-    mockCreate.mockResolvedValueOnce(makeWork({ id: 9 }))
+    mockCreate.mockResolvedValueOnce(makeWork({ id: '9' }))
     const wrapper = mount(OrdinariumworkFormView, { props: {} })
     await flushPromises()
 
@@ -90,7 +90,7 @@ describe('OrdinariumworkFormView', () => {
   })
 
   it('creates a new work and strips the name field from setup positions', async () => {
-    mockCreate.mockResolvedValueOnce(makeWork({ id: 9 }))
+    mockCreate.mockResolvedValueOnce(makeWork({ id: '9' }))
     const wrapper = mount(OrdinariumworkFormView, { props: {} })
     await flushPromises()
 
@@ -108,32 +108,32 @@ describe('OrdinariumworkFormView', () => {
     expect(mockCreate).toHaveBeenCalledWith({
       name: 'Requiem',
       description: 'Unvollendet',
-      artist_id: 2,
+      artist_id: '2',
       duration: 30,
       demanding: true,
       setup: {
-        instruments: [{ id: 10, quantity: 1 }],
-        voices: [{ id: 20, quantity: 1 }],
+        instruments: [{ id: '10', quantity: 1 }],
+        voices: [{ id: '20', quantity: 1 }],
       },
     })
     expect(mockShowToast).toHaveBeenCalledWith('gespeichert.')
     expect(mockPush).toHaveBeenCalledWith({
       name: 'repertoire-ordinariumworks-show',
-      params: { id: 9 },
+      params: { id: '9' },
     })
   })
 
   it('pre-fills the form and its setup editors when editing', async () => {
     mockGet.mockResolvedValueOnce(makeWork())
     mockGetSetup.mockResolvedValueOnce(
-      makeSetup({ instruments: [{ id: 10, name: 'Fagott', quantity: 3 }] }),
+      makeSetup({ instruments: [{ id: '10', name: 'Fagott', quantity: 3 }] }),
     )
     mockUpdate.mockResolvedValueOnce(makeWork())
     const wrapper = mount(OrdinariumworkFormView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
-    expect(mockGetSetup).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
+    expect(mockGetSetup).toHaveBeenCalledWith('1')
     expect((wrapper.find('input#ordinariumwork-name').element as HTMLInputElement).value).toBe(
       'Krönungsmesse',
     )
@@ -143,9 +143,9 @@ describe('OrdinariumworkFormView', () => {
     await flushPromises()
 
     expect(mockUpdate).toHaveBeenCalledWith(
-      1,
+      '1',
       expect.objectContaining({
-        setup: { instruments: [{ id: 10, quantity: 3 }], voices: [] },
+        setup: { instruments: [{ id: '10', quantity: 3 }], voices: [] },
       }),
     )
   })

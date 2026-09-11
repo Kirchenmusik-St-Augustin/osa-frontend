@@ -3,7 +3,7 @@ import api from '@/services/api'
 import type { CoreelementType } from '@/constants/coreelementTypes'
 
 export interface Coreelement {
-  id: number
+  id: string
   name: string
   order: number
   label: string | null
@@ -43,7 +43,7 @@ export function useCoreelements(type: MaybeRefOrGetter<CoreelementType>) {
     items.value = response.data
   }
 
-  async function save(id: number | null, payload: CoreelementPayload): Promise<void> {
+  async function save(id: string | null, payload: CoreelementPayload): Promise<void> {
     if (id === null) {
       await api.post<Coreelement>(basePath(), payload)
     } else {
@@ -52,12 +52,12 @@ export function useCoreelements(type: MaybeRefOrGetter<CoreelementType>) {
     await fetchList()
   }
 
-  async function remove(id: number): Promise<void> {
+  async function remove(id: string): Promise<void> {
     await api.delete(`${basePath()}/${id}`)
     await fetchList()
   }
 
-  async function move(id: number, direction: 'up' | 'down'): Promise<void> {
+  async function move(id: string, direction: 'up' | 'down'): Promise<void> {
     const response = await api.post<Coreelement[]>(`${basePath()}/${id}/move/${direction}`)
     items.value = response.data
   }

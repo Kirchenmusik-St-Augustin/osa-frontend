@@ -21,7 +21,7 @@ const fields = computed(() => {
 })
 
 onMounted(async () => {
-  work.value = await get(Number(props.id))
+  work.value = await get(props.id)
 })
 
 async function destroy(): Promise<void> {
@@ -29,7 +29,7 @@ async function destroy(): Promise<void> {
   if (!confirmed) return
 
   try {
-    await remove(Number(props.id))
+    await remove(props.id)
     showToast('gelöscht.')
     await router.push({ name: 'repertoire-propriumworks-search' })
   } catch (error) {

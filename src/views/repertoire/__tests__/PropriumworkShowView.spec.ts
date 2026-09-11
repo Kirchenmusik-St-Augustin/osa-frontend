@@ -25,10 +25,10 @@ vi.mock('@/services/notifications', () => ({
 
 function makeWork(overrides: Partial<Propriumwork> = {}): Propriumwork {
   return {
-    id: 1,
+    id: '1',
     name: 'Introitus',
     description: null,
-    artist_id: 2,
+    artist_id: '2',
     artist_name: 'HAYDN, Joseph',
     duration: null,
     demanding: false,
@@ -46,7 +46,7 @@ describe('PropriumworkShowView', () => {
     const wrapper = mount(PropriumworkShowView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('Introitus')
     expect(wrapper.text()).toContain('HAYDN, Joseph')
     expect(wrapper.text()).toContain('5 Minuten')

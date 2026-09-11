@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import api from '@/services/api'
 
 export interface Shorturl {
-  id: number
+  id: string
   path: string
   target: string
   counter: number
@@ -33,7 +33,7 @@ export function useShorturls() {
     items.value = response.data.items
   }
 
-  async function save(id: number | null, payload: ShorturlPayload): Promise<void> {
+  async function save(id: string | null, payload: ShorturlPayload): Promise<void> {
     if (id === null) {
       await api.post<Shorturl>('/shorturls', payload)
     } else {
@@ -42,7 +42,7 @@ export function useShorturls() {
     await fetchList()
   }
 
-  async function remove(id: number): Promise<void> {
+  async function remove(id: string): Promise<void> {
     await api.delete(`/shorturls/${id}`)
     await fetchList()
   }

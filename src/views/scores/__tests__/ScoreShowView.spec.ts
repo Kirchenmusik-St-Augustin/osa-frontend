@@ -12,7 +12,7 @@ vi.mock('@/composables/useScores', () => ({
 
 function makeScore(overrides: Partial<Score> = {}): Score {
   return {
-    id: 1,
+    id: '1',
     created_at: '2026-01-01T10:00:00+00:00',
     updated_at: null,
     fields: { werk: 'Requiem', kasten: 'A' },
@@ -31,7 +31,7 @@ describe('ScoreShowView', () => {
     const wrapper = mount(ScoreShowView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
     expect(mockGetFieldsConfig).toHaveBeenCalledOnce()
     const fieldsComponent = wrapper.findComponent(ScoreFieldsComponent)
     expect(fieldsComponent.props('readonly')).toBe(true)
@@ -39,7 +39,7 @@ describe('ScoreShowView', () => {
   })
 
   it('links "bearbeiten" to the edit route and "Zur Suche" to the search route', async () => {
-    mockGet.mockResolvedValueOnce(makeScore({ id: 5 }))
+    mockGet.mockResolvedValueOnce(makeScore({ id: '5' }))
     const wrapper = mount(ScoreShowView, { props: { id: '5' } })
     await flushPromises()
 

@@ -16,22 +16,22 @@ vi.mock('@/services/notifications', () => ({
 
 function makeAbilities(): DirectoryAbilities {
   return {
-    instruments: [{ id: 1, name: 'Fagott' }],
+    instruments: [{ id: '1', name: 'Fagott' }],
     voices: [],
-    choirjobs: [{ id: 3, name: 'Substitut' }],
+    choirjobs: [{ id: '3', name: 'Substitut' }],
   }
 }
 
 const entries: DirectoryEntry[] = [
   {
-    id: 5,
+    id: '5',
     surname: 'HUBER',
     givenname: 'Franz',
     has_email: true,
     email: 'huber@example.com',
     phone: '0664123456',
   },
-  { id: 6, surname: 'MAYER', givenname: 'Anna', has_email: false, email: null, phone: null },
+  { id: '6', surname: 'MAYER', givenname: 'Anna', has_email: false, email: null, phone: null },
 ]
 
 function rowCheckbox(wrapper: ReturnType<typeof mount>, index: number) {
@@ -88,7 +88,7 @@ describe('UserdirectoryView', () => {
     await wrapper.find('select').setValue('choirjobs@3')
     await flushPromises()
 
-    expect(mockListUsers).toHaveBeenCalledWith('choirjobs', 3)
+    expect(mockListUsers).toHaveBeenCalledWith('choirjobs', '3')
   })
 
   it('disables the checkbox for a user without a verified email', async () => {

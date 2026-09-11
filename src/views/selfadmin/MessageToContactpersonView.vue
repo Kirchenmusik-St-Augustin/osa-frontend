@@ -14,7 +14,7 @@ const { getContactpersons, sendMessageToContactperson } = useSupport()
 const authStore = useAuthStore()
 
 const roles = ref<RoleWithContacts[]>([])
-const selectedRecipientId = ref<number | null>(null)
+const selectedRecipientId = ref<string | null>(null)
 const message = ref('')
 const sending = ref(false)
 
@@ -63,7 +63,7 @@ async function send(): Promise<void> {
       <form class="text-start mb-4" @submit.prevent>
         <select
           id="message-to-contactperson-recipient"
-          v-model.number="selectedRecipientId"
+          v-model="selectedRecipientId"
           class="form-select mb-2"
         >
           <optgroup v-for="role in roles" :key="role.name" :label="role.label">

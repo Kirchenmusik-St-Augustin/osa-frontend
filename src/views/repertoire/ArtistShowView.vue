@@ -31,7 +31,7 @@ const listedAs = computed(() => {
 })
 
 onMounted(async () => {
-  artist.value = await get(Number(props.id))
+  artist.value = await get(props.id)
 })
 
 async function destroy(): Promise<void> {
@@ -39,7 +39,7 @@ async function destroy(): Promise<void> {
   if (!confirmed) return
 
   try {
-    await remove(Number(props.id))
+    await remove(props.id)
     showToast('gelöscht.')
     await router.push({ name: 'repertoire-artists-search' })
   } catch (error) {

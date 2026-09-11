@@ -22,8 +22,8 @@ const subtitle = computed(() =>
 
 onMounted(async () => {
   const [loadedUser, loadedEntries] = await Promise.all([
-    get(Number(props.id)),
-    getRequestsAndBookings(Number(props.id)),
+    get(props.id),
+    getRequestsAndBookings(props.id),
   ])
   user.value = loadedUser
   entries.value = loadedEntries

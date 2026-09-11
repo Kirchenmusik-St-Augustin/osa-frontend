@@ -7,7 +7,7 @@ import { useScores } from '@/composables/useScores'
 const router = useRouter()
 const { search } = useScores()
 
-function onSelect(id: number): void {
+function onSelect(id: string): void {
   void router.push({ name: 'repertoire-scores-show', params: { id } })
 }
 </script>

@@ -12,7 +12,7 @@ vi.mock('@/composables/useUsers', () => ({
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: 7,
+    id: '7',
     surname: 'SCHINDLER',
     givenname: 'Margot',
     email: null,
@@ -33,13 +33,13 @@ function makeUser(overrides: Partial<User> = {}): User {
 
 function makeEntry(overrides: Partial<PerformanceShortBase> = {}): PerformanceShortBase {
   return {
-    id: 1,
+    id: '1',
     ordinariumwork_name: 'Krönungsmesse',
     ordinariumwork_artist_name: 'MOZART, Wolfgang',
     artist_name: null,
     schedule: '2099-01-01T12:00:00',
-    location: { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
-    user_booking: { status: 4, position: { id: 2, name: 'Fagott' }, at: null },
+    location: { id: '1', name: 'Augustinerkirche', color: '336699', address: null },
+    user_booking: { status: 4, position: { id: '2', name: 'Fagott' }, at: null },
     proprium: [],
     demanding_proprium: false,
     rehearsals: [],
@@ -58,7 +58,7 @@ describe('UserRequestsAndBookingsView', () => {
     const wrapper = mount(UserRequestsAndBookingsView, { props: { id: '7' } })
     await flushPromises()
 
-    expect(mockGetRequestsAndBookings).toHaveBeenCalledWith(7)
+    expect(mockGetRequestsAndBookings).toHaveBeenCalledWith('7')
     expect(wrapper.text()).toContain('MOZART, Wolfgang: Krönungsmesse')
     expect(wrapper.text()).toContain('Gebucht für Fagott')
   })
@@ -72,7 +72,7 @@ describe('UserRequestsAndBookingsView', () => {
     const wrapper = mount(UserRequestsAndBookingsView, { props: { id: '7' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(7)
+    expect(mockGet).toHaveBeenCalledWith('7')
     expect(wrapper.text()).toContain('Anfragen und Buchungen für')
     expect(wrapper.text()).toContain('SCHINDLER, Margot')
   })

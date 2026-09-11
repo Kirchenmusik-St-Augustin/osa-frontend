@@ -1,7 +1,7 @@
 import api from '@/services/api'
 
 export interface DirectoryPositionRef {
-  id: number
+  id: string
   name: string
 }
 
@@ -12,7 +12,7 @@ export interface DirectoryAbilities {
 }
 
 export interface DirectoryEntry {
-  id: number
+  id: string
   surname: string
   givenname: string
   has_email: boolean
@@ -32,9 +32,9 @@ export function useUserdirectory() {
 
   async function listUsers(
     type: 'all' | DirectoryPositionType,
-    id: number | null,
+    id: string | null,
   ): Promise<DirectoryEntry[]> {
-    const params: Record<string, string | number> = { type }
+    const params: Record<string, string> = { type }
     if (id !== null) params['id'] = id
     const response = await api.get<DirectoryEntry[]>('/userdirectory', { params })
     return response.data

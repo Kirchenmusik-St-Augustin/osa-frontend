@@ -25,7 +25,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: 1,
+    id: '1',
     surname: 'SCHINDLER',
     givenname: 'Margot',
     email: null,
@@ -38,7 +38,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     oauth2_bindings: [],
     instruments: [],
     voices: [],
-    choirjobs: [{ id: 3, name: 'Substitut' }],
+    choirjobs: [{ id: '3', name: 'Substitut' }],
     roles: [],
     ...overrides,
   }
@@ -54,7 +54,7 @@ describe('UserShowView', () => {
     const wrapper = mount(UserShowView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('SCHINDLER, Margot')
     expect(wrapper.text()).toContain('0664 9182108')
     expect(wrapper.text()).toContain('Substitut')
@@ -140,7 +140,7 @@ describe('UserShowView', () => {
     await wrapper.find('button.btn-danger').trigger('click')
     await flushPromises()
 
-    expect(mockRemove).toHaveBeenCalledWith(1)
+    expect(mockRemove).toHaveBeenCalledWith('1')
     expect(mockShowToast).toHaveBeenCalledWith('gelöscht.')
     expect(mockPush).toHaveBeenCalledWith({ name: 'system-users-search' })
   })

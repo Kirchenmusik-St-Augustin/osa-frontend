@@ -10,7 +10,7 @@ const { get } = useSentEmails()
 const email = ref<SentEmailShow | null>(null)
 
 onMounted(async () => {
-  email.value = await get(Number(props.id))
+  email.value = await get(props.id)
 })
 
 // Legacy's "zurück" returns to the Index for the month the email's own

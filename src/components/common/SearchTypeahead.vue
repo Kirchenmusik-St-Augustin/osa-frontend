@@ -9,7 +9,7 @@ import { ref } from 'vue'
 // `force-item` behavior (free text alone never fires a selection) is
 // preserved: `select()` only ever runs from a click on an actual result.
 export interface SearchResult {
-  id: number
+  id: string
   label: string
 }
 
@@ -17,7 +17,7 @@ const props = defineProps<{
   search: (query: string) => Promise<SearchResult[]>
 }>()
 
-const emit = defineEmits<{ select: [id: number] }>()
+const emit = defineEmits<{ select: [id: string] }>()
 
 const query = ref('')
 const results = ref<SearchResult[]>([])

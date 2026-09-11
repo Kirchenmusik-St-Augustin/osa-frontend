@@ -43,7 +43,7 @@ onMounted(async () => {
   options.value = await getFormOptions()
   if (!props.id) return
 
-  const user = await get(Number(props.id))
+  const user = await get(props.id)
   form.givenname = user.givenname
   form.surname = user.surname
   form.email = user.email
@@ -86,7 +86,7 @@ async function save(): Promise<void> {
   }
 
   try {
-    const user = props.id ? await update(Number(props.id), payload) : await create(payload)
+    const user = props.id ? await update(props.id, payload) : await create(payload)
     showToast('gespeichert.')
     await router.push({ name: 'system-users-show', params: { id: user.id } })
   } catch (error) {

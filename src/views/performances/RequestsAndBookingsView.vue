@@ -14,7 +14,7 @@ const { getRequestsAndBookings } = useBookings()
 const performance = ref<PerformanceRequestsAndBookings | null>(null)
 
 onMounted(async () => {
-  performance.value = await getRequestsAndBookings(Number(props.id))
+  performance.value = await getRequestsAndBookings(props.id)
 })
 
 // Legacy's "zurück" goes to the calendar month of the performance's own

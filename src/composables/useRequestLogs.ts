@@ -1,7 +1,7 @@
 import api from '@/services/api'
 
 export interface RequestLogUserSummary {
-  id: number
+  id: string
   label: string
 }
 
@@ -11,7 +11,7 @@ export interface RequestLogDayGroup {
 }
 
 export interface RequestLogEntry {
-  id: number
+  id: string
   created_at: string
   request_method: string
   request_path: string
@@ -23,11 +23,11 @@ export interface RequestLogUserDetail {
 }
 
 export interface RequestLogShow {
-  id: number
+  id: string
   client_ip: string
   client_ips: string[]
   client_user_agent_string: string | null
-  user_id: number | null
+  user_id: string | null
   user_name: string | null
   request_method: string
   request_path: string
@@ -51,7 +51,7 @@ export function useRequestLogs() {
   }
 
   async function getForUser(
-    userId: number,
+    userId: string,
     year: number,
     month: number,
     day: number,
@@ -63,7 +63,7 @@ export function useRequestLogs() {
     return response.data
   }
 
-  async function get(id: number): Promise<RequestLogShow> {
+  async function get(id: string): Promise<RequestLogShow> {
     const response = await api.get<RequestLogShow>(`/administrator/request-logs/${id}`)
     return response.data
   }

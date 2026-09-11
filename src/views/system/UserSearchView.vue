@@ -6,7 +6,7 @@ import { useUsers } from '@/composables/useUsers'
 const router = useRouter()
 const { search } = useUsers()
 
-function onSelect(id: number): void {
+function onSelect(id: string): void {
   void router.push({ name: 'system-users-show', params: { id } })
 }
 </script>

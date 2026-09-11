@@ -11,14 +11,14 @@ export interface ScoreFieldConfig {
 export type ScoreFieldsPayload = Record<string, string | number>
 
 export interface Score {
-  id: number
+  id: string
   created_at: string | null
   updated_at: string | null
   fields: ScoreFieldsPayload
 }
 
 export interface ScoreSearchResult {
-  id: number
+  id: string
   label: string
 }
 
@@ -44,7 +44,7 @@ export function useScores() {
     return response.data
   }
 
-  async function get(id: number): Promise<Score> {
+  async function get(id: string): Promise<Score> {
     const response = await api.get<Score>(`/scores/${id}`)
     return response.data
   }
@@ -54,7 +54,7 @@ export function useScores() {
     return response.data
   }
 
-  async function update(id: number, payload: ScoreFieldsPayload): Promise<Score> {
+  async function update(id: string, payload: ScoreFieldsPayload): Promise<Score> {
     const response = await api.put<Score>(`/scores/${id}`, payload)
     return response.data
   }

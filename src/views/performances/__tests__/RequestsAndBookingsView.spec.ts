@@ -16,12 +16,12 @@ function makePage(
   overrides: Partial<PerformanceRequestsAndBookings> = {},
 ): PerformanceRequestsAndBookings {
   return {
-    id: 1,
+    id: '1',
     ordinariumwork_name: 'Krönungsmesse',
     ordinariumwork_artist_name: 'MOZART, Wolfgang',
     artist_name: null,
     schedule: '2026-08-02T11:00:00',
-    location: { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
+    location: { id: '1', name: 'Augustinerkirche', color: '336699', address: null },
     user_booking: { status: 0, position: null, at: null },
     proprium: [],
     demanding_proprium: false,
@@ -40,15 +40,15 @@ describe('RequestsAndBookingsView', () => {
     mockGetRequestsAndBookings.mockResolvedValueOnce(
       makePage({
         entries: [
-          { id: 1, name: 'HUBER, Franz', status: { status: 4, position: null, at: null } },
-          { id: 2, name: 'MAYER, Anna', status: { status: 2, position: null, at: null } },
+          { id: '1', name: 'HUBER, Franz', status: { status: 4, position: null, at: null } },
+          { id: '2', name: 'MAYER, Anna', status: { status: 2, position: null, at: null } },
         ],
       }),
     )
     const wrapper = mount(RequestsAndBookingsView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGetRequestsAndBookings).toHaveBeenCalledWith(1)
+    expect(mockGetRequestsAndBookings).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('HUBER, Franz')
     expect(wrapper.text()).toContain('MAYER, Anna')
     expect(wrapper.findAll('tbody tr')).toHaveLength(2)

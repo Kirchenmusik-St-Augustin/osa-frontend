@@ -25,17 +25,17 @@ export interface MultiSelectGroup {
 
 const props = defineProps<{ options: MultiSelectGroup[] }>()
 
-const model = defineModel<number[]>({ required: true })
+const model = defineModel<string[]>({ required: true })
 
 const isOpen = ref(false)
 const activeTab = ref(0)
 const rootElement = useTemplateRef<HTMLElement>('rootElement')
 
-function isSelected(id: number): boolean {
+function isSelected(id: string): boolean {
   return model.value.includes(id)
 }
 
-function toggleSelection(id: number): void {
+function toggleSelection(id: string): void {
   model.value = isSelected(id)
     ? model.value.filter((candidateId) => candidateId !== id)
     : [...model.value, id]

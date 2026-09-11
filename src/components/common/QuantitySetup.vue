@@ -5,7 +5,7 @@
 // Native `title` attributes replace Legacy's vue-tippy tooltips (same
 // hover-text UX, no extra dependency for three tooltip strings).
 export interface QuantitySetupEntry {
-  id: number
+  id: string
   name: string
   quantity: number
   // Omitted/true = active; explicitly false flags an archived Instrument/
@@ -26,8 +26,8 @@ withDefaults(
 )
 
 const emit = defineEmits<{
-  remove: [id: number]
-  modify: [id: number, increase: boolean]
+  remove: [id: string]
+  modify: [id: string, increase: boolean]
 }>()
 </script>
 

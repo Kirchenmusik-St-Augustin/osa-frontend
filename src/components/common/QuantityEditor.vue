@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import QuantitySetup, { type QuantitySetupEntry } from './QuantitySetup.vue'
 
 export interface AvailablePosition {
-  id: number
+  id: string
   name: string
 }
 
@@ -35,7 +35,7 @@ function computeUnused(): AvailablePosition[] {
 }
 
 const unused = ref(computeUnused())
-const selectedUnused = ref<number | null>(unused.value[0]?.id ?? null)
+const selectedUnused = ref<string | null>(unused.value[0]?.id ?? null)
 
 watch(
   setup,
@@ -59,11 +59,11 @@ function add(): void {
     .filter((entry): entry is QuantitySetupEntry => entry !== undefined)
 }
 
-function remove(id: number): void {
+function remove(id: string): void {
   setup.value = setup.value.filter((item) => item.id !== id)
 }
 
-function modify(id: number, increase: boolean): void {
+function modify(id: string, increase: boolean): void {
   setup.value = setup.value
     .map((item) =>
       item.id === id ? { ...item, quantity: item.quantity + (increase ? 1 : -1) } : item,
@@ -82,11 +82,7 @@ function reset(): void {
       <QuantitySetup :setup="setup" with-controls @modify="modify" @remove="remove" />
     </div>
     <div class="col-sm">
-      <select
-        v-if="unused.length"
-        v-model.number="selectedUnused"
-        class="form-select form-select-sm"
-      >
+      <select v-if="unused.length" v-model="selectedUnused" class="form-select form-select-sm">
         <option v-for="item in unused" :key="item.id" :value="item.id">{{ item.name }}</option>
       </select>
       <div v-if="selectedUnused !== null" class="text-end">

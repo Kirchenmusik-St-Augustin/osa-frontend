@@ -10,7 +10,7 @@ vi.mock('@/composables/useSentEmails', () => ({
 
 function makeEmail(overrides: Partial<SentEmailShow> = {}): SentEmailShow {
   return {
-    id: 1,
+    id: '1',
     mailer: 'smtp',
     datetime: '2026-08-02T11:00:00+00:00',
     from: 'noreply@example.test',
@@ -33,7 +33,7 @@ describe('SentEmailShowView', () => {
     const wrapper = mount(SentEmailShowView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('noreply@example.test')
     expect(wrapper.text()).toContain('empfaenger@example.test')
     expect(wrapper.text()).toContain('Betreff-Text')

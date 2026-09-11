@@ -19,7 +19,7 @@ import { confirmAction, showToast } from '@/services/notifications'
 const { items, fetchList, save, remove } = useFees()
 
 const editForm = reactive({ name: '', amount: 0 })
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 

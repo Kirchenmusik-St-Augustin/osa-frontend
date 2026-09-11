@@ -17,7 +17,7 @@ onMounted(async () => {
   deletedUsers.value = await listDeleted()
 })
 
-function onSelect(id: number): void {
+function onSelect(id: string): void {
   void router.push({ name: 'administrator-users-show', params: { id } })
 }
 </script>

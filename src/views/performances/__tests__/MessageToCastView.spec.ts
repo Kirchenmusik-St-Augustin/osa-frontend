@@ -33,18 +33,20 @@ function makePage(
   overrides: Partial<PerformanceMessageToCast['booked_cast']> = {},
 ): PerformanceMessageToCast {
   return {
-    id: 1,
+    id: '1',
     ordinariumwork_name: 'Krönungsmesse',
     ordinariumwork_artist_name: 'MOZART, Wolfgang',
     artist_name: null,
     schedule: '2026-08-02T11:00:00',
-    location: { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
+    location: { id: '1', name: 'Augustinerkirche', color: '336699', address: null },
     user_booking: { status: 0, position: null, at: null },
     proprium: [],
     demanding_proprium: false,
     rehearsals: [],
     booked_cast: {
-      instruments: [{ id: 10, name: 'Fagott', cast: [{ id: 5, name: 'HUBER, Franz', fee: 60 }] }],
+      instruments: [
+        { id: '10', name: 'Fagott', cast: [{ id: '5', name: 'HUBER, Franz', fee: 60 }] },
+      ],
       voices: [],
       choirjobs: [],
       ...overrides,
@@ -54,14 +56,14 @@ function makePage(
 
 const recipients: MessageRecipient[] = [
   {
-    id: 5,
+    id: '5',
     surname: 'HUBER',
     givenname: 'Franz',
     has_email: true,
     email: 'huber@example.com',
     phone: '0664123456',
   },
-  { id: 6, surname: 'MAYER', givenname: 'Anna', has_email: false, email: null, phone: null },
+  { id: '6', surname: 'MAYER', givenname: 'Anna', has_email: false, email: null, phone: null },
 ]
 
 function rowCheckbox(wrapper: ReturnType<typeof mount>, index: number) {
@@ -84,8 +86,8 @@ describe('MessageToCastView', () => {
     const wrapper = mount(MessageToCastView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGetMessageToCastPage).toHaveBeenCalledWith(1)
-    expect(mockGetMessageRecipients).toHaveBeenCalledWith(1, null, null)
+    expect(mockGetMessageToCastPage).toHaveBeenCalledWith('1')
+    expect(mockGetMessageRecipients).toHaveBeenCalledWith('1', null, null)
     const rows = wrapper.findAll('tbody tr')
     expect(rows).toHaveLength(2)
     expect(rows[0]?.text()).toContain('HUBER')
@@ -128,7 +130,7 @@ describe('MessageToCastView', () => {
     await wrapper.find('select').setValue('instruments@10')
     await flushPromises()
 
-    expect(mockGetMessageRecipients).toHaveBeenLastCalledWith(1, 'instruments', 10)
+    expect(mockGetMessageRecipients).toHaveBeenLastCalledWith('1', 'instruments', '10')
     expect(wrapper.findAll('tbody tr')).toHaveLength(1)
   })
 
@@ -198,7 +200,7 @@ describe('MessageToCastView', () => {
     await sendButton?.trigger('click')
     await flushPromises()
 
-    expect(mockSendMessageToCast).toHaveBeenCalledWith(1, [5], 'Bitte pünktlich erscheinen.')
+    expect(mockSendMessageToCast).toHaveBeenCalledWith('1', ['5'], 'Bitte pünktlich erscheinen.')
     expect(mockShowToast).toHaveBeenCalledWith('Nachricht versandt.')
     expect(wrapper.find('textarea').element.value).toBe('')
   })

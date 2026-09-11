@@ -25,7 +25,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeArtist(overrides: Partial<Artist> = {}): Artist {
   return {
-    id: 1,
+    id: '1',
     surname: 'MOZART',
     givenname: 'Wolfgang',
     description: null,
@@ -49,7 +49,7 @@ describe('ArtistShowView', () => {
     const wrapper = mount(ArtistShowView, { props: { id: '1' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(1)
+    expect(mockGet).toHaveBeenCalledWith('1')
     expect(wrapper.text()).toContain('Wolfgang')
     expect(wrapper.text()).toContain('MOZART')
     expect(wrapper.text()).toContain('1756')
@@ -85,7 +85,7 @@ describe('ArtistShowView', () => {
     await wrapper.find('button.btn-danger').trigger('click')
     await flushPromises()
 
-    expect(mockRemove).toHaveBeenCalledWith(1)
+    expect(mockRemove).toHaveBeenCalledWith('1')
     expect(mockShowToast).toHaveBeenCalledWith('gelöscht.')
     expect(mockPush).toHaveBeenCalledWith({ name: 'repertoire-artists-search' })
   })

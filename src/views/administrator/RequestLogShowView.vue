@@ -12,7 +12,7 @@ const { get } = useRequestLogs()
 const entry = ref<RequestLogShow | null>(null)
 
 onMounted(async () => {
-  entry.value = await get(Number(props.id))
+  entry.value = await get(props.id)
 })
 
 // Legacy's "zurück" returns to IndexUser for the month/user the entry's

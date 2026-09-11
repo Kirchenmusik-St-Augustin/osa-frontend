@@ -21,7 +21,7 @@ watch(
   { immediate: true },
 )
 
-function openShow(id: number): void {
+function openShow(id: string): void {
   router.push({ name: 'administrator-sent-emails-show', params: { id } })
 }
 </script>

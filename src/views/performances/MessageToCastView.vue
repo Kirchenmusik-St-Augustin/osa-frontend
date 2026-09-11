@@ -26,14 +26,14 @@ import { useAuthStore } from '@/stores/auth'
 // working INLINE textarea+Senden instead (see
 // booking_service.send_message_to_cast).
 const props = defineProps<{ id: string }>()
-const performanceId = computed(() => Number(props.id))
+const performanceId = computed(() => props.id)
 
 const { getMessageToCastPage, getMessageRecipients, sendMessageToCast } = useBookings()
 const authStore = useAuthStore()
 
 const performance = ref<PerformanceMessageToCast | null>(null)
 const recipients = ref<MessageRecipient[]>([])
-const selectedRecipientIds = ref<number[]>([])
+const selectedRecipientIds = ref<string[]>([])
 const checkAllStatus = ref(false)
 const selectedAbility = ref('all')
 const message = ref('')
@@ -59,7 +59,7 @@ async function loadRecipients(): Promise<void> {
     return
   }
   const [type, idText] = selectedAbility.value.split('@') as [PositionType, string]
-  recipients.value = await getMessageRecipients(performanceId.value, type, Number(idText))
+  recipients.value = await getMessageRecipients(performanceId.value, type, idText)
 }
 
 onMounted(async () => {
@@ -102,7 +102,7 @@ function toggleCheckAll(): void {
     : []
 }
 
-function toggleRecipient(id: number): void {
+function toggleRecipient(id: string): void {
   selectedRecipientIds.value = selectedRecipientIds.value.includes(id)
     ? selectedRecipientIds.value.filter((candidateId) => candidateId !== id)
     : [...selectedRecipientIds.value, id]

@@ -17,7 +17,7 @@ const { get, create, update } = usePropriumworks()
 const form = reactive({
   name: '',
   description: '' as string | null,
-  artist_id: null as number | null,
+  artist_id: null as string | null,
   duration: null as number | string | null,
   demanding: false,
 })
@@ -30,7 +30,7 @@ onMounted(async () => {
   artists.value = await listComposers()
 
   if (props.id) {
-    const work = await get(Number(props.id))
+    const work = await get(props.id)
     form.name = work.name
     form.description = work.description
     form.artist_id = work.artist_id
@@ -54,13 +54,13 @@ async function save(): Promise<void> {
   const payload = {
     name: form.name,
     description: form.description || null,
-    artist_id: form.artist_id as number,
+    artist_id: form.artist_id as string,
     duration: toNullableNumber(form.duration),
     demanding: form.demanding,
   }
 
   try {
-    const work = props.id ? await update(Number(props.id), payload) : await create(payload)
+    const work = props.id ? await update(props.id, payload) : await create(payload)
     showToast('gespeichert.')
     await router.push({ name: 'repertoire-propriumworks-show', params: { id: work.id } })
   } catch (error) {

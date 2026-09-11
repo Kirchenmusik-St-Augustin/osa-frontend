@@ -26,7 +26,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeArtist(overrides: Partial<Artist> = {}): Artist {
   return {
-    id: 1,
+    id: '1',
     surname: 'MOZART',
     givenname: 'Wolfgang',
     description: null,
@@ -45,7 +45,7 @@ beforeEach(() => {
 
 describe('ArtistFormView', () => {
   it('starts empty and creates a new artist on save', async () => {
-    mockCreate.mockResolvedValueOnce(makeArtist({ id: 9 }))
+    mockCreate.mockResolvedValueOnce(makeArtist({ id: '9' }))
     const wrapper = mount(ArtistFormView, { props: {} })
     await flushPromises()
 
@@ -71,24 +71,24 @@ describe('ArtistFormView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('gespeichert.')
     expect(mockPush).toHaveBeenCalledWith({
       name: 'repertoire-artists-show',
-      params: { id: 9 },
+      params: { id: '9' },
     })
   })
 
   it('pre-fills the form and updates the existing artist when editing', async () => {
-    mockGet.mockResolvedValueOnce(makeArtist({ id: 5, birthyear: 1756 }))
-    mockUpdate.mockResolvedValueOnce(makeArtist({ id: 5 }))
+    mockGet.mockResolvedValueOnce(makeArtist({ id: '5', birthyear: 1756 }))
+    mockUpdate.mockResolvedValueOnce(makeArtist({ id: '5' }))
     const wrapper = mount(ArtistFormView, { props: { id: '5' } })
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(5)
+    expect(mockGet).toHaveBeenCalledWith('5')
     expect((wrapper.find('input#artist-surname').element as HTMLInputElement).value).toBe('MOZART')
     expect((wrapper.find('input#artist-birthyear').element as HTMLInputElement).value).toBe('1756')
 
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(mockUpdate).toHaveBeenCalledWith(5, expect.objectContaining({ birthyear: 1756 }))
+    expect(mockUpdate).toHaveBeenCalledWith('5', expect.objectContaining({ birthyear: 1756 }))
   })
 
   it('does not save when the user cancels the confirmation', async () => {

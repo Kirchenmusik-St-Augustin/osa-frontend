@@ -4,6 +4,14 @@ import { coreelementRouteGuard } from './coreelementGuard'
 import { runAuthGuards } from './guards'
 import { setPageTitle } from './pageTitle'
 
+// A defensive shape check, not a security boundary -- rejects an
+// obviously-malformed id segment before it ever reaches a component,
+// same role `(\d+)` played before the UUIDv7 primary-key migration.
+// Generic UUID shape (not v7-specific): no endpoint lets a client choose
+// its own id on create, so there is nothing version-specific to enforce
+// here, only "looks like a UUID at all".
+const UUID_PATTERN = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -31,14 +39,14 @@ const router = createRouter({
           },
         },
         {
-          path: 'performances/:id(\\d+)',
+          path: `performances/:id(${UUID_PATTERN})`,
           name: 'performances-show',
           component: () => import('@/views/performances/PerformanceShowView.vue'),
           props: true,
           meta: { requiresAuth: true, title: 'Aufführung - Details' },
         },
         {
-          path: 'performances/:id(\\d+)/edit',
+          path: `performances/:id(${UUID_PATTERN})/edit`,
           name: 'performances-edit',
           component: () => import('@/views/performances/PerformanceFormView.vue'),
           props: true,
@@ -49,7 +57,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'performances/:id(\\d+)/cast',
+          path: `performances/:id(${UUID_PATTERN})/cast`,
           name: 'performances-cast',
           component: () => import('@/views/performances/CastView.vue'),
           props: true,
@@ -64,7 +72,7 @@ const router = createRouter({
           // performances-edit above) -- billing is the one Booking-domain
           // page Legacy's own policy never locks by schedule either, see
           // booking_service.get_billing's docstring.
-          path: 'performances/:id(\\d+)/billing',
+          path: `performances/:id(${UUID_PATTERN})/billing`,
           name: 'performances-billing',
           component: () => import('@/views/performances/BillingView.vue'),
           props: true,
@@ -75,7 +83,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'performances/:id(\\d+)/requests-and-bookings',
+          path: `performances/:id(${UUID_PATTERN})/requests-and-bookings`,
           name: 'performances-requests-and-bookings',
           component: () => import('@/views/performances/RequestsAndBookingsView.vue'),
           props: true,
@@ -86,7 +94,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'performances/:id(\\d+)/message-to-cast',
+          path: `performances/:id(${UUID_PATTERN})/message-to-cast`,
           name: 'performances-message-to-cast',
           component: () => import('@/views/performances/MessageToCastView.vue'),
           props: true,
@@ -170,7 +178,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'administrator/users/:id(\\d+)',
+          path: `administrator/users/:id(${UUID_PATTERN})`,
           name: 'administrator-users-show',
           component: () => import('@/views/administrator/UserAdministrationShowView.vue'),
           props: true,
@@ -192,7 +200,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'administrator/sent-emails/:id(\\d+)',
+          path: `administrator/sent-emails/:id(${UUID_PATTERN})`,
           name: 'administrator-sent-emails-show',
           component: () => import('@/views/administrator/SentEmailShowView.vue'),
           props: true,
@@ -213,7 +221,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'administrator/request-logs/users/:userId(\\d+)',
+          path: `administrator/request-logs/users/:userId(${UUID_PATTERN})`,
           name: 'administrator-request-logs-user',
           component: () => import('@/views/administrator/RequestLogUserView.vue'),
           props: true,
@@ -224,7 +232,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'administrator/request-logs/:id(\\d+)',
+          path: `administrator/request-logs/:id(${UUID_PATTERN})`,
           name: 'administrator-request-logs-show',
           component: () => import('@/views/administrator/RequestLogShowView.vue'),
           props: true,
@@ -310,7 +318,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'system/users/:id(\\d+)',
+          path: `system/users/:id(${UUID_PATTERN})`,
           name: 'system-users-show',
           component: () => import('@/views/system/UserShowView.vue'),
           props: true,
@@ -321,7 +329,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'system/users/:id(\\d+)/edit',
+          path: `system/users/:id(${UUID_PATTERN})/edit`,
           name: 'system-users-edit',
           component: () => import('@/views/system/UserFormView.vue'),
           props: true,
@@ -334,7 +342,7 @@ const router = createRouter({
         {
           // Nachtrag zu Baustelle 1: Legacy's
           // content.system.users.requestsAndBookings link on the Show page.
-          path: 'system/users/:id(\\d+)/requests-and-bookings',
+          path: `system/users/:id(${UUID_PATTERN})/requests-and-bookings`,
           name: 'system-users-requests-and-bookings',
           component: () => import('@/views/system/UserRequestsAndBookingsView.vue'),
           props: true,
@@ -414,7 +422,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'repertoire/artists/:id(\\d+)',
+          path: `repertoire/artists/:id(${UUID_PATTERN})`,
           name: 'repertoire-artists-show',
           component: () => import('@/views/repertoire/ArtistShowView.vue'),
           props: true,
@@ -425,7 +433,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'repertoire/artists/:id(\\d+)/edit',
+          path: `repertoire/artists/:id(${UUID_PATTERN})/edit`,
           name: 'repertoire-artists-edit',
           component: () => import('@/views/repertoire/ArtistFormView.vue'),
           props: true,
@@ -456,7 +464,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'repertoire/ordinariumworks/:id(\\d+)',
+          path: `repertoire/ordinariumworks/:id(${UUID_PATTERN})`,
           name: 'repertoire-ordinariumworks-show',
           component: () => import('@/views/repertoire/OrdinariumworkShowView.vue'),
           props: true,
@@ -467,7 +475,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'repertoire/ordinariumworks/:id(\\d+)/edit',
+          path: `repertoire/ordinariumworks/:id(${UUID_PATTERN})/edit`,
           name: 'repertoire-ordinariumworks-edit',
           component: () => import('@/views/repertoire/OrdinariumworkFormView.vue'),
           props: true,
@@ -498,7 +506,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'repertoire/propriumworks/:id(\\d+)',
+          path: `repertoire/propriumworks/:id(${UUID_PATTERN})`,
           name: 'repertoire-propriumworks-show',
           component: () => import('@/views/repertoire/PropriumworkShowView.vue'),
           props: true,
@@ -509,7 +517,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'repertoire/propriumworks/:id(\\d+)/edit',
+          path: `repertoire/propriumworks/:id(${UUID_PATTERN})/edit`,
           name: 'repertoire-propriumworks-edit',
           component: () => import('@/views/repertoire/PropriumworkFormView.vue'),
           props: true,
@@ -543,7 +551,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'repertoire/scores/:id(\\d+)',
+          path: `repertoire/scores/:id(${UUID_PATTERN})`,
           name: 'repertoire-scores-show',
           component: () => import('@/views/scores/ScoreShowView.vue'),
           props: true,
@@ -554,7 +562,7 @@ const router = createRouter({
           },
         },
         {
-          path: 'repertoire/scores/:id(\\d+)/edit',
+          path: `repertoire/scores/:id(${UUID_PATTERN})/edit`,
           name: 'repertoire-scores-edit',
           component: () => import('@/views/scores/ScoreFormView.vue'),
           props: true,
