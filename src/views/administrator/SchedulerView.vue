@@ -1,7 +1,9 @@
 <script setup lang="ts">
 // Admin-only overview of the backend's currently registered scheduled jobs
-// (no Legacy equivalent). Live snapshot only: no persisted run history.
-// Plus a manual Koofr-backup trigger, production-only in the UI -- the
+// (no Legacy equivalent). Trigger/next_run are a live snapshot computed
+// from the backend's cron catalog; last_run is the one persisted piece of
+// state -- the most recently completed run of each job, if any. Plus a
+// manual Koofr-backup trigger, production-only in the UI -- the
 // backend endpoint itself stays callable in every stage (see
 // useScheduler.ts/backend comments), the `schedulerView` permission is
 // the real guard. The
@@ -10,11 +12,22 @@
 // convenience -- see the backend router's docstring).
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useScheduler, type ScheduledJob } from '@/composables/useScheduler'
+import { useScheduler, type JobRun, type ScheduledJob } from '@/composables/useScheduler'
 import { appEnvironment } from '@/runtimeConfig'
 import { extractApiErrors } from '@/services/apiErrors'
+import { formatUtcDateTime } from '@/services/dateFormat'
 import { confirmAction, showToast } from '@/services/notifications'
 import { useAuthStore } from '@/stores/auth'
+
+// Plain lookup table, not a computed() -- there is nothing reactive to
+// derive here, just a static status->class mapping indexed per job card
+// in the v-for below (a single top-level computed() can't vary per loop
+// item). Same Record-lookup style as BookingStatusBadge.vue's
+// BADGE_BY_STATUS.
+const lastRunBadgeClassByStatus: Record<JobRun['status'], string> = {
+  success: 'text-bg-success',
+  failure: 'text-bg-danger',
+}
 
 const { listScheduledJobs, triggerBackup, triggerDownsync } = useScheduler()
 const authStore = useAuthStore()
@@ -131,6 +144,18 @@ async function onTriggerDownsync(): Promise<void> {
                 <dd class="col-7">{{ job.trigger }}</dd>
                 <dt class="col-5">Nächste Ausführung</dt>
                 <dd class="col-7">{{ job.next_run ?? '–' }}</dd>
+                <dt class="col-5">Letzter Lauf</dt>
+                <dd class="col-7">
+                  <span
+                    v-if="job.last_run"
+                    class="badge"
+                    :class="lastRunBadgeClassByStatus[job.last_run.status]"
+                    :title="job.last_run.output ?? undefined"
+                  >
+                    {{ formatUtcDateTime(job.last_run.finished_at) }}
+                  </span>
+                  <span v-else>–</span>
+                </dd>
               </dl>
             </div>
           </div>

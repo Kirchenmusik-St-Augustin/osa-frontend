@@ -2,7 +2,12 @@ import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import SchedulerView from '../SchedulerView.vue'
-import type { BackupTrigger, DownsyncTrigger, ScheduledJob } from '@/composables/useScheduler'
+import type {
+  BackupTrigger,
+  DownsyncTrigger,
+  JobRun,
+  ScheduledJob,
+} from '@/composables/useScheduler'
 
 const mockListScheduledJobs = vi.fn()
 const mockTriggerBackup = vi.fn()
@@ -47,6 +52,17 @@ function makeJob(overrides: Partial<ScheduledJob> = {}): ScheduledJob {
     trigger: 'cron[minute=0]',
     next_run: '13.08.2026, 15:00',
     description: 'Löscht stündlich offene Buchungsanfragen.',
+    last_run: null,
+    ...overrides,
+  }
+}
+
+function makeJobRun(overrides: Partial<JobRun> = {}): JobRun {
+  return {
+    status: 'success',
+    output: null,
+    started_at: '2026-08-13T14:59:58+00:00',
+    finished_at: '2026-08-13T15:00:00+00:00',
     ...overrides,
   }
 }
@@ -106,6 +122,44 @@ describe('SchedulerView', () => {
     await flushPromises()
 
     expect(wrapper.find('.card-text').exists()).toBe(false)
+  })
+
+  it('shows a dash for last_run when the job has never run', async () => {
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob({ last_run: null })])
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+
+    expect(wrapper.find('.badge.text-bg-success').exists()).toBe(false)
+    expect(wrapper.find('.badge.text-bg-danger').exists()).toBe(false)
+  })
+
+  it('renders a success badge with the finished_at date for a successful last run', async () => {
+    mockListScheduledJobs.mockResolvedValueOnce([
+      makeJob({ last_run: makeJobRun({ status: 'success' }) }),
+    ])
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+
+    const badge = wrapper.find('.badge.text-bg-success')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toMatch(/2026/)
+  })
+
+  it('renders a failure badge for a failed last run, with the output as its tooltip', async () => {
+    mockListScheduledJobs.mockResolvedValueOnce([
+      makeJob({
+        last_run: makeJobRun({ status: 'failure', output: 'Koofr upload failed' }),
+      }),
+    ])
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+
+    const badge = wrapper.find('.badge.text-bg-danger')
+    expect(badge.exists()).toBe(true)
+    expect(badge.attributes('title')).toBe('Koofr upload failed')
   })
 
   it('shows the empty-state text when the job list is empty', async () => {

@@ -1,11 +1,19 @@
 import api from '@/services/api'
 
+export interface JobRun {
+  status: 'success' | 'failure'
+  output: string | null
+  started_at: string
+  finished_at: string
+}
+
 export interface ScheduledJob {
   id: string
   name: string
   trigger: string
   next_run: string | null
   description: string | null
+  last_run: JobRun | null
 }
 
 export interface BackupTrigger {
@@ -19,10 +27,11 @@ export interface DownsyncTrigger {
 }
 
 // UI-independent API layer for the admin-only "Scheduler" overview
-// (GET /administrator/scheduler/jobs) -- a live snapshot of the backend's
-// currently registered APScheduler jobs, no persisted run history -- plus
-// the manual Koofr-backup trigger (POST .../backup/trigger) and its
-// non-production counterpart, the manual downsync trigger
+// (GET /administrator/scheduler/jobs) -- trigger/next_run are a live
+// snapshot computed from the backend's cron catalog, last_run is the one
+// persisted piece of state (the most recent completed run per job, if
+// any) -- plus the manual Koofr-backup trigger (POST .../backup/trigger)
+// and its non-production counterpart, the manual downsync trigger
 // (POST .../downsync/trigger).
 export function useScheduler() {
   async function listScheduledJobs(): Promise<ScheduledJob[]> {
