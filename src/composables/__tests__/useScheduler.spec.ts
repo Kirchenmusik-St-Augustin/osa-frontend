@@ -21,6 +21,12 @@ describe('useScheduler', () => {
         trigger: 'interval[1:00:00]',
         next_run: '13.08.2026, 15:00',
         description: 'Löscht stündlich offene Buchungsanfragen.',
+        last_run: {
+          status: 'success',
+          output: null,
+          started_at: '2026-08-13T15:00:00+00:00',
+          finished_at: '2026-08-13T15:00:01+00:00',
+        },
       },
     ]
     mockedApi.get.mockResolvedValueOnce({ data: jobs })
