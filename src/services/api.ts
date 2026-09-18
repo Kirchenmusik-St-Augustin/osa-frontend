@@ -44,9 +44,11 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 // Concurrent 401s instead queue up and get replayed once the one refresh
 // in flight completes.
 let isRefreshing = false
-let refreshSubscribers: ((token: string) => void)[] = []
+let refreshSubscribers: ((token: string | null) => void)[] = []
 
-function onRefreshComplete(newToken: string): void {
+// `null` signals a failed refresh: every queued request must reject
+// instead of hanging forever, since there is no new token to retry with.
+function onRefreshComplete(newToken: string | null): void {
   refreshSubscribers.forEach((subscriber) => subscriber(newToken))
   refreshSubscribers = []
 }
@@ -60,8 +62,12 @@ function redirectToLoginIfNeeded(): void {
 }
 
 function queueForRefresh(originalRequest: RetryableRequestConfig): Promise<unknown> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     refreshSubscribers.push((newToken) => {
+      if (newToken === null) {
+        reject(new Error('Session refresh failed'))
+        return
+      }
       originalRequest.headers.Authorization = `Bearer ${newToken}`
       resolve(api(originalRequest))
     })
@@ -79,7 +85,7 @@ async function refreshAndRetry(originalRequest: RetryableRequestConfig): Promise
     return await api(originalRequest)
   } catch (refreshError) {
     isRefreshing = false
-    refreshSubscribers = []
+    onRefreshComplete(null)
     authStore.clearAuth()
     redirectToLoginIfNeeded()
     throw refreshError

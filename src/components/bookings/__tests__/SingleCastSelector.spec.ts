@@ -48,6 +48,26 @@ describe('SingleCastSelector', () => {
     expect(select.value).toBe('3')
   })
 
+  it('disables both action buttons until at least one candidate is selected', async () => {
+    const wrapper = mount(SingleCastSelector, {
+      props: { allBooked: [], notBooked: [], bookable, fees, modalId: 'instruments-1' },
+    })
+    const buttons = wrapper
+      .findAll('button.btn-primary')
+      .filter((button) => ['hinzufügen', 'zurückweisen'].includes(button.text()))
+    expect(buttons).toHaveLength(2)
+    for (const button of buttons) {
+      expect(button.attributes('disabled')).toBeDefined()
+    }
+
+    await openDropdown(wrapper)
+    await wrapper.find('.list-group-item').trigger('click')
+
+    for (const button of buttons) {
+      expect(button.attributes('disabled')).toBeUndefined()
+    }
+  })
+
   it('emits add-to with stack "cast" and the selected fee amount on hinzufügen', async () => {
     const wrapper = mount(SingleCastSelector, {
       props: { allBooked: [], notBooked: [], bookable, fees, modalId: 'instruments-1' },

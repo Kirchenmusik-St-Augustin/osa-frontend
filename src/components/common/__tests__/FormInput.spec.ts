@@ -142,6 +142,44 @@ describe('FormInput', () => {
     expect(wrapper.find('input').attributes('maxlength')).toBe('16')
   })
 
+  it.each(['email', 'tel', 'password'] as const)(
+    'applies maxlength on a "%s" input instead of silently dropping the "max" prop',
+    (type) => {
+      const wrapper = mount(FormInput, {
+        props: { id: 'contact', title: 'Kontakt', modelValue: '', type, max: 128 },
+      })
+
+      expect(wrapper.find('input#contact').attributes('maxlength')).toBe('128')
+    },
+  )
+
+  it.each([
+    ['text', 'input'],
+    ['password', 'input'],
+    ['number', 'input'],
+    ['textarea', 'textarea'],
+  ] as const)('passes autocomplete through to the real control of a "%s" field', (type, tag) => {
+    const wrapper = mount(FormInput, {
+      props: {
+        id: 'secret',
+        title: 'Geheimnis',
+        modelValue: '',
+        type,
+        autocomplete: 'new-password',
+      },
+    })
+
+    expect(wrapper.find(`${tag}#secret`).attributes('autocomplete')).toBe('new-password')
+  })
+
+  it('renders no autocomplete attribute unless the prop is set', () => {
+    const wrapper = mount(FormInput, {
+      props: { id: 'name', title: 'Name', modelValue: '' },
+    })
+
+    expect(wrapper.find('input#name').attributes('autocomplete')).toBeUndefined()
+  })
+
   it('applies maxlength on a textarea too', () => {
     const wrapper = mount(FormInput, {
       props: {

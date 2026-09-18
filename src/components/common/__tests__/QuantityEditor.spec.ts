@@ -18,6 +18,42 @@ describe('QuantityEditor', () => {
     expect(optionTexts).toEqual(['Oboe', 'Klarinette'])
   })
 
+  it('hides the dropdown and add button once every available item is already used', () => {
+    const wrapper = mount(QuantityEditor, {
+      props: {
+        modelValue: [
+          { id: 1, name: 'Fagott', quantity: 1 },
+          { id: 2, name: 'Oboe', quantity: 1 },
+          { id: 3, name: 'Klarinette', quantity: 1 },
+        ],
+        available,
+      },
+    })
+
+    expect(wrapper.find('select').exists()).toBe(false)
+    expect(wrapper.find('button.btn-primary').exists()).toBe(false)
+  })
+
+  it('hides the dropdown and add button after the last unused item gets added', async () => {
+    const wrapper = mount(QuantityEditor, {
+      props: {
+        modelValue: [
+          { id: 1, name: 'Fagott', quantity: 1 },
+          { id: 2, name: 'Oboe', quantity: 1 },
+        ],
+        available,
+      },
+    })
+    expect(wrapper.find('select').exists()).toBe(true)
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    const emitted = wrapper.emitted('update:modelValue')
+    await wrapper.setProps({ modelValue: emitted?.[emitted.length - 1]?.[0] })
+
+    expect(wrapper.find('select').exists()).toBe(false)
+    expect(wrapper.find('button.btn-primary').exists()).toBe(false)
+  })
+
   it('adds the selected unused item with quantity 1', async () => {
     const wrapper = mount(QuantityEditor, {
       props: { modelValue: [], available },

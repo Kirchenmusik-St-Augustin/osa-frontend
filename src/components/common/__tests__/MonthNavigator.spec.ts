@@ -38,4 +38,13 @@ describe('MonthNavigator', () => {
     const links = wrapper.findAllComponents(RouterLinkStub)
     expect(links[0]?.props('to').query).toEqual({ year: 2025, month: 12 })
   })
+
+  it('rolls over into the next year at the December boundary', () => {
+    const wrapper = mount(MonthNavigator, {
+      props: { year: 2026, month: 12, routeName: 'home' },
+    })
+
+    const links = wrapper.findAllComponents(RouterLinkStub)
+    expect(links[2]?.props('to').query).toEqual({ year: 2027, month: 1 })
+  })
 })

@@ -33,6 +33,22 @@ describe('RehearsalsEditor', () => {
     expect(emitted![0]![0]).toEqual([existing[1]])
   })
 
+  it('removes only the intended entry, not both, when two rehearsals share the same schedule and comment', async () => {
+    const existing: RehearsalEntry[] = [
+      { schedule: '2026-08-03T09:45:00', comment: '' },
+      { schedule: '2026-08-03T09:45:00', comment: '' },
+    ]
+    const wrapper = mount(RehearsalsEditor, {
+      props: { modelValue: existing, 'onUpdate:modelValue': () => {} },
+    })
+
+    await wrapper.findAll('.fa-trash')[0]!.trigger('click')
+    const emitted = wrapper.emitted('update:modelValue')
+
+    expect(emitted![0]![0]).toHaveLength(1)
+    expect(emitted![0]![0]).toEqual([existing[1]])
+  })
+
   it('renders one row per rehearsal with a comment input', () => {
     const existing: RehearsalEntry[] = [{ schedule: '2026-08-03T09:45:00', comment: 'GP' }]
     const wrapper = mount(RehearsalsEditor, {

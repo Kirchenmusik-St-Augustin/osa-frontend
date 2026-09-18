@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, useTemplateRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Modal } from 'bootstrap'
 import DateTimePicker from '@/components/common/DateTimePicker.vue'
@@ -199,6 +199,13 @@ onMounted(() => {
       keyboard: false,
     })
   }
+})
+
+onBeforeUnmount(() => {
+  ordinariumworkModalInstance?.dispose()
+  ordinariumworkModalInstance = null
+  propriumModalInstance?.dispose()
+  propriumModalInstance = null
 })
 
 const unusedPropriumelements = computed(() =>

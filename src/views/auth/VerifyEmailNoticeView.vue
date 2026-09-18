@@ -3,18 +3,38 @@
 // shown to a logged-in-but-unverified user, reached via router/guards.ts's
 // redirect. Not to be confused with VerifyEmailView.vue (the token-
 // consuming page, self-contained, no login required).
+//
+// Deliberate deviation from Legacy: its resend form only handles success
+// and has no disabled state, so a failed request (network error, or the
+// endpoint's 6-per-minute rate limit) showed nothing beyond Inertia's
+// generic error modal. Here a failure surfaces a short message and the
+// button stays disabled while a request is in flight, so repeated clicks
+// cannot burn through the rate limit.
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+
+const RESEND_ERROR_MESSAGE =
+  'Beim erneuten Versand ist ein Fehler aufgetreten. Bitte versuchen Sie es später noch einmal.'
 
 const authStore = useAuthStore()
 const router = useRouter()
 
 const verificationLinkSent = ref(false)
+const submitting = ref(false)
+const generalError = ref<string | null>(null)
 
 async function submit(): Promise<void> {
-  await authStore.resendVerificationEmail()
-  verificationLinkSent.value = true
+  submitting.value = true
+  generalError.value = null
+  try {
+    await authStore.resendVerificationEmail()
+    verificationLinkSent.value = true
+  } catch {
+    generalError.value = RESEND_ERROR_MESSAGE
+  } finally {
+    submitting.value = false
+  }
 }
 
 async function logout(): Promise<void> {
@@ -45,7 +65,10 @@ async function logout(): Promise<void> {
             Die Überprüfungs-E-Mail wurde erneut versandt!
           </div>
           <form v-else @submit.prevent="submit">
-            <button type="submit" class="btn btn-primary">Überprüfungs-E-Mail erneut senden</button>
+            <button type="submit" class="btn btn-primary" :disabled="submitting">
+              Überprüfungs-E-Mail erneut senden
+            </button>
+            <small v-if="generalError" class="text-danger d-block mt-2">{{ generalError }}</small>
           </form>
         </div>
         <div class="card-footer">

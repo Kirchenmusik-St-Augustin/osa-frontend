@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted } from 'vue'
+import { onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { Collapse } from 'bootstrap'
 import { useAuthStore } from '@/stores/auth'
@@ -19,11 +19,22 @@ async function logout(): Promise<void> {
 // closed on every navigation. router.afterEach covers both link clicks
 // and back/forward navigation in one hook (Legacy needed a separate
 // popstate listener only because of Inertia's own event system).
-const removeAfterEachHook = router.afterEach(() => {
-  const element = document.getElementById('mainNavBar')
-  if (element) new Collapse(element, { toggle: false }).hide()
+const navbarElement = useTemplateRef<HTMLDivElement>('navbarElement')
+let navbarCollapse: Collapse | null = null
+
+onMounted(() => {
+  if (navbarElement.value) navbarCollapse = new Collapse(navbarElement.value, { toggle: false })
 })
-onUnmounted(removeAfterEachHook)
+
+const removeAfterEachHook = router.afterEach(() => {
+  navbarCollapse?.hide()
+})
+
+onUnmounted(() => {
+  removeAfterEachHook()
+  navbarCollapse?.dispose()
+  navbarCollapse = null
+})
 </script>
 
 <template>
@@ -46,7 +57,7 @@ onUnmounted(removeAfterEachHook)
     >
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div id="mainNavBar" class="collapse navbar-collapse">
+    <div id="mainNavBar" ref="navbarElement" class="collapse navbar-collapse">
       <ul class="navbar-nav mb-2 mb-lg-0">
         <!-- Further left-hand navigation entries are added as real views land in later slices. -->
         <li
@@ -99,14 +110,18 @@ onUnmounted(removeAfterEachHook)
             </div>
           </div>
         </li>
-        <!-- Legacy's "System" menu (AuthLeftMenu.vue) is gated on role
-             'disponent', not the broader userMaintain permission (which also
-             allows administrators) -- Legacy's own System dropdown is
-             disponent-only too, administrators reach user management via
-             their own separate "Administrator" dropdown instead. Item order
-             matches Legacy exactly: Benutzerverzeichnis, Benutzerkonten
-             verwalten, Tarife verwalten. -->
-        <li v-if="authStore.hasPermission('feeMaintain')" class="nav-item">
+        <!-- Item order matches Legacy exactly: Benutzerverzeichnis,
+             Benutzerkonten verwalten, Tarife verwalten. Each link is gated
+             on the permission its route actually requires (userMaintain for
+             the first two, feeMaintain for the third) -- those are distinct
+             permissions (userMaintain also covers administrators without
+             the 'disponent' role, feeMaintain does not), so the outer
+             v-if must cover their union, same pattern as the Repertoire
+             dropdown above. -->
+        <li
+          v-if="authStore.hasPermission('userMaintain') || authStore.hasPermission('feeMaintain')"
+          class="nav-item"
+        >
           <div class="dropdown">
             <button
               class="btn dropdown-toggle"
@@ -117,13 +132,25 @@ onUnmounted(removeAfterEachHook)
               <span>System</span>
             </button>
             <div class="dropdown-menu" data-bs-theme="light">
-              <RouterLink class="dropdown-item" :to="{ name: 'system-userdirectory' }">
+              <RouterLink
+                v-if="authStore.hasPermission('userMaintain')"
+                class="dropdown-item"
+                :to="{ name: 'system-userdirectory' }"
+              >
                 <span>Benutzerverzeichnis</span>
               </RouterLink>
-              <RouterLink class="dropdown-item" :to="{ name: 'system-users-search' }">
+              <RouterLink
+                v-if="authStore.hasPermission('userMaintain')"
+                class="dropdown-item"
+                :to="{ name: 'system-users-search' }"
+              >
                 <span>Benutzerkonten verwalten</span>
               </RouterLink>
-              <RouterLink class="dropdown-item" :to="{ name: 'system-fees' }">
+              <RouterLink
+                v-if="authStore.hasPermission('feeMaintain')"
+                class="dropdown-item"
+                :to="{ name: 'system-fees' }"
+              >
                 <span>Tarife verwalten</span>
               </RouterLink>
             </div>

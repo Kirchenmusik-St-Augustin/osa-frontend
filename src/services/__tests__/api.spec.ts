@@ -228,6 +228,39 @@ describe('api (axios interceptors)', () => {
     expect(resB.data).toEqual({ url: '/protected/b' })
     expect(authStore.accessToken).toBe('new-token')
   })
+
+  it('rejects queued requests instead of hanging when the in-flight refresh fails', async () => {
+    const authStore = useAuthStore()
+    authStore.$patch({ accessToken: 'expired-token' })
+
+    let failRefresh: () => void = () => {}
+    const refreshGate = new Promise<void>((resolve) => {
+      failRefresh = resolve
+    })
+
+    api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      if (config.url === '/auth/refresh') {
+        await refreshGate
+        throw makeError(config, 401, { detail: 'no session' })
+      }
+      if (config.url?.startsWith('/protected')) {
+        throw makeError(config, 401, { detail: 'expired' })
+      }
+      throw new Error(`unexpected url ${String(config.url)}`)
+    })
+
+    const requestA = api.get('/protected/a')
+    const requestB = api.get('/protected/b')
+
+    // Let both initial 401s resolve and the refresh call start before failing it.
+    await Promise.resolve()
+    await Promise.resolve()
+    failRefresh()
+
+    await expect(requestA).rejects.toBeTruthy()
+    await expect(requestB).rejects.toBeTruthy()
+    expect(authStore.accessToken).toBeNull()
+  })
 })
 
 describe('api (global loading bar)', () => {

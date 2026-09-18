@@ -45,6 +45,15 @@ describe('RegisterView', () => {
     }
   })
 
+  it('lets password managers propose a new password for both password fields', () => {
+    const wrapper = mount(RegisterView)
+
+    expect(wrapper.find('input#password').attributes('autocomplete')).toBe('new-password')
+    expect(wrapper.find('input#password_confirmation').attributes('autocomplete')).toBe(
+      'new-password',
+    )
+  })
+
   it('registers and redirects home on success', async () => {
     mockRegister.mockResolvedValueOnce(undefined)
     const wrapper = mount(RegisterView)

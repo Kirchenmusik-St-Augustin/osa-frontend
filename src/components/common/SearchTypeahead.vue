@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 
 // Replacement for Legacy's third-party `pure-vue3-type-ahead` widget (used
 // on the Artists/Ordinariumworks/Propriumworks Search pages) -- same UX
@@ -41,6 +41,10 @@ function onInput(): void {
     })
   }, 300)
 }
+
+onBeforeUnmount(() => {
+  clearTimeout(debounceTimer)
+})
 
 function select(result: SearchResult): void {
   results.value = []

@@ -118,6 +118,7 @@ async function save(): Promise<void> {
                   title="Neues Passwort"
                   type="password"
                   required
+                  autocomplete="new-password"
                   :error="fieldErrors['password']"
                 />
               </div>
@@ -128,6 +129,7 @@ async function save(): Promise<void> {
                   title="Neues Passwort bestätigen"
                   type="password"
                   required
+                  autocomplete="new-password"
                   :error="fieldErrors['password_confirmation']"
                 />
               </div>
@@ -147,6 +149,7 @@ async function save(): Promise<void> {
                   title="Aktuelles Passwort"
                   type="password"
                   required
+                  autocomplete="current-password"
                   :error="fieldErrors['auth_password']"
                 />
               </div>

@@ -22,19 +22,22 @@ vi.mock('vue-router', async (importOriginal) => ({
 // Bootstrap's real Collapse manipulates DOM classes via CSS transitions
 // jsdom doesn't implement -- stubbed minimally instead (same established
 // pattern as vuedraggable/vue-flatpickr-component elsewhere in this repo),
-// so the afterEach hook's Collapse(...).hide() call can be asserted
-// directly without depending on any real transition behavior.
-const { mockCollapse, mockCollapseHide } = vi.hoisted(() => {
+// so the afterEach hook's collapse.hide() call and the unmount-time
+// dispose() can be asserted directly without depending on any real
+// transition behavior.
+const { mockCollapse, mockCollapseHide, mockCollapseDispose } = vi.hoisted(() => {
   const mockCollapseHide = vi.fn()
+  const mockCollapseDispose = vi.fn()
   // Called with `new` in AppNavbar.vue -- mockReturnValue doesn't support
   // that (Vitest requires mockImplementation with a class for constructor
   // mocks), hence the class expression here instead of a plain factory.
   const mockCollapse = vi.fn().mockImplementation(
     class {
       hide = mockCollapseHide
+      dispose = mockCollapseDispose
     },
   )
-  return { mockCollapseHide, mockCollapse }
+  return { mockCollapseHide, mockCollapseDispose, mockCollapse }
 })
 vi.mock('bootstrap', () => ({ Collapse: mockCollapse }))
 
@@ -231,7 +234,7 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).toContain('Statistiken')
   })
 
-  it('hides the System dropdown without the feeMaintain permission', () => {
+  it('hides the System dropdown with neither userMaintain nor feeMaintain', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
@@ -242,17 +245,52 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('System')
   })
 
-  it('shows the System dropdown with all three links, in Legacy order, for a user with feeMaintain', () => {
-    // Legacy's System menu is gated on role 'disponent' (AuthLeftMenu.vue)
-    // -- feeMaintain mirrors that role gate 1:1 (see permission_service.py).
-    // Deliberately NOT gated by the administrator flag, unlike the
-    // Coreelement types in the Administrator dropdown above. Order matches
-    // Legacy exactly: Benutzerverzeichnis, Benutzerkonten verwalten, Tarife
-    // verwalten.
+  it('shows only "Tarife verwalten" for a user with feeMaintain but not userMaintain', () => {
+    // A pure 'disponent' role (feeMaintain=true) without the administrator
+    // flag has no userMaintain permission (see permission_service.py) --
+    // the two user-management links must stay hidden even though the
+    // dropdown itself is visible.
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max', administrator: false },
       permissions: ['feeMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('System')
+    expect(wrapper.text()).toContain('Tarife verwalten')
+    expect(wrapper.text()).not.toContain('Benutzerverzeichnis')
+    expect(wrapper.text()).not.toContain('Benutzerkonten verwalten')
+  })
+
+  it('shows the two user-management links for a user with userMaintain but not feeMaintain', () => {
+    // A pure administrator (userMaintain=true via the is_admin branch, no
+    // 'disponent' role) has no feeMaintain permission -- "Tarife verwalten"
+    // must stay hidden while the dropdown itself is visible. This is the
+    // regression case for the fixed bug: the outer v-if used to gate on
+    // feeMaintain alone, hiding the whole dropdown -- including these two
+    // links the router lets this user reach directly by URL -- from a
+    // userMaintain-only administrator entirely.
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max', administrator: true },
+      permissions: ['userMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('System')
+    expect(wrapper.text()).toContain('Benutzerverzeichnis')
+    expect(wrapper.text()).toContain('Benutzerkonten verwalten')
+    expect(wrapper.text()).not.toContain('Tarife verwalten')
+  })
+
+  it('shows the System dropdown with all three links, in Legacy order, for a user with both permissions', () => {
+    // Order matches Legacy exactly: Benutzerverzeichnis, Benutzerkonten
+    // verwalten, Tarife verwalten.
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max', administrator: false },
+      permissions: ['userMaintain', 'feeMaintain'],
     }
     const wrapper = mount(AppNavbar)
 
@@ -381,6 +419,30 @@ describe('AppNavbar', () => {
       })
       expect(mockCollapseHide).toHaveBeenCalledOnce()
       wrapper.unmount()
+    })
+
+    it('creates the Collapse instance once and reuses it across navigations', () => {
+      const wrapper = mount(AppNavbar)
+      const navigationHook = mockAfterEach.mock.calls[0]?.[0] as () => void
+
+      navigationHook()
+      navigationHook()
+      navigationHook()
+
+      expect(mockCollapse).toHaveBeenCalledOnce()
+      expect(mockCollapseHide).toHaveBeenCalledTimes(3)
+      wrapper.unmount()
+    })
+
+    it('disposes the Collapse instance on unmount and ignores later navigations', () => {
+      const wrapper = mount(AppNavbar)
+      const navigationHook = mockAfterEach.mock.calls[0]?.[0] as () => void
+
+      wrapper.unmount()
+      navigationHook()
+
+      expect(mockCollapseDispose).toHaveBeenCalledOnce()
+      expect(mockCollapseHide).not.toHaveBeenCalled()
     })
 
     it('unregisters the afterEach hook on unmount', () => {

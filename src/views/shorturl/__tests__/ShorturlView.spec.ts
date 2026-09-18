@@ -31,14 +31,16 @@ vi.mock('@/services/notifications', () => ({
 // vi.mock factories run above every import, so the mocked Modal class must
 // come from vi.hoisted() too (1:1 FeeView.spec.ts's own note on this) -- a
 // plain arrow function can't be used as a constructor.
-const { MockModal, mockModalShow, mockModalHide } = vi.hoisted(() => {
+const { MockModal, mockModalShow, mockModalHide, mockModalDispose } = vi.hoisted(() => {
   const mockModalShow = vi.fn()
   const mockModalHide = vi.fn()
+  const mockModalDispose = vi.fn()
   class MockModal {
     show = mockModalShow
     hide = mockModalHide
+    dispose = mockModalDispose
   }
-  return { MockModal, mockModalShow, mockModalHide }
+  return { MockModal, mockModalShow, mockModalHide, mockModalDispose }
 })
 vi.mock('bootstrap', () => ({ Modal: MockModal }))
 
@@ -194,5 +196,14 @@ describe('ShorturlView', () => {
     await flushPromises()
 
     expect(wrapper.find('table').exists()).toBe(false)
+  })
+
+  it('disposes the Bootstrap Modal instance on unmount', async () => {
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+
+    wrapper.unmount()
+
+    expect(mockModalDispose).toHaveBeenCalledOnce()
   })
 })

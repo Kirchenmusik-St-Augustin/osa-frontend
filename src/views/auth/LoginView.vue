@@ -128,6 +128,7 @@ function cancelLinkAccount(): void {
                 type="password"
                 class="form-control"
                 required
+                autocomplete="current-password"
               />
             </div>
             <div class="text-center">
@@ -177,11 +178,17 @@ function cancelLinkAccount(): void {
             </div>
             <div class="mb-3">
               <label class="form-label" for="link-password">Passwort</label>
+              <!-- Deliberate deviation from Legacy (no `required` there): this
+                   endpoint is rate-limited to 5 requests per hour, so an empty
+                   submit must be stopped by the browser instead of burning an
+                   attempt on a request that can only fail. -->
               <input
                 id="link-password"
                 v-model="linkPassword"
                 type="password"
                 class="form-control"
+                required
+                autocomplete="current-password"
               />
             </div>
             <div class="text-center">

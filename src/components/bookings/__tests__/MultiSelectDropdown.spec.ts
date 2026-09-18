@@ -66,6 +66,33 @@ describe('MultiSelectDropdown', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([1])
   })
 
+  it('removes an already-selected item from the model on click, keeping the others', async () => {
+    const wrapper = mount(MultiSelectDropdown, {
+      props: { options, modelValue: [1, 2] },
+    })
+    await wrapper.find('.c-pointer').trigger('click')
+    await wrapper.find('.list-group-item').trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([2])
+  })
+
+  it('falls back to the first tab when a group disappears from the options', async () => {
+    const wrapper = mount(MultiSelectDropdown, {
+      props: { options, modelValue: [] },
+    })
+    await wrapper.find('.c-pointer').trigger('click')
+    await wrapper.findAll('.nav-link')[1]?.trigger('click')
+    expect(wrapper.findAll('.tab-pane')[1]?.classes()).toContain('active')
+
+    const remainingGroup = options[1]!
+    await wrapper.setProps({ options: [remainingGroup] })
+
+    const panes = wrapper.findAll('.tab-pane')
+    expect(panes).toHaveLength(1)
+    expect(panes[0]?.classes()).toContain('active')
+    expect(wrapper.find('.nav-link').classes()).toContain('active')
+  })
+
   it('shows a checked icon only for already-selected items', async () => {
     const wrapper = mount(MultiSelectDropdown, {
       props: { options, modelValue: [1] },

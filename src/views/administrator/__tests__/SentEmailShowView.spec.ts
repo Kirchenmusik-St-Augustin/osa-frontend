@@ -84,6 +84,14 @@ describe('SentEmailShowView', () => {
     expect(iframe.attributes('height')).toBe('1000px')
   })
 
+  it("sandboxes the iframe so a stored HTML body can never execute with the admin session's origin", async () => {
+    mockGet.mockResolvedValueOnce(makeEmail({ body: '<script>alert(1)</script>' }))
+    const wrapper = mount(SentEmailShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(wrapper.find('iframe').attributes('sandbox')).toBe('')
+  })
+
   it('lays out each field as a label/value grid row (col-md-2/col-md-10), 1:1 Legacy', async () => {
     mockGet.mockResolvedValueOnce(makeEmail())
     const wrapper = mount(SentEmailShowView, { props: { id: '1' } })

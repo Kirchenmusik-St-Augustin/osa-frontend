@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, useTemplateRef } from 'vue'
 import { Modal } from 'bootstrap'
 import FormInput from '@/components/common/FormInput.vue'
 import { useFees, type Fee } from '@/composables/useFees'
@@ -31,6 +31,11 @@ onMounted(async () => {
     modalInstance = new Modal(modalElement.value, { backdrop: 'static', keyboard: false })
   }
   await fetchList()
+})
+
+onBeforeUnmount(() => {
+  modalInstance?.dispose()
+  modalInstance = null
 })
 
 // 1:1 port of Legacy's toggleSort()/orderCol/orderDirection -- both start

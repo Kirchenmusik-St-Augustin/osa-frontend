@@ -73,7 +73,13 @@ const mailerBadgeClass = computed(() =>
       <div class="row mb-3">
         <div class="col-md-2 fw-bold">Nachricht:</div>
         <div class="col-md-10">
-          <iframe :srcdoc="email.body ?? ''" class="border-top" width="100%" height="1000px" />
+          <iframe
+            :srcdoc="email.body ?? ''"
+            sandbox=""
+            class="border-top"
+            width="100%"
+            height="1000px"
+          />
         </div>
       </div>
     </div>

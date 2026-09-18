@@ -34,6 +34,17 @@ describe('SearchTypeahead', () => {
     expect(search).toHaveBeenCalledWith('Mozart')
   })
 
+  it('cancels a pending debounced search when unmounted', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    const wrapper = mount(SearchTypeahead, { props: { search } })
+
+    await wrapper.find('input').setValue('Mozart')
+    wrapper.unmount()
+    await vi.advanceTimersByTimeAsync(300)
+
+    expect(search).not.toHaveBeenCalled()
+  })
+
   it('renders results and selects one on click, clearing the query', async () => {
     const search = vi.fn().mockResolvedValue([{ id: 5, label: 'MOZART, Wolfgang' }])
     const wrapper = mount(SearchTypeahead, { props: { search } })

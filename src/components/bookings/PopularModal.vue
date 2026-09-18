@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, useTemplateRef } from 'vue'
+import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { Modal } from 'bootstrap'
 import type { PopularItem } from '@/composables/useBookings'
 import { formatDateTime } from '@/services/dateFormat'
@@ -11,11 +11,17 @@ import { formatDateTime } from '@/services/dateFormat'
 defineProps<{ modalId: string; popular: PopularItem }>()
 
 const modalElement = useTemplateRef<HTMLDivElement>('modalElement')
+let modalInstance: Modal | null = null
 
 onMounted(() => {
   if (modalElement.value) {
-    new Modal(modalElement.value, { backdrop: true, keyboard: true })
+    modalInstance = new Modal(modalElement.value, { backdrop: true, keyboard: true })
   }
+})
+
+onBeforeUnmount(() => {
+  modalInstance?.dispose()
+  modalInstance = null
 })
 </script>
 

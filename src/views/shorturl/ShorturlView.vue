@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, useTemplateRef } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref, useTemplateRef } from 'vue'
 import { Modal } from 'bootstrap'
 import FormInput from '@/components/common/FormInput.vue'
 import { useShorturls, type Shorturl } from '@/composables/useShorturls'
@@ -29,6 +29,11 @@ onMounted(async () => {
     modalInstance = new Modal(modalElement.value, { backdrop: 'static', keyboard: false })
   }
   await fetchList()
+})
+
+onBeforeUnmount(() => {
+  modalInstance?.dispose()
+  modalInstance = null
 })
 
 function resetForm(): void {

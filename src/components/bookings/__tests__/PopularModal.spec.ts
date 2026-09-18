@@ -3,14 +3,16 @@ import { mount } from '@vue/test-utils'
 import PopularModal from '../PopularModal.vue'
 import type { PopularItem } from '@/composables/useBookings'
 
-const { MockModal } = vi.hoisted(() => {
+const { MockModal, mockModalDispose } = vi.hoisted(() => {
+  const mockModalDispose = vi.fn()
   class MockModal {
     static instances: MockModal[] = []
+    dispose = mockModalDispose
     constructor() {
       MockModal.instances.push(this)
     }
   }
-  return { MockModal }
+  return { MockModal, mockModalDispose }
 })
 vi.mock('bootstrap', () => ({ Modal: MockModal }))
 
@@ -34,5 +36,17 @@ describe('PopularModal', () => {
   it('uses a modal id scoped to the given position', () => {
     const wrapper = mount(PopularModal, { props: { modalId: 'voices-7', popular } })
     expect(wrapper.find('#popularvoices-7').exists()).toBe(true)
+  })
+
+  it('disposes the Bootstrap Modal instance on unmount', () => {
+    // Regression test: SingleCastSelector renders one PopularModal PER
+    // setup item (5-10+ at once), so a missing dispose() here accumulates
+    // hard references in Bootstrap's internal Data map over a session with
+    // many edited performances.
+    const wrapper = mount(PopularModal, { props: { modalId: 'instruments-1', popular } })
+
+    wrapper.unmount()
+
+    expect(mockModalDispose).toHaveBeenCalledOnce()
   })
 })

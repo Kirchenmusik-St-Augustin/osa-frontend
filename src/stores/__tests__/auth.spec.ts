@@ -13,7 +13,7 @@ vi.mock('@/services/api', () => ({
 const mockedApi = vi.mocked(api)
 
 const profile = (overrides: Partial<Record<string, unknown>> = {}) => ({
-  id: 1,
+  id: '1',
   email: 'a@example.test',
   email_verified_at: '2024-01-01T00:00:00Z',
   surname: 'MUSTER',
@@ -106,7 +106,7 @@ describe('useAuthStore', () => {
     mockedApi.post.mockResolvedValueOnce({
       data: { access_token: 'restored-token', token_type: 'bearer' },
     })
-    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: 2 }) })
+    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: '2' }) })
     const store = useAuthStore()
 
     await store.restoreSession()
@@ -119,7 +119,7 @@ describe('useAuthStore', () => {
     mockedApi.post.mockResolvedValueOnce({
       data: { access_token: 'restored-token', token_type: 'bearer' },
     })
-    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: 2 }) })
+    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: '2' }) })
     const store = useAuthStore()
 
     await store.restoreSession()
@@ -145,7 +145,7 @@ describe('useAuthStore', () => {
 
   it('register sends the payload, sets the token, and fetches the profile', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { access_token: 'token', token_type: 'bearer' } })
-    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: 3 }) })
+    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: '3' }) })
     const store = useAuthStore()
 
     await store.register({
@@ -166,7 +166,7 @@ describe('useAuthStore', () => {
 
   it('verifyEmail sends the token, sets the access token, and fetches the profile', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { access_token: 'token', token_type: 'bearer' } })
-    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: 4 }) })
+    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: '4' }) })
     const store = useAuthStore()
 
     await store.verifyEmail('some-token')
@@ -184,9 +184,48 @@ describe('useAuthStore', () => {
     expect(mockedApi.post).toHaveBeenCalledWith('/auth/resend-verification-email')
   })
 
+  it('forgotPassword posts the email without touching the session', async () => {
+    mockedApi.post.mockResolvedValueOnce({ data: { status: 'ok' } })
+    const store = useAuthStore()
+
+    await store.forgotPassword('a@example.test')
+
+    expect(mockedApi.post).toHaveBeenCalledWith('/auth/forgot-password', {
+      email: 'a@example.test',
+    })
+    expect(store.isAuthenticated).toBe(false)
+  })
+
+  it('resetPassword posts the payload without touching the session', async () => {
+    mockedApi.post.mockResolvedValueOnce({ data: { status: 'ok' } })
+    const store = useAuthStore()
+    const payload = {
+      email: 'a@example.test',
+      token: 'reset-token-abc',
+      password: 'Passw0rd1',
+      password_confirmation: 'Passw0rd1',
+    }
+
+    await store.resetPassword(payload)
+
+    expect(mockedApi.post).toHaveBeenCalledWith('/auth/reset-password', payload)
+    expect(store.isAuthenticated).toBe(false)
+  })
+
+  it('forgotPassword and resetPassword propagate API errors to the caller', async () => {
+    const failure = new Error('Ungültige E-Mail-Adresse.')
+    mockedApi.post.mockRejectedValueOnce(failure).mockRejectedValueOnce(failure)
+    const store = useAuthStore()
+
+    await expect(store.forgotPassword('nope')).rejects.toBe(failure)
+    await expect(
+      store.resetPassword({ email: 'a', token: 't', password: 'p', password_confirmation: 'p' }),
+    ).rejects.toBe(failure)
+  })
+
   it('loginWithGoogleCredential sends the credential, sets the token, and fetches the profile', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { access_token: 'token', token_type: 'bearer' } })
-    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: 5 }) })
+    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: '5' }) })
     const store = useAuthStore()
 
     await store.loginWithGoogleCredential('google-credential')
@@ -199,7 +238,7 @@ describe('useAuthStore', () => {
 
   it('linkGoogleAccount sends credential+local creds, sets the token, and fetches the profile', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { access_token: 'token', token_type: 'bearer' } })
-    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: 6 }) })
+    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: '6' }) })
     const store = useAuthStore()
 
     await store.linkGoogleAccount('google-credential', 'f@example.test', 'secret')

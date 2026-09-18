@@ -12,14 +12,16 @@ import type {
 import type { Ordinariumwork, OrdinariumworkSetup } from '@/composables/useOrdinariumworks'
 import type { Propriumwork } from '@/composables/usePropriumworks'
 
-const { MockModal, mockModalShow, mockModalHide } = vi.hoisted(() => {
+const { MockModal, mockModalShow, mockModalHide, mockModalDispose } = vi.hoisted(() => {
   const mockModalShow = vi.fn()
   const mockModalHide = vi.fn()
+  const mockModalDispose = vi.fn()
   class MockModal {
     show = mockModalShow
     hide = mockModalHide
+    dispose = mockModalDispose
   }
-  return { MockModal, mockModalShow, mockModalHide }
+  return { MockModal, mockModalShow, mockModalHide, mockModalDispose }
 })
 vi.mock('bootstrap', () => ({ Modal: MockModal }))
 
@@ -506,5 +508,16 @@ describe('PerformanceFormView -- Proprium editor', () => {
 
     await wrapper.find('.fa-trash').trigger('click')
     expect(wrapper.text()).not.toContain('Gregorianik I')
+  })
+})
+
+describe('PerformanceFormView -- modal lifecycle', () => {
+  it('disposes both Bootstrap Modal instances (Ordinarium + Proprium) on unmount', async () => {
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    wrapper.unmount()
+
+    expect(mockModalDispose).toHaveBeenCalledTimes(2)
   })
 })

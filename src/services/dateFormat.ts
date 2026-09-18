@@ -42,10 +42,9 @@ function pad(value: number): string {
 
 // The backend serializes `schedule` fields as a naive, offset-free string
 // representing local wall-clock time in Settings.app_timezone (default
-// Europe/Vienna) -- those DB columns are still declared without a
-// timezone (a real TIMESTAMPTZ migration is a separate, not-yet-started
-// step), and unlike created_at/updated_at (genuinely UTC audit columns),
-// `schedule` is a
+// Europe/Vienna) -- those DB columns are deliberately kept without a
+// timezone (unlike created_at/updated_at, which are genuinely UTC audit
+// columns), since `schedule` is a
 // user-entered value that mirrors Legacy's Carbon under
 // config('app.timezone') (see osa-backend's app/core/datetime_utils.py::
 // local_now()). It carries NO timezone of its own and must never be run

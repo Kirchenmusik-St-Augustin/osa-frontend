@@ -82,6 +82,7 @@ async function submit(): Promise<void> {
                 type="password"
                 class="form-control"
                 required
+                autocomplete="new-password"
               />
               <small class="text-danger">{{ fieldErrors['password'] }}</small>
             </div>
@@ -93,6 +94,7 @@ async function submit(): Promise<void> {
                 type="password"
                 class="form-control"
                 required
+                autocomplete="new-password"
               />
               <div class="form-check-label small text-danger">
                 {{ fieldErrors['password_confirmation'] }}

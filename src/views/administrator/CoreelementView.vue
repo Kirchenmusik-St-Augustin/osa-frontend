@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, useTemplateRef, watch } from 'vue'
 import { Modal } from 'bootstrap'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'
 import FormInput from '@/components/common/FormInput.vue'
@@ -49,6 +49,11 @@ onMounted(async () => {
     modalInstance = new Modal(modalElement.value, { backdrop: 'static', keyboard: false })
   }
   await fetchList()
+})
+
+onBeforeUnmount(() => {
+  modalInstance?.dispose()
+  modalInstance = null
 })
 
 // Vue Router reuses this exact component instance when navigating between

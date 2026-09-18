@@ -34,14 +34,16 @@ vi.mock('@/services/notifications', () => ({
 // mockCurrentRoute pattern in services/__tests__/api.spec.ts). Also note
 // arrow functions can never be used as constructors (`new (() => {})()`
 // throws), so this needs an actual class, not `.mockImplementation(() => ...)`.
-const { MockModal, mockModalShow, mockModalHide } = vi.hoisted(() => {
+const { MockModal, mockModalShow, mockModalHide, mockModalDispose } = vi.hoisted(() => {
   const mockModalShow = vi.fn()
   const mockModalHide = vi.fn()
+  const mockModalDispose = vi.fn()
   class MockModal {
     show = mockModalShow
     hide = mockModalHide
+    dispose = mockModalDispose
   }
-  return { MockModal, mockModalShow, mockModalHide }
+  return { MockModal, mockModalShow, mockModalHide, mockModalDispose }
 })
 vi.mock('bootstrap', () => ({ Modal: MockModal }))
 
@@ -356,5 +358,14 @@ describe('CoreelementView', () => {
 
     expect(wrapper.text()).toContain('Der Wert ist bereits vergeben.')
     expect(wrapper.text()).toContain('Dieses Feld ist erforderlich.')
+  })
+
+  it('disposes the Bootstrap Modal instance on unmount', async () => {
+    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
+    await flushPromises()
+
+    wrapper.unmount()
+
+    expect(mockModalDispose).toHaveBeenCalledOnce()
   })
 })

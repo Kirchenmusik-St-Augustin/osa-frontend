@@ -1,13 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ForgotPasswordView from '../ForgotPasswordView.vue'
-import api from '@/services/api'
 
-vi.mock('@/services/api', () => ({
-  default: { post: vi.fn() },
+const mockForgotPassword = vi.fn()
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: () => ({ forgotPassword: mockForgotPassword }),
 }))
-
-const mockedApi = vi.mocked(api)
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -25,7 +23,7 @@ describe('ForgotPasswordView', () => {
   })
 
   it('shows the neutral confirmation message after submitting, regardless of the outcome', async () => {
-    mockedApi.post.mockResolvedValueOnce({ data: { status: 'ok' } })
+    mockForgotPassword.mockResolvedValueOnce(undefined)
     const wrapper = mount(ForgotPasswordView)
 
     await wrapper.find('input#email').setValue('nobody@example.com')
@@ -36,15 +34,13 @@ describe('ForgotPasswordView', () => {
       ),
     )
 
-    expect(mockedApi.post).toHaveBeenCalledWith('/auth/forgot-password', {
-      email: 'nobody@example.com',
-    })
+    expect(mockForgotPassword).toHaveBeenCalledWith('nobody@example.com')
     // The form itself disappears once the neutral confirmation is shown.
     expect(wrapper.find('input#email').exists()).toBe(false)
   })
 
   it('shows a field error on malformed input instead of the confirmation', async () => {
-    mockedApi.post.mockRejectedValueOnce({
+    mockForgotPassword.mockRejectedValueOnce({
       response: {
         data: {
           detail: [

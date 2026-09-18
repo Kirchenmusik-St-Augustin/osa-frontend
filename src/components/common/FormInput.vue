@@ -9,7 +9,10 @@
 // Schritt 8 (Scores) -- its generic, config-driven field grid is the
 // first caller needing Legacy's read-only Show variant and its compact
 // "small" inputs; both are additive and default to Legacy's normal look,
-// so every existing call site is unaffected.
+// so every existing call site is unaffected. `autocomplete` is passed
+// through to the real form control explicitly -- the single root <div>
+// swallows attribute fallthrough -- so password fields can tell password
+// managers whether to fill an existing or propose a new password.
 const model = defineModel<string | number | null>({ required: true })
 
 withDefaults(
@@ -24,6 +27,7 @@ withDefaults(
     max?: number
     readonly?: boolean
     small?: boolean
+    autocomplete?: string
   }>(),
   {
     title: undefined,
@@ -35,6 +39,7 @@ withDefaults(
     max: undefined,
     readonly: false,
     small: false,
+    autocomplete: undefined,
   },
 )
 </script>
@@ -55,6 +60,7 @@ withDefaults(
       :readonly="readonly"
       :disabled="readonly"
       :maxlength="max"
+      :autocomplete="autocomplete"
     ></textarea>
     <input
       v-else-if="type === 'number'"
@@ -67,6 +73,7 @@ withDefaults(
       :required="required"
       :readonly="readonly"
       :disabled="readonly"
+      :autocomplete="autocomplete"
       :class="small ? ['form-control-sm'] : []"
     />
     <input
@@ -78,7 +85,8 @@ withDefaults(
       :required="required"
       :readonly="readonly"
       :disabled="readonly"
-      :maxlength="type === 'text' ? max : undefined"
+      :maxlength="max"
+      :autocomplete="autocomplete"
       :class="small ? ['form-control-sm'] : []"
     />
     <small class="text-danger">{{ error }}&nbsp;</small>
