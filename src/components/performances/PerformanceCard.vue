@@ -8,6 +8,7 @@ import type {
   PerformanceRehearsal,
 } from '@/composables/usePerformances'
 import BookingStatusBadge from '@/components/bookings/BookingStatusBadge.vue'
+import AppDropdown from '@/components/common/AppDropdown.vue'
 import PropriumSetup from './PropriumSetup.vue'
 
 // Structural subset shared by PerformanceCalendarItem and PerformanceShow --
@@ -99,76 +100,68 @@ const upcoming = computed(() => parseWallClock(props.performance.schedule).getTi
     <div class="card-body">
       <div class="row">
         <div class="col-lg-2 order-lg-2 text-end">
-          <div v-if="showMenu" class="dropdown">
-            <button
-              class="btn btn-sm btn-primary dropdown-toggle"
-              type="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            ></button>
-            <ul class="dropdown-menu dropdown-menu-end">
+          <AppDropdown v-if="showMenu" toggle-class="btn btn-sm btn-primary" menu-tag="ul" menu-end>
+            <li>
+              <RouterLink
+                class="dropdown-item"
+                :to="{ name: 'performances-show', params: { id: performance.id } }"
+              >
+                <i class="fas fa-info-circle me-1"></i>Information
+              </RouterLink>
+            </li>
+            <template v-if="upcoming && authStore.hasPermission('performanceMaintain')">
+              <li><hr class="dropdown-divider" /></li>
               <li>
                 <RouterLink
                   class="dropdown-item"
-                  :to="{ name: 'performances-show', params: { id: performance.id } }"
+                  :to="{ name: 'performances-edit', params: { id: performance.id } }"
                 >
-                  <i class="fas fa-info-circle me-1"></i>Information
+                  <i class="fas fa-edit me-1"></i>Bearbeiten
                 </RouterLink>
               </li>
-              <template v-if="upcoming && authStore.hasPermission('performanceMaintain')">
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                  <RouterLink
-                    class="dropdown-item"
-                    :to="{ name: 'performances-edit', params: { id: performance.id } }"
-                  >
-                    <i class="fas fa-edit me-1"></i>Bearbeiten
-                  </RouterLink>
-                </li>
-                <li v-if="authStore.hasPermission('performanceCast')">
-                  <RouterLink
-                    class="dropdown-item"
-                    :to="{
-                      name: 'performances-requests-and-bookings',
-                      params: { id: performance.id },
-                    }"
-                  >
-                    <i class="fas fa-eye me-1"></i>Anfragen und Buchungen
-                  </RouterLink>
-                </li>
-                <li v-if="authStore.hasPermission('performanceCast')">
-                  <RouterLink
-                    class="dropdown-item"
-                    :to="{ name: 'performances-cast', params: { id: performance.id } }"
-                  >
-                    <i class="fas fa-boxes me-1"></i>Besetzung
-                  </RouterLink>
-                </li>
-                <li v-if="authStore.hasPermission('performanceCast')">
-                  <RouterLink
-                    class="dropdown-item"
-                    :to="{
-                      name: 'performances-message-to-cast',
-                      params: { id: performance.id },
-                    }"
-                  >
-                    <i class="fas fa-envelope me-1"></i>Nachricht an aktuelle Besetzung
-                  </RouterLink>
-                </li>
-              </template>
-              <template v-if="authStore.hasPermission('performanceBilling')">
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                  <RouterLink
-                    class="dropdown-item"
-                    :to="{ name: 'performances-billing', params: { id: performance.id } }"
-                  >
-                    <i class="fas fa-euro-sign me-1"></i>Abrechnung
-                  </RouterLink>
-                </li>
-              </template>
-            </ul>
-          </div>
+              <li v-if="authStore.hasPermission('performanceCast')">
+                <RouterLink
+                  class="dropdown-item"
+                  :to="{
+                    name: 'performances-requests-and-bookings',
+                    params: { id: performance.id },
+                  }"
+                >
+                  <i class="fas fa-eye me-1"></i>Anfragen und Buchungen
+                </RouterLink>
+              </li>
+              <li v-if="authStore.hasPermission('performanceCast')">
+                <RouterLink
+                  class="dropdown-item"
+                  :to="{ name: 'performances-cast', params: { id: performance.id } }"
+                >
+                  <i class="fas fa-boxes me-1"></i>Besetzung
+                </RouterLink>
+              </li>
+              <li v-if="authStore.hasPermission('performanceCast')">
+                <RouterLink
+                  class="dropdown-item"
+                  :to="{
+                    name: 'performances-message-to-cast',
+                    params: { id: performance.id },
+                  }"
+                >
+                  <i class="fas fa-envelope me-1"></i>Nachricht an aktuelle Besetzung
+                </RouterLink>
+              </li>
+            </template>
+            <template v-if="authStore.hasPermission('performanceBilling')">
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <RouterLink
+                  class="dropdown-item"
+                  :to="{ name: 'performances-billing', params: { id: performance.id } }"
+                >
+                  <i class="fas fa-euro-sign me-1"></i>Abrechnung
+                </RouterLink>
+              </li>
+            </template>
+          </AppDropdown>
         </div>
         <div class="col-lg-10 order-lg-1 text-start">
           <small>{{ performance.ordinariumwork_artist_name }}</small>

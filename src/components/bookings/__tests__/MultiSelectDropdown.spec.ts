@@ -25,35 +25,31 @@ describe('MultiSelectDropdown', () => {
     expect(wrapper.find('.list-group-item').exists()).toBe(false)
   })
 
-  it('opens on badge click and shows only the first group by default', async () => {
+  it('opens on badge click and renders only the first group by default', async () => {
     const wrapper = mount(MultiSelectDropdown, {
       props: { options, modelValue: [] },
     })
     await wrapper.find('.c-pointer').trigger('click')
 
     expect(wrapper.text()).toContain('Requester')
-    // Bootstrap's own stylesheet drives .tab-pane visibility via the
-    // "active" class (`.tab-pane { display: none } .tab-pane.active {
-    // display: block }`) -- toggling it via v-show instead would only
-    // ever remove/restore an inline override, which falls back to that
-    // same stylesheet "none" once shown. Asserting on the class (not
-    // isVisible(), which needs the real stylesheet loaded to mean
-    // anything) is what actually matches Bootstrap's contract here.
-    const panes = wrapper.findAll('.tab-pane')
-    expect(panes[0]?.classes()).toContain('active')
-    expect(panes[1]?.classes()).not.toContain('active')
+    expect(wrapper.text()).not.toContain('Other')
+    const tabs = wrapper.findAll('.nav-link')
+    expect(tabs[0]?.classes()).toContain('active')
+    expect(tabs[1]?.classes()).not.toContain('active')
   })
 
-  it('switches tabs on click, revealing the other group', async () => {
+  it('switches tabs on click, swapping the rendered group', async () => {
     const wrapper = mount(MultiSelectDropdown, {
       props: { options, modelValue: [] },
     })
     await wrapper.find('.c-pointer').trigger('click')
     await wrapper.findAll('.nav-link')[1]?.trigger('click')
 
-    const panes = wrapper.findAll('.tab-pane')
-    expect(panes[0]?.classes()).not.toContain('active')
-    expect(panes[1]?.classes()).toContain('active')
+    expect(wrapper.text()).toContain('Other')
+    expect(wrapper.text()).not.toContain('Requester')
+    const tabs = wrapper.findAll('.nav-link')
+    expect(tabs[0]?.classes()).not.toContain('active')
+    expect(tabs[1]?.classes()).toContain('active')
   })
 
   it('toggles an item into and out of the model on click', async () => {
@@ -82,15 +78,14 @@ describe('MultiSelectDropdown', () => {
     })
     await wrapper.find('.c-pointer').trigger('click')
     await wrapper.findAll('.nav-link')[1]?.trigger('click')
-    expect(wrapper.findAll('.tab-pane')[1]?.classes()).toContain('active')
+    expect(wrapper.findAll('.nav-link')[1]?.classes()).toContain('active')
 
     const remainingGroup = options[1]!
     await wrapper.setProps({ options: [remainingGroup] })
 
-    const panes = wrapper.findAll('.tab-pane')
-    expect(panes).toHaveLength(1)
-    expect(panes[0]?.classes()).toContain('active')
+    expect(wrapper.findAll('.nav-link')).toHaveLength(1)
     expect(wrapper.find('.nav-link').classes()).toContain('active')
+    expect(wrapper.text()).toContain('Other')
   })
 
   it('shows a checked icon only for already-selected items', async () => {
@@ -103,18 +98,31 @@ describe('MultiSelectDropdown', () => {
     expect(item.find('.fa-square-check').exists()).toBe(true)
   })
 
+  it('stays open when an item inside the panel is clicked', async () => {
+    const wrapper = mount(MultiSelectDropdown, {
+      props: { options, modelValue: [] },
+      attachTo: document.body,
+    })
+    await wrapper.find('.c-pointer').trigger('click')
+
+    await wrapper.find('.list-group-item').trigger('click')
+
+    expect(wrapper.find('.multiselect-panel').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('closes when clicking outside the component', async () => {
     const wrapper = mount(MultiSelectDropdown, {
       props: { options, modelValue: [] },
       attachTo: document.body,
     })
     await wrapper.find('.c-pointer').trigger('click')
-    expect(wrapper.find('.dropdown').exists()).toBe(true)
+    expect(wrapper.find('.multiselect-panel').exists()).toBe(true)
 
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('.dropdown').exists()).toBe(false)
+    expect(wrapper.find('.multiselect-panel').exists()).toBe(false)
     wrapper.unmount()
   })
 })

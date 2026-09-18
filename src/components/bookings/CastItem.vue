@@ -109,7 +109,6 @@ function handleRemoveNotBooked(id: string): void {
             :bookable="bookable"
             :fees="fees"
             :popular="popular"
-            :modal-id="`${type}-${item.id}`"
             @add-to="handleAddTo"
           />
         </div>

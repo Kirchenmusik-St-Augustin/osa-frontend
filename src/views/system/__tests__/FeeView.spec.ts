@@ -25,22 +25,6 @@ vi.mock('@/services/notifications', () => ({
   showToast: (...args: unknown[]) => mockShowToast(...args),
 }))
 
-// vi.mock factories run above every import, so the mocked Modal class must
-// come from vi.hoisted() too (same as CoreelementView.spec.ts) -- a plain
-// arrow function can't be used as a constructor.
-const { MockModal, mockModalShow, mockModalHide, mockModalDispose } = vi.hoisted(() => {
-  const mockModalShow = vi.fn()
-  const mockModalHide = vi.fn()
-  const mockModalDispose = vi.fn()
-  class MockModal {
-    show = mockModalShow
-    hide = mockModalHide
-    dispose = mockModalDispose
-  }
-  return { MockModal, mockModalShow, mockModalHide, mockModalDispose }
-})
-vi.mock('bootstrap', () => ({ Modal: MockModal }))
-
 function makeFee(overrides: Partial<Fee> = {}): Fee {
   return { id: 1, name: 'Chor', amount: 0, ...overrides }
 }
@@ -125,8 +109,9 @@ describe('FeeView', () => {
     const wrapper = mount(FeeView)
     await flushPromises()
 
+    expect(wrapper.find('.modal').exists()).toBe(false)
     await wrapper.find('button.btn-secondary.my-3').trigger('click')
-    expect(mockModalShow).toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(true)
 
     await wrapper.find('input#fee-name').setValue('Solist')
     await wrapper.find('input#fee-amount').setValue(80)
@@ -137,7 +122,7 @@ describe('FeeView', () => {
     // The toast says "Tarif gespeichert" (singular "Tarif", matching the
     // page's own "Tarife verwalten" title) -- not "Honorar".
     expect(mockShowToast).toHaveBeenCalledWith('Tarif gespeichert')
-    expect(mockModalHide).toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(false)
   })
 
   it('pre-fills the form and updates the existing fee when editing', async () => {
@@ -165,13 +150,14 @@ describe('FeeView', () => {
     })
     const wrapper = mount(FeeView)
     await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
 
     await wrapper.find('input#fee-name').setValue('Chor')
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Der Name ist bereits vergeben.')
-    expect(mockModalHide).not.toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(true)
   })
 
   it('deletes a fee after the user confirms, using the generic "Element" confirm/toast copy', async () => {
@@ -204,12 +190,16 @@ describe('FeeView', () => {
     expect(mockRemove).not.toHaveBeenCalled()
   })
 
-  it('disposes the Bootstrap Modal instance on unmount', async () => {
+  it('releases the page scroll lock when unmounted while the modal is open', async () => {
+    // Regression test: navigating away (e.g. browser back) with the dialog
+    // open must not leave the page stuck unscrollable.
     const wrapper = mount(FeeView)
     await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+    expect(document.body.classList.contains('modal-open')).toBe(true)
 
     wrapper.unmount()
 
-    expect(mockModalDispose).toHaveBeenCalledOnce()
+    expect(document.body.classList.contains('modal-open')).toBe(false)
   })
 })

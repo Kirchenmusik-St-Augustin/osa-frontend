@@ -1,5 +1,6 @@
 import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import AppNavbar from '../AppNavbar.vue'
 
@@ -18,28 +19,6 @@ vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof VueRouter>()),
   useRouter: () => ({ push: mockPush, afterEach: mockAfterEach }),
 }))
-
-// Bootstrap's real Collapse manipulates DOM classes via CSS transitions
-// jsdom doesn't implement -- stubbed minimally instead (same established
-// pattern as vuedraggable/vue-flatpickr-component elsewhere in this repo),
-// so the afterEach hook's collapse.hide() call and the unmount-time
-// dispose() can be asserted directly without depending on any real
-// transition behavior.
-const { mockCollapse, mockCollapseHide, mockCollapseDispose } = vi.hoisted(() => {
-  const mockCollapseHide = vi.fn()
-  const mockCollapseDispose = vi.fn()
-  // Called with `new` in AppNavbar.vue -- mockReturnValue doesn't support
-  // that (Vitest requires mockImplementation with a class for constructor
-  // mocks), hence the class expression here instead of a plain factory.
-  const mockCollapse = vi.fn().mockImplementation(
-    class {
-      hide = mockCollapseHide
-      dispose = mockCollapseDispose
-    },
-  )
-  return { mockCollapseHide, mockCollapseDispose, mockCollapse }
-})
-vi.mock('bootstrap', () => ({ Collapse: mockCollapse }))
 
 const mockLogout = vi.fn()
 let mockAuthState: {
@@ -404,43 +383,33 @@ describe('AppNavbar', () => {
     expect(link).toBeDefined()
   })
 
-  describe('burger menu closes on navigation', () => {
-    it('registers a router.afterEach hook that force-closes #mainNavBar via Bootstrap Collapse', () => {
-      const wrapper = mount(AppNavbar, { attachTo: document.body })
+  describe('burger menu', () => {
+    it('starts closed and toggles via the toggler button', async () => {
+      const wrapper = mount(AppNavbar)
+      const toggler = wrapper.find('.navbar-toggler')
+      const menu = wrapper.find('#mainNavBar')
+      expect(menu.classes()).not.toContain('show')
+      expect(toggler.attributes('aria-expanded')).toBe('false')
+
+      await toggler.trigger('click')
+      expect(menu.classes()).toContain('show')
+      expect(toggler.attributes('aria-expanded')).toBe('true')
+
+      await toggler.trigger('click')
+      expect(menu.classes()).not.toContain('show')
+    })
+
+    it('force-closes when the router finishes a navigation', async () => {
+      const wrapper = mount(AppNavbar)
+      await wrapper.find('.navbar-toggler').trigger('click')
+      expect(wrapper.find('#mainNavBar').classes()).toContain('show')
 
       expect(mockAfterEach).toHaveBeenCalledOnce()
       const navigationHook = mockAfterEach.mock.calls[0]?.[0] as () => void
       navigationHook()
+      await nextTick()
 
-      expect(mockCollapse).toHaveBeenCalledWith(document.getElementById('mainNavBar'), {
-        toggle: false,
-      })
-      expect(mockCollapseHide).toHaveBeenCalledOnce()
-      wrapper.unmount()
-    })
-
-    it('creates the Collapse instance once and reuses it across navigations', () => {
-      const wrapper = mount(AppNavbar)
-      const navigationHook = mockAfterEach.mock.calls[0]?.[0] as () => void
-
-      navigationHook()
-      navigationHook()
-      navigationHook()
-
-      expect(mockCollapse).toHaveBeenCalledOnce()
-      expect(mockCollapseHide).toHaveBeenCalledTimes(3)
-      wrapper.unmount()
-    })
-
-    it('disposes the Collapse instance on unmount and ignores later navigations', () => {
-      const wrapper = mount(AppNavbar)
-      const navigationHook = mockAfterEach.mock.calls[0]?.[0] as () => void
-
-      wrapper.unmount()
-      navigationHook()
-
-      expect(mockCollapseDispose).toHaveBeenCalledOnce()
-      expect(mockCollapseHide).not.toHaveBeenCalled()
+      expect(wrapper.find('#mainNavBar').classes()).not.toContain('show')
     })
 
     it('unregisters the afterEach hook on unmount', () => {
@@ -449,6 +418,26 @@ describe('AppNavbar', () => {
       wrapper.unmount()
 
       expect(mockRemoveAfterEachHook).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('dropdown menus', () => {
+    it('opens the user menu from its toggle and closes it after picking an entry', async () => {
+      mockAuthState = {
+        isAuthenticated: true,
+        user: { surname: 'MUSTER', givenname: 'Max' },
+        permissions: [],
+      }
+      mockLogout.mockResolvedValueOnce(undefined)
+      const wrapper = mount(AppNavbar)
+      const menu = wrapper.find('.dropdown-menu')
+      expect(menu.classes()).not.toContain('show')
+
+      await wrapper.find('.dropdown-toggle').trigger('click')
+      expect(menu.classes()).toContain('show')
+
+      await menu.find('button.dropdown-item').trigger('click')
+      expect(menu.classes()).not.toContain('show')
     })
   })
 })

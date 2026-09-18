@@ -1,10 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import CastItem from '../CastItem.vue'
 import SingleCastList from '../SingleCastList.vue'
 import type { BookableGroup, CastMember, Fee } from '@/composables/useBookings'
-
-vi.mock('bootstrap', () => ({ Modal: vi.fn() }))
 
 const bookable: BookableGroup = { requesting: [], other: [{ id: 5, name: 'Candidate' }] }
 const fees: Fee[] = [{ id: 3, name: 'Instrumentalist', amount: 80 }]

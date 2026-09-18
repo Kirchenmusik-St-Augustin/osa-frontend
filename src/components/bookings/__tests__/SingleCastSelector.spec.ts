@@ -1,9 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import SingleCastSelector from '../SingleCastSelector.vue'
 import type { BookableGroup, Fee } from '@/composables/useBookings'
-
-vi.mock('bootstrap', () => ({ Modal: vi.fn() }))
 
 const bookable: BookableGroup = {
   requesting: [{ id: 1, name: 'Requester' }],
@@ -32,17 +30,19 @@ describe('SingleCastSelector', () => {
         notBooked: [],
         bookable,
         fees,
-        modalId: 'instruments-1',
       },
     })
     await openDropdown(wrapper)
-    expect(wrapper.text()).not.toContain('AlreadyBooked')
+    expect(wrapper.text()).toContain('Requester')
+
+    await wrapper.findAll('.nav-link')[1]?.trigger('click')
     expect(wrapper.text()).toContain('Other')
+    expect(wrapper.text()).not.toContain('AlreadyBooked')
   })
 
   it('defaults the fee selection to id 3 when present', () => {
     const wrapper = mount(SingleCastSelector, {
-      props: { allBooked: [], notBooked: [], bookable, fees, modalId: 'instruments-1' },
+      props: { allBooked: [], notBooked: [], bookable, fees },
     })
     const select = wrapper.find('select').element as HTMLSelectElement
     expect(select.value).toBe('3')
@@ -50,7 +50,7 @@ describe('SingleCastSelector', () => {
 
   it('disables both action buttons until at least one candidate is selected', async () => {
     const wrapper = mount(SingleCastSelector, {
-      props: { allBooked: [], notBooked: [], bookable, fees, modalId: 'instruments-1' },
+      props: { allBooked: [], notBooked: [], bookable, fees },
     })
     const buttons = wrapper
       .findAll('button.btn-primary')
@@ -70,7 +70,7 @@ describe('SingleCastSelector', () => {
 
   it('emits add-to with stack "cast" and the selected fee amount on hinzufügen', async () => {
     const wrapper = mount(SingleCastSelector, {
-      props: { allBooked: [], notBooked: [], bookable, fees, modalId: 'instruments-1' },
+      props: { allBooked: [], notBooked: [], bookable, fees },
     })
     await openDropdown(wrapper)
     await wrapper.find('.list-group-item').trigger('click')
@@ -89,7 +89,7 @@ describe('SingleCastSelector', () => {
 
   it('emits add-to with stack "notBooked" on zurückweisen', async () => {
     const wrapper = mount(SingleCastSelector, {
-      props: { allBooked: [], notBooked: [], bookable, fees, modalId: 'instruments-1' },
+      props: { allBooked: [], notBooked: [], bookable, fees },
     })
     await openDropdown(wrapper)
     await wrapper.find('.list-group-item').trigger('click')
@@ -104,7 +104,7 @@ describe('SingleCastSelector', () => {
 
   it('shows the popular star button only when a popular prop is supplied', () => {
     const withoutPopular = mount(SingleCastSelector, {
-      props: { allBooked: [], notBooked: [], bookable, fees, modalId: 'instruments-1' },
+      props: { allBooked: [], notBooked: [], bookable, fees },
     })
     expect(withoutPopular.find('.fa-star').exists()).toBe(false)
 
@@ -114,11 +114,32 @@ describe('SingleCastSelector', () => {
         notBooked: [],
         bookable,
         fees,
-        modalId: 'instruments-1',
         popular: { frequent: [], recent: [] },
       },
     })
     expect(withPopular.find('.fa-star').exists()).toBe(true)
+  })
+
+  it('opens the popular-bookings dialog from the star button and closes it again', async () => {
+    const wrapper = mount(SingleCastSelector, {
+      props: {
+        allBooked: [],
+        notBooked: [],
+        bookable,
+        fees,
+        popular: {
+          frequent: [{ id: 1, name: 'Muster, Max', total: 5 }],
+          recent: [],
+        },
+      },
+    })
+    expect(wrapper.find('.modal').exists()).toBe(false)
+
+    await wrapper.find('.fa-star').trigger('click')
+    expect(wrapper.find('.modal').text()).toContain('Muster, Max (5)')
+
+    await wrapper.find('.btn-close').trigger('click')
+    expect(wrapper.find('.modal').exists()).toBe(false)
   })
 
   it('carries voice_name/voice_order through into emitted candidates', async () => {
@@ -131,7 +152,6 @@ describe('SingleCastSelector', () => {
           other: [{ id: 2, name: 'Other', voice_name: 'Sopran', voice_order: 1 }],
         },
         fees,
-        modalId: 'choirjobs-1',
       },
     })
     await openDropdown(wrapper)
@@ -158,7 +178,6 @@ describe('SingleCastSelector', () => {
         notBooked: [],
         bookable,
         fees,
-        modalId: 'instruments-1',
       },
     })
     expect(wrapper.find('select').exists()).toBe(false)

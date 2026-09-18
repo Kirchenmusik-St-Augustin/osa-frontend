@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, useTemplateRef } from 'vue'
-import { Modal } from 'bootstrap'
+import { onMounted, reactive, ref } from 'vue'
+import AppModal from '@/components/common/AppModal.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import { useShorturls, type Shorturl } from '@/composables/useShorturls'
 import { extractApiErrors } from '@/services/apiErrors'
@@ -9,7 +9,7 @@ import { formatUtcDateTime } from '@/services/dateFormat'
 
 // Deliberately its own small modal-edit page, following CoreelementView.vue's/
 // FeeView.vue's pattern of shared building blocks (FormInput,
-// notifications.ts, bootstrap Modal) -- but with its own markup (bare
+// notifications.ts, AppModal) -- but with its own markup (bare
 // clickable icons instead of icon buttons, no row/col grid wrapper around
 // the table, `.modal-lg`) rather than FeeView.vue's.
 const { items, urlprefix, fetchList, save, remove } = useShorturls()
@@ -19,20 +19,9 @@ const editingId = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 
-const modalElement = useTemplateRef<HTMLDivElement>('editModal')
-let modalInstance: Modal | null = null
+const modalOpen = ref(false)
 
-onMounted(async () => {
-  if (modalElement.value) {
-    modalInstance = new Modal(modalElement.value, { backdrop: 'static', keyboard: false })
-  }
-  await fetchList()
-})
-
-onBeforeUnmount(() => {
-  modalInstance?.dispose()
-  modalInstance = null
-})
+onMounted(fetchList)
 
 function resetForm(): void {
   editForm.path = ''
@@ -43,7 +32,7 @@ function resetForm(): void {
 function openCreateModal(): void {
   editingId.value = null
   resetForm()
-  modalInstance?.show()
+  modalOpen.value = true
 }
 
 function openEditModal(shorturl: Shorturl): void {
@@ -51,11 +40,11 @@ function openEditModal(shorturl: Shorturl): void {
   editForm.path = shorturl.path
   editForm.target = shorturl.target
   fieldErrors.value = {}
-  modalInstance?.show()
+  modalOpen.value = true
 }
 
 function closeModal(): void {
-  modalInstance?.hide()
+  modalOpen.value = false
   resetForm()
 }
 
@@ -90,61 +79,52 @@ async function deleteItem(shorturl: Shorturl): Promise<void> {
 <template>
   <h2 class="h2 text-center mb-4">Kurz-URLs</h2>
 
-  <div
-    id="editModal"
-    ref="editModal"
-    class="modal fade"
-    tabindex="-1"
-    data-bs-backdrop="static"
-    data-bs-keyboard="false"
-  >
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Bearbeiten</h5>
+  <AppModal v-model="modalOpen" :dismissible="false" size="lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bearbeiten</h5>
+      </div>
+      <div class="modal-body">
+        <FormInput
+          id="shorturl-path"
+          v-model="editForm.path"
+          title="Pfad"
+          required
+          :error="fieldErrors['path']"
+        />
+        <FormInput
+          id="shorturl-target"
+          v-model="editForm.target"
+          title="Ziel"
+          required
+          :error="fieldErrors['target']"
+        />
+        <div v-if="editForm.path.length" class="mt-2 overflow-x-hidden">
+          <span class="text-muted">{{ urlprefix }}</span>
+          <span class="fw-bold">{{ editForm.path }}</span>
         </div>
-        <div class="modal-body">
-          <FormInput
-            id="shorturl-path"
-            v-model="editForm.path"
-            title="Pfad"
-            required
-            :error="fieldErrors['path']"
-          />
-          <FormInput
-            id="shorturl-target"
-            v-model="editForm.target"
-            title="Ziel"
-            required
-            :error="fieldErrors['target']"
-          />
-          <div v-if="editForm.path.length" class="mt-2 overflow-x-hidden">
-            <span class="text-muted">{{ urlprefix }}</span>
-            <span class="fw-bold">{{ editForm.path }}</span>
-          </div>
-          <div v-else class="mt-2">&nbsp;</div>
-          <div v-if="editForm.target.length" class="overflow-x-hidden">
-            <span class="me-2 h3 fw-bold">&rdca;</span>
-            <span>{{ editForm.target }}</span>
-          </div>
-          <div v-else>
-            <span class="h3">&nbsp;</span>
-          </div>
+        <div v-else class="mt-2">&nbsp;</div>
+        <div v-if="editForm.target.length" class="overflow-x-hidden">
+          <span class="me-2 h3 fw-bold">&rdca;</span>
+          <span>{{ editForm.target }}</span>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="closeModal">Schließen</button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            :disabled="submitting || !editForm.path || !editForm.target"
-            @click="submitForm"
-          >
-            Speichern
-          </button>
+        <div v-else>
+          <span class="h3">&nbsp;</span>
         </div>
       </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" @click="closeModal">Schließen</button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          :disabled="submitting || !editForm.path || !editForm.target"
+          @click="submitForm"
+        >
+          Speichern
+        </button>
+      </div>
     </div>
-  </div>
+  </AppModal>
 
   <div v-if="items.length" class="table-responsive">
     <table class="table table-striped table-sm table-bordered">

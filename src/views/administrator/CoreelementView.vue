@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, useTemplateRef, watch } from 'vue'
-import { Modal } from 'bootstrap'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AppModal from '@/components/common/AppModal.vue'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import { useCoreelements, type Coreelement } from '@/composables/useCoreelements'
@@ -39,20 +39,9 @@ const editingId = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 
-const modalElement = useTemplateRef<HTMLDivElement>('editModal')
-let modalInstance: Modal | null = null
+const modalOpen = ref(false)
 
-onMounted(async () => {
-  if (modalElement.value) {
-    modalInstance = new Modal(modalElement.value, { backdrop: 'static', keyboard: false })
-  }
-  await fetchList()
-})
-
-onBeforeUnmount(() => {
-  modalInstance?.dispose()
-  modalInstance = null
-})
+onMounted(fetchList)
 
 // Vue Router reuses this exact component instance when navigating between
 // two `administrator-coreelement` routes (only the `:type` param changes,
@@ -62,7 +51,7 @@ onBeforeUnmount(() => {
 watch(
   () => props.type,
   () => {
-    modalInstance?.hide()
+    modalOpen.value = false
     editingId.value = null
     resetForm()
     void fetchList()
@@ -82,7 +71,7 @@ function resetForm(): void {
 function openCreateModal(): void {
   editingId.value = null
   resetForm()
-  modalInstance?.show()
+  modalOpen.value = true
 }
 
 function openEditModal(element: Coreelement): void {
@@ -94,11 +83,11 @@ function openEditModal(element: Coreelement): void {
   editForm.color = element.color ?? ''
   editForm.active = element.active ?? true
   fieldErrors.value = {}
-  modalInstance?.show()
+  modalOpen.value = true
 }
 
 function closeModal(): void {
-  modalInstance?.hide()
+  modalOpen.value = false
   resetForm()
 }
 
@@ -174,78 +163,69 @@ async function moveItem(id: string, direction: 'up' | 'down'): Promise<void> {
 <template>
   <h2 class="h2 text-center mb-4">{{ title }}</h2>
 
-  <div
-    id="editModal"
-    ref="editModal"
-    class="modal fade"
-    tabindex="-1"
-    data-bs-backdrop="static"
-    data-bs-keyboard="false"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Bearbeiten</h5>
-        </div>
-        <div class="modal-body">
-          <FormInput
-            id="coreelement-name"
-            v-model="editForm.name"
-            title="Name"
-            required
-            :error="fieldErrors['name']"
-          />
-          <FormInput
-            v-if="type === 'role'"
-            id="coreelement-label"
-            v-model="editForm.label"
-            title="Anzeigename"
-            required
-            :error="fieldErrors['label']"
-          />
-          <FormInput
-            v-if="type === 'role'"
-            id="coreelement-description"
-            v-model="editForm.description"
-            title="Beschreibung"
-            required
-            type="textarea"
-            :error="fieldErrors['description']"
-          />
-          <FormInput
-            v-if="type === 'location'"
-            id="coreelement-address"
-            v-model="editForm.address"
-            title="Adresse"
-            required
-            type="textarea"
-            :error="fieldErrors['address']"
-          />
-          <FormInput
-            v-if="type === 'location'"
-            id="coreelement-color"
-            v-model="editForm.color"
-            title="Farbe"
-            required
-            :error="fieldErrors['color']"
-          />
-          <FormCheckbox
-            v-if="hasActiveFlag"
-            id="coreelement-active"
-            v-model="editForm.active"
-            title="Aktiv"
-            as-switch
-          />
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="closeModal">Schließen</button>
-          <button type="button" class="btn btn-primary" :disabled="submitting" @click="submitForm">
-            Speichern
-          </button>
-        </div>
+  <AppModal v-model="modalOpen" :dismissible="false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bearbeiten</h5>
+      </div>
+      <div class="modal-body">
+        <FormInput
+          id="coreelement-name"
+          v-model="editForm.name"
+          title="Name"
+          required
+          :error="fieldErrors['name']"
+        />
+        <FormInput
+          v-if="type === 'role'"
+          id="coreelement-label"
+          v-model="editForm.label"
+          title="Anzeigename"
+          required
+          :error="fieldErrors['label']"
+        />
+        <FormInput
+          v-if="type === 'role'"
+          id="coreelement-description"
+          v-model="editForm.description"
+          title="Beschreibung"
+          required
+          type="textarea"
+          :error="fieldErrors['description']"
+        />
+        <FormInput
+          v-if="type === 'location'"
+          id="coreelement-address"
+          v-model="editForm.address"
+          title="Adresse"
+          required
+          type="textarea"
+          :error="fieldErrors['address']"
+        />
+        <FormInput
+          v-if="type === 'location'"
+          id="coreelement-color"
+          v-model="editForm.color"
+          title="Farbe"
+          required
+          :error="fieldErrors['color']"
+        />
+        <FormCheckbox
+          v-if="hasActiveFlag"
+          id="coreelement-active"
+          v-model="editForm.active"
+          title="Aktiv"
+          as-switch
+        />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" @click="closeModal">Schließen</button>
+        <button type="button" class="btn btn-primary" :disabled="submitting" @click="submitForm">
+          Speichern
+        </button>
       </div>
     </div>
-  </div>
+  </AppModal>
 
   <div class="row justify-content-center my-2">
     <div class="col-md-6">

@@ -21,7 +21,6 @@ const props = defineProps<{
   bookable: BookableGroup
   fees: Fee[]
   popular?: PopularItem
-  modalId: string
 }>()
 
 // voice_name/voice_order are only ever populated for choirjobs candidates
@@ -49,6 +48,7 @@ const selectedFeeId = ref<string>(
   props.fees.find((fee) => fee.name === DEFAULT_FEE_NAME)?.id ?? props.fees[0]?.id ?? '',
 )
 const selectedCandidateIds = ref<string[]>([])
+const popularOpen = ref(false)
 
 const excludedIds = computed(() => {
   const ids = new Set<string>()
@@ -103,14 +103,13 @@ function addTo(stack: 'cast' | 'notBooked'): void {
         v-if="popular"
         type="button"
         class="btn btn-sm"
-        data-bs-toggle="modal"
-        :data-bs-target="`#popular${modalId}`"
         title="populäre Buchungen"
+        @click="popularOpen = true"
       >
         <i class="fas fa-star text-primary"></i>
       </button>
     </div>
-    <PopularModal v-if="popular" :modal-id="modalId" :popular="popular" />
+    <PopularModal v-if="popular" v-model="popularOpen" :popular="popular" />
 
     <MultiSelectDropdown v-model="selectedCandidateIds" :options="selectGroups" />
 

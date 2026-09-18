@@ -21,6 +21,19 @@ body {
   overflow-y: scroll;
 }
 
+// Page scroll lock while a modal is open (toggled by useBodyScrollLock.ts).
+// --scrollbar-compensation is the width of the scrollbar that `overflow:
+// hidden` removes; the sticky navbar is pulled back out by the same amount so
+// it keeps spanning the full viewport.
+body.modal-open {
+  overflow: hidden;
+  padding-right: var(--scrollbar-compensation, 0);
+
+  .sticky-top {
+    margin-right: calc(-1 * var(--scrollbar-compensation, 0px));
+  }
+}
+
 .c-pointer {
   cursor: pointer;
 }
