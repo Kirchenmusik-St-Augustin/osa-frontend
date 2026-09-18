@@ -4,12 +4,10 @@ import type { BookingStatus } from '@/composables/useBookings'
 import { nextActionFor } from '@/composables/useBookings'
 import { formatDateTime } from '@/services/dateFormat'
 
-// Combines Legacy's two always-paired components (BookingStatusComponent's
-// badge + BookingTriggerComponent's self-service icon) into one -- both are
-// driven by the exact same `status` prop and never appear independently in
-// any Legacy template (PerformanceCardComponent.vue always renders them
-// side by side), so splitting them would be a Hasty Abstraction, not less
-// coupling.
+// Combines the booking-status badge and the self-service trigger icon into
+// one component -- both are driven by the exact same `status` prop and never
+// appear independently (PerformanceCard.vue always renders them side by
+// side), so splitting them would be a Hasty Abstraction, not less coupling.
 const props = withDefaults(
   defineProps<{ status: BookingStatus; explainUnbookable?: boolean; interactive?: boolean }>(),
   { explainUnbookable: false, interactive: false },

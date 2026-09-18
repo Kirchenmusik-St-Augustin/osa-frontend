@@ -72,7 +72,7 @@ beforeEach(() => {
 })
 
 describe('AppNavbar', () => {
-  it('renders the legacy brand text', () => {
+  it('renders the brand text', () => {
     expect(mount(AppNavbar).text()).toContain('Orchester-Einteilung')
   })
 
@@ -80,7 +80,7 @@ describe('AppNavbar', () => {
     expect(mount(AppNavbar).find('.navbar-toggler').exists()).toBe(true)
   })
 
-  it('uses the legacy text-bg-primary/dark theming', () => {
+  it('uses the text-bg-primary/dark theming', () => {
     const wrapper = mount(AppNavbar)
     const nav = wrapper.find('nav')
     expect(nav.classes()).toContain('text-bg-primary')
@@ -284,9 +284,8 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('Tarife verwalten')
   })
 
-  it('shows the System dropdown with all three links, in Legacy order, for a user with both permissions', () => {
-    // Order matches Legacy exactly: Benutzerverzeichnis, Benutzerkonten
-    // verwalten, Tarife verwalten.
+  it('shows the System dropdown with all three links, in order, for a user with both permissions', () => {
+    // Order: Benutzerverzeichnis, Benutzerkonten verwalten, Tarife verwalten.
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max', administrator: false },
@@ -359,8 +358,7 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).toContain('Proprium-Werke')
     expect(wrapper.text()).toContain('Komponisten und Dirigenten')
     expect(wrapper.text()).toContain('Notenarchiv')
-    // 1:1 Legacy's AuthLeftMenu.vue order: Ordinarium/Proprium/Komponisten
-    // first, Notenarchiv last.
+    // Order: Ordinarium/Proprium/Komponisten first, Notenarchiv last.
     const links = wrapper
       .findAll('.dropdown-item')
       .map((link) => link.text())
@@ -392,8 +390,8 @@ describe('AppNavbar', () => {
   })
 
   it('shows "Kurz-URLs" as a standalone link with shorturlMaintain', () => {
-    // 1:1 Legacy's AuthLeftMenu.vue: a standalone top-level nav item (not
-    // a dropdown), gated on role 'shorturls'.
+    // A standalone top-level nav item (not a dropdown), gated on role
+    // 'shorturls'.
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
@@ -406,7 +404,7 @@ describe('AppNavbar', () => {
     expect(link).toBeDefined()
   })
 
-  describe('burger menu closes on navigation (Legacy parity)', () => {
+  describe('burger menu closes on navigation', () => {
     it('registers a router.afterEach hook that force-closes #mainNavBar via Bootstrap Collapse', () => {
       const wrapper = mount(AppNavbar, { attachTo: document.body })
 

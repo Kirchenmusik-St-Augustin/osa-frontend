@@ -5,9 +5,8 @@ import BookingStatusBadge from '@/components/bookings/BookingStatusBadge.vue'
 import { useBookings, type PerformanceRequestsAndBookings } from '@/composables/useBookings'
 import { parseWallClock } from '@/services/dateFormat'
 
-// Port of Legacy's RequestsAndBookings.vue -- available to planner AND
-// disponent (gated on performanceMaintain, not performanceCast), unlike the
-// actual Cast page.
+// Available to planner AND disponent (gated on performanceMaintain, not
+// performanceCast), unlike the actual Cast page.
 const props = defineProps<{ id: string }>()
 const { getRequestsAndBookings } = useBookings()
 
@@ -17,10 +16,8 @@ onMounted(async () => {
   performance.value = await getRequestsAndBookings(props.id)
 })
 
-// Legacy's "zurück" goes to the calendar month of the performance's own
-// schedule (PerformanceController::requestsAndBookings() links to
-// `route('...performances.index', { year, month })`), never to the
-// performance's own show/detail page.
+// "zurück" goes to the calendar month of the performance's own schedule,
+// never to the performance's own show/detail page.
 const backTarget = computed(() => {
   if (!performance.value) return { name: 'home' as const }
   const scheduleDate = parseWallClock(performance.value.schedule)

@@ -8,19 +8,17 @@ import { findCoreelementTypeMeta, type CoreelementType } from '@/constants/coree
 import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
-// Only these three CoreelementTypes carry the osa-only `active` flag
-// (outside the structural 1:1 transfer's scope) -- they're the ones
-// referenced via instrument_id/voice_id/choirjob_id foreign keys
+// Only these three CoreelementTypes carry the `active` flag -- they're the
+// ones referenced via instrument_id/voice_id/choirjob_id foreign keys
 // (bookings/booking_logs/performance_positions/ordinariumwork_positions/
 // user_positions), where "no longer offered for a NEW assignment, but
 // never deletable either" actually applies. Location/Role/Propriumelement
 // don't have it.
 const ACTIVE_FLAG_TYPES: readonly CoreelementType[] = ['instrument', 'voice', 'choirjob']
 
-// Generic replacement for Legacy's six near-identical Instrument/Voice/
-// Choirjob/Location/Role/Propriumelement admin pages -- Legacy itself
-// already renders all six through a single `type`-prop-driven
-// Coreelement/Index.vue, this is the same idea ported to Vue3 (Schritt 3).
+// Generic admin page for the six Instrument/Voice/Choirjob/Location/Role/
+// Propriumelement lists, driven by a single `type` prop instead of six
+// near-identical pages.
 const props = defineProps<{ type: CoreelementType }>()
 
 const typeMeta = computed(() => findCoreelementTypeMeta(props.type))
@@ -106,8 +104,7 @@ function closeModal(): void {
 
 // Only send the fields that are actually relevant for this type -- the
 // backend's CoreelementRequest treats an unexpected non-null field as a
-// validation error ("für diesen Typ nicht zulässig"), mirroring Legacy's
-// per-type SaveRequest classes.
+// validation error ("für diesen Typ nicht zulässig").
 function buildPayload(): {
   name: string
   label?: string

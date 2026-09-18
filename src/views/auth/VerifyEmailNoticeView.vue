@@ -1,15 +1,12 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Pages/Auth/VerifyEmail.vue -- the blocking notice
-// shown to a logged-in-but-unverified user, reached via router/guards.ts's
-// redirect. Not to be confused with VerifyEmailView.vue (the token-
-// consuming page, self-contained, no login required).
+// The blocking notice shown to a logged-in-but-unverified user, reached via
+// router/guards.ts's redirect. Not to be confused with VerifyEmailView.vue
+// (the token-consuming page, self-contained, no login required).
 //
-// Deliberate deviation from Legacy: its resend form only handles success
-// and has no disabled state, so a failed request (network error, or the
-// endpoint's 6-per-minute rate limit) showed nothing beyond Inertia's
-// generic error modal. Here a failure surfaces a short message and the
-// button stays disabled while a request is in flight, so repeated clicks
-// cannot burn through the rate limit.
+// A failed resend request (network error, or the endpoint's 6-per-minute
+// rate limit) surfaces a short message, and the button stays disabled while
+// a request is in flight, so repeated clicks cannot burn through the rate
+// limit.
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'

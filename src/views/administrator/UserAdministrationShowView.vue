@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Administrator/Users/Show.vue.
+// Administration detail of one user (restore/unlock/set password).
 import { onMounted, ref } from 'vue'
 import {
   useUserAdministration,
@@ -13,8 +13,8 @@ const { get, restore, unlock, setPassword } = useUserAdministration()
 
 const user = ref<UserAdministrationDetail | null>(null)
 // Shown only once, right after setPassword -- never re-fetched from the
-// backend (1:1 Legacy: `newpw` lives only in that one action response,
-// GET/Show never returns it).
+// backend (`newpw` lives only in that one action response, GET/Show never
+// returns it).
 const newPassword = ref<string | null>(null)
 
 onMounted(async () => {

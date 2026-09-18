@@ -88,7 +88,7 @@ describe('RequestLogUserView', () => {
       params: { id: '99' },
     })
 
-    // Legacy shows the "zurück" button both above and below the log list.
+    // The "zurück" button is shown both above and below the log list.
     const backLinks = links.filter(
       (link) => link.props('to')?.name === 'administrator-request-logs-index',
     )

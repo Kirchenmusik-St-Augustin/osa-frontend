@@ -1,19 +1,10 @@
 <script setup lang="ts">
-// Port of Legacy's Content/System/Userdirectory/Index.vue +
-// Common/ListUsergroupComponent.vue (incl. its SelectorComponent/
-// ClipboardComponent) -- the ability dropdown ("alle" or one specific
-// Instrument/Voice/Choirjob), the "alle (N)" toggle-all switch, and the
-// Nachname/Vorname/E-Mail/Telefon table (mailto/tel links, disabled
-// switch for users without a verified email) are all real, visible
-// Legacy UI and are ported 1:1 here -- same pattern already established
-// in MessageToCastView.vue (Schritt 6).
-//
-// Deliberate exception (same reasoning as MessageToCastView.vue,
-// User-confirmed 2026-07-31): Legacy's own "Nachricht verfassen" compose
-// modal has NO trigger anywhere in its markup and posts to a route that
-// never processes message/recipients -- genuinely dead, unreachable code,
-// not ported. Only the functional "Mailing-Liste in Zwischenablage
-// kopieren" part of ListUsergroupComponent is real.
+// The ability dropdown ("alle" or one specific Instrument/Voice/Choirjob),
+// the "alle (N)" toggle-all switch, and the Nachname/Vorname/E-Mail/Telefon
+// table (mailto/tel links, disabled switch for users without a verified
+// email) -- same pattern as MessageToCastView.vue. There is deliberately no
+// message compose UI here, only the "Mailing-Liste in Zwischenablage
+// kopieren" action.
 import { computed, onMounted, ref, watch } from 'vue'
 import {
   useUserdirectory,
@@ -29,9 +20,8 @@ const abilities = ref<DirectoryAbilities | null>(null)
 const users = ref<DirectoryEntry[]>([])
 const selectedUserIds = ref<string[]>([])
 const checkAllStatus = ref(false)
-// Legacy's SelectorComponent.vue defaults to 'all' with an `immediate:
-// true` watcher, fetching the full list right on mount -- no manual
-// selection required (1:1 the same default already established in
+// Defaults to 'all' with an `immediate: true` watcher, fetching the full
+// list right on mount -- no manual selection required (same default as
 // MessageToCastView.vue's ability dropdown).
 const selectedAbility = ref('all')
 
@@ -61,9 +51,8 @@ onMounted(async () => {
   abilities.value = await getAbilities()
 })
 
-// immediate: true -- 1:1 Legacy's SelectorComponent.vue watcher, which
-// fires right on mount against the 'all' default (see selectedAbility's
-// docstring above).
+// immediate: true -- fires right on mount against the 'all' default (see
+// selectedAbility's comment above).
 watch(selectedAbility, loadUsers, { immediate: true })
 
 const eligibleCount = computed(() => users.value.filter((user) => user.has_email).length)

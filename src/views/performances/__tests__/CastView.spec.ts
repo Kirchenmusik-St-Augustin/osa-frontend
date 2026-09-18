@@ -81,7 +81,7 @@ beforeEach(() => {
 describe('CastView', () => {
   it('fetches and renders the setup items, collapsed by default', async () => {
     mockGetCastPage.mockResolvedValueOnce(makePage())
-    // Legacy's expanded panel uses v-show, not v-if (see CastItem.vue
+    // The expanded panel uses v-show, not v-if (see CastItem.vue
     // docstring) -- it stays mounted while collapsed, just hidden, so
     // "collapsed by default" must be asserted via isVisible(), not via
     // wrapper.text() (which doesn't respect display:none). isVisible()
@@ -96,16 +96,13 @@ describe('CastView', () => {
       .findAll('small')
       .find((small) => small.text().includes('HUBER, Franz'))
     expect(castEntry?.isVisible()).toBe(false)
-    // Legacy's Cast/Show.pug table renders "Name"/"gebucht" column headers
-    // above each position-type's list (verified via Playwright against
-    // osa.dev.schimpl.cc/content/music/performances/758/cast) -- kept as a
-    // header row here rather than a literal HTML table (see
+    // "Name"/"gebucht" column headers above each position-type's list --
+    // kept as a header row rather than a literal HTML table (see
     // CastView.vue's docstring).
     expect(wrapper.text()).toContain('Name')
     expect(wrapper.text()).toContain('gebucht')
-    // ...but only for types that actually have items -- Legacy omits the
-    // whole table (no header either) for an empty Stimmen/Choraufgaben
-    // section, a regression caught during that same Playwright check.
+    // ...but only for types that actually have items -- an empty
+    // Stimmen/Choraufgaben section gets no header either.
     expect(wrapper.findAll('span').filter((span) => span.text() === 'gebucht')).toHaveLength(1)
     wrapper.unmount()
   })
@@ -126,10 +123,10 @@ describe('CastView', () => {
   })
 
   it('only visually hides the top-level reset link, keeping its line height reserved', async () => {
-    // Legacy's Cast.vue reserves the row via a permanent &nbsp; and only
-    // toggles the link text itself, so the page doesn't jump when the link
-    // appears/disappears -- ported here via Bootstrap's `.invisible`
-    // (visibility:hidden, space kept) instead of v-if (would collapse the row).
+    // The row is reserved and only the link text is toggled, so the page
+    // doesn't jump when the link appears/disappears -- via Bootstrap's
+    // `.invisible` (visibility:hidden, space kept) instead of v-if (would
+    // collapse the row).
     mockGetCastPage.mockResolvedValueOnce(makePage())
     const wrapper = mount(CastView, { props: { id: '1' } })
     await flushPromises()
@@ -159,7 +156,7 @@ describe('CastView', () => {
     expect(wrapper.text()).toContain('HUBER, Franz')
   })
 
-  it('centers the Instrumente/Stimmen/Choraufgaben subtitles like Legacy’s PageSubtitleComponent', async () => {
+  it('centers the Instrumente/Stimmen/Choraufgaben subtitles', async () => {
     mockGetCastPage.mockResolvedValueOnce(makePage())
     const wrapper = mount(CastView, { props: { id: '1' } })
     await flushPromises()
@@ -169,11 +166,9 @@ describe('CastView', () => {
   })
 
   it('saves a payload stripped of display-only name fields, then navigates to the calendar month of the performance', async () => {
-    // Legacy's PerformanceController::saveCast() redirects to
-    // `content.music.performances.index` (the calendar) for the
-    // performance's own schedule year/month, verified live against
-    // osa.dev.schimpl.cc/content/music/performances/731/cast -- Cast does
-    // NOT stay on the same page showing a refreshed snapshot.
+    // Saving redirects to the calendar for the performance's own schedule
+    // year/month -- Cast does NOT stay on the same page showing a refreshed
+    // snapshot.
     mockGetCastPage.mockResolvedValueOnce(makePage())
     mockSaveCast.mockResolvedValueOnce({
       cast: { instruments: [{ id: '10', name: 'Fagott', cast: [] }], voices: [], choirjobs: [] },
@@ -230,13 +225,12 @@ describe('CastView', () => {
   })
 
   it('passes the same not_booked list to every position so each shows it in its own box, not once at the page bottom', async () => {
-    // Verified live against osa.dev.schimpl.cc/content/music/performances/731/cast
-    // (Legacy): the "nicht gebucht" list is performance-wide DATA, but
-    // Legacy's CastItemComponent.vue passes the identical array into every
-    // position's own SingleCastListComponent -- it shows up redundantly
-    // under Violine 1 AND Violine 2 AND every other box, never as a single
-    // section below the whole list. A prior port collapsed this into one
-    // shared section under the page, which this regression-tests against.
+    // The "nicht gebucht" list is performance-wide DATA, but the identical
+    // array is passed into every position's own SingleCastList -- it shows up
+    // redundantly under Violine 1 AND Violine 2 AND every other box, never as
+    // a single section below the whole list. A prior implementation collapsed
+    // this into one shared section under the page, which this
+    // regression-tests against.
     mockGetCastPage.mockResolvedValueOnce(
       makePage({
         setup: {

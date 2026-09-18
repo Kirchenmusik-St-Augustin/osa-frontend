@@ -6,7 +6,7 @@ describe('coreelementTypes', () => {
   // coreelement guard, and must match the backend's permission names
   // exactly -- a typo in any single row would silently hide a menu entry or
   // lock out a legitimate role, so every row is pinned, not just the type.
-  it('has exactly the six Legacy Coreelement types, each with its label and permission name', () => {
+  it('has exactly the six Coreelement types, each with its label and permission name', () => {
     expect(COREELEMENT_TYPES).toEqual([
       { type: 'instrument', label: 'Instrumente', permission: 'instrumentMaintain' },
       { type: 'voice', label: 'Stimmen', permission: 'voiceMaintain' },

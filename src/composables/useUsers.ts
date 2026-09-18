@@ -30,7 +30,7 @@ export interface UserFormOptions {
   roles: RoleRef[]
 }
 
-// Covers both Show and the Edit-form's prefill -- 1:1 the backend's
+// Covers both Show and the Edit-form's prefill -- matches the backend's
 // UserResponse (app/schemas/user.py), same pattern as useArtists.ts's
 // Artist type.
 export interface User {
@@ -99,9 +99,8 @@ export function useUsers() {
   }
 
   // Admin-side counterpart to useSupport.ts's getMyRequestsAndBookings --
-  // same backend function, scoped to an arbitrary user id (Legacy's
-  // "Anfragen und Buchungen für dieses Konto einsehen" link on the Show
-  // page).
+  // same backend function, scoped to an arbitrary user id (the Show page's
+  // "Anfragen und Buchungen für dieses Konto einsehen" link).
   async function getRequestsAndBookings(id: string): Promise<PerformanceShortBase[]> {
     const response = await api.get<PerformanceShortBase[]>(`/users/${id}/requests-and-bookings`)
     return response.data

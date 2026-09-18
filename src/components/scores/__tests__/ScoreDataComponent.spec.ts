@@ -18,7 +18,7 @@ describe('ScoreDataComponent', () => {
     expect(wrapper.text()).toMatch(/Erstelldatum:.*2026/)
   })
 
-  it('duplicates the "Erstelldatum" label for updated_at too (1:1 Legacy typo)', () => {
+  it('uses the "Erstelldatum" label for the updated_at row too', () => {
     const wrapper = mount(ScoreDataComponent, {
       props: {
         score: {

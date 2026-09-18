@@ -4,8 +4,8 @@ import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 import { useBookings, type PerformanceBilling } from '@/composables/useBookings'
 import { parseWallClock } from '@/services/dateFormat'
 
-// Port of Legacy's Billing.vue -- no past-lock (see
-// booking_service.get_billing's docstring), printable via window.print().
+// No past-lock (see booking_service.get_billing's docstring), printable via
+// window.print().
 const props = defineProps<{ id: string }>()
 const { getBilling } = useBookings()
 
@@ -15,10 +15,8 @@ onMounted(async () => {
   performance.value = await getBilling(props.id)
 })
 
-// Legacy's "zurück" goes to the calendar month of the performance's own
-// schedule (PerformanceController::billing() links to
-// `route('...performances.index', { year, month })`), never to the
-// performance's own show/detail page.
+// "zurück" goes to the calendar month of the performance's own schedule,
+// never to the performance's own show/detail page.
 const backTarget = computed(() => {
   if (!performance.value) return { name: 'home' as const }
   const scheduleDate = parseWallClock(performance.value.schedule)

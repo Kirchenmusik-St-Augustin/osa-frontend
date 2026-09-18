@@ -64,10 +64,9 @@ describe('RequestsAndBookingsView', () => {
   })
 
   it('both "zurück" links (above and below the table) go to the calendar month of the performance, not its show page', async () => {
-    // Legacy's RequestsAndBookings.vue renders "zurück" TWICE (before and
-    // after the table) and links both to
-    // `route('...performances.index', { year, month })` (the calendar),
-    // never to the performance's own show/detail page.
+    // "zurück" is rendered TWICE (before and after the table) and both link
+    // to the calendar (`year`/`month` query), never to the performance's own
+    // show/detail page.
     mockGetRequestsAndBookings.mockResolvedValueOnce(makePage())
     const wrapper = mount(RequestsAndBookingsView, { props: { id: '1' } })
     await flushPromises()

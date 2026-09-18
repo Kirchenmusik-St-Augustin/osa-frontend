@@ -1,9 +1,8 @@
 import Swal from 'sweetalert2'
 
-// 1:1 port of Legacy's helper.js customConfirm/customToast (SweetAlert2) --
-// used app-wide for destructive-action confirmation and success/error
-// feedback, not just by the Coreelement admin pages, so this lives in
-// services/ rather than being scoped to one view.
+// SweetAlert2 confirm/toast helpers -- used app-wide for destructive-action
+// confirmation and success/error feedback, not just by the Coreelement admin
+// pages, so this lives in services/ rather than being scoped to one view.
 export async function confirmAction(
   message = 'Soll diese Aktion wirklich ausgeführt werden',
 ): Promise<boolean> {

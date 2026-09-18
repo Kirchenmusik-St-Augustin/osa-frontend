@@ -22,10 +22,10 @@ export interface ScoreSearchResult {
   label: string
 }
 
-// UI-independent API layer for the Score (Notenarchiv) domain, Schritt 8 --
-// mirrors useCoreelements.ts's shape. No remove() -- Legacy's own route
-// registration excludes destroy entirely (see osa-backend's score.py
-// router docstring), this domain has no delete concept at all.
+// UI-independent API layer for the Score (Notenarchiv) domain -- mirrors
+// useCoreelements.ts's shape. No remove() -- scores are never deleted (see
+// osa-backend's score.py router docstring), this domain has no delete
+// concept at all.
 export function useScores() {
   async function getFieldsConfig(): Promise<Record<string, ScoreFieldConfig>> {
     const response = await api.get<Record<string, ScoreFieldConfig>>('/scores/fields-config')

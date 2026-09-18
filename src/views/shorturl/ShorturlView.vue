@@ -7,13 +7,11 @@ import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 import { formatUtcDateTime } from '@/services/dateFormat'
 
-// Deliberately its own small modal-edit page, 1:1 CoreelementView.vue's/
+// Deliberately its own small modal-edit page, following CoreelementView.vue's/
 // FeeView.vue's pattern of shared building blocks (FormInput,
-// notifications.ts, bootstrap Modal) -- but the markup below mirrors
-// Legacy's OWN `Content/Shorturl/Index.vue` template exactly (bare
+// notifications.ts, bootstrap Modal) -- but with its own markup (bare
 // clickable icons instead of icon buttons, no row/col grid wrapper around
-// the table, `.modal-lg`), not FeeView.vue's markup, since Legacy's
-// Shorturl page and Fee page differ from each other in these details too.
+// the table, `.modal-lg`) rather than FeeView.vue's.
 const { items, urlprefix, fetchList, save, remove } = useShorturls()
 
 const editForm = reactive({ path: '', target: '' })

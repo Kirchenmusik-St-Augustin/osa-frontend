@@ -1,7 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Scores/Form.vue -- serves both "anlegen" (no `id`
-// prop) and "bearbeiten" (`id` set), exactly like Legacy's single
-// Form.vue backing both the create() and edit() controller actions.
+// Serves both "anlegen" (no `id` prop) and "bearbeiten" (`id` set).
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ScoreDataComponent from '@/components/scores/ScoreDataComponent.vue'

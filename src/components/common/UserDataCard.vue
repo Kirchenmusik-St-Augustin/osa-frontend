@@ -1,10 +1,9 @@
 <script setup lang="ts">
-// Shared "Benutzer-Daten" + "Eigenschaften" card pair -- 1:1 port of
-// Legacy's Components/Common/ShowUserComponent.vue, which both
-// System::UserController's Show page (UserShowView.vue) and Selfadmin's
-// own Profile Show page (ProfileShowView.vue) embed -- Legacy renders both
-// from the exact same `User\Show` resource, so this component is genuinely
-// shared, not a premature abstraction.
+// Shared "Benutzer-Daten" + "Eigenschaften" card pair, embedded by both the
+// admin-side user Show page (UserShowView.vue) and the Selfadmin Profile
+// Show page (ProfileShowView.vue) -- both render the exact same user
+// resource, so this component is genuinely shared, not a premature
+// abstraction.
 import { computed } from 'vue'
 import type { User } from '@/composables/useUsers'
 import { formatUtcDateTime } from '@/services/dateFormat'

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Common/Selfadmin/Support/MessageToContactperson.vue --
-// native <select><optgroup> per role (FormSelect.vue can't render optgroups),
-// disabled <option> for contacts without a verified email, a role-description
-// card per role fed straight from the DB (role.description, not hardcoded).
+// Native <select><optgroup> per role (FormSelect.vue can't render
+// optgroups), disabled <option> for contacts without a verified email, a
+// role-description card per role fed straight from the DB (role.description,
+// not hardcoded).
 import { computed, onMounted, ref } from 'vue'
 import { useSupport, type RoleWithContacts } from '@/composables/useSupport'
 import { useAuthStore } from '@/stores/auth'
@@ -37,8 +37,6 @@ async function send(): Promise<void> {
     await sendMessageToContactperson(selectedRecipientId.value, message.value)
     showToast('Nachricht versandt.')
   } catch {
-    // 1:1 Legacy's exact (typo'd) wording -- a real, reachable page, unlike
-    // MessageToCastView's dead-route error text.
     showToast('Nachricht konnte nicht versanct werden.', true)
   } finally {
     message.value = ''

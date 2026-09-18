@@ -12,10 +12,10 @@ export interface FeePayload {
   amount: number
 }
 
-// UI-independent API layer for the Fee admin page -- 1:1 structure of
+// UI-independent API layer for the Fee admin page -- same structure as
 // useCoreelements.ts, but without move() (fees have no `order` column, see
 // app/db/models/fee.py's docstring: administered through its own dedicated
-// Legacy controller, not the generic Coreelement mechanism).
+// service, not the generic Coreelement mechanism).
 export function useFees() {
   const items = ref<Fee[]>([])
 

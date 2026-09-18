@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-// 1:1 port of Legacy's Components/Common/TogglerComponent.vue -- a shared
-// collapse-toggle primitive, not Performance-specific (also used on the
-// RequestLog day-grouping, see RequestLogUserView.vue), so it lives in
-// components/common/ like FormInput/FormSelect.
+// A shared collapse-toggle primitive, not Performance-specific (also used
+// on the RequestLog day-grouping, see RequestLogUserView.vue), so it lives
+// in components/common/ like FormInput/FormSelect.
 const props = withDefaults(
   defineProps<{
     title: string

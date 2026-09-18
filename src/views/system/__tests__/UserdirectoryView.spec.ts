@@ -55,9 +55,8 @@ describe('UserdirectoryView', () => {
   })
 
   it('defaults the dropdown to "alle" and fetches the full list immediately on mount', async () => {
-    // 1:1 Legacy's SelectorComponent.vue (`selectedAbility = ref("all")`
-    // + `{ immediate: true }` watcher) -- no manual selection required to
-    // see the full directory.
+    // (`selectedAbility = ref("all")` + `{ immediate: true }` watcher) -- no
+    // manual selection required to see the full directory.
     mockListUsers.mockResolvedValueOnce(entries)
     const wrapper = mount(UserdirectoryView)
     await flushPromises()

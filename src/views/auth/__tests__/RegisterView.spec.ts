@@ -29,7 +29,7 @@ async function fillAndSubmit(wrapper: ReturnType<typeof mount>) {
 }
 
 describe('RegisterView', () => {
-  it('renders the Legacy card structure with all fields', () => {
+  it('renders the card structure with all fields', () => {
     const wrapper = mount(RegisterView)
 
     expect(wrapper.text()).toContain('Erst-Registrierung')
@@ -108,7 +108,7 @@ describe('RegisterView', () => {
           detail: [
             {
               loc: ['body', 'password'],
-              msg: 'Das neue Passwort entspricht nicht den Richtlinien (8-16 Zeichen, mind. eine Ziffer, mind. ein Buchstabe. Muss sich vom bestehenden Passwort unterscheiden.).',
+              msg: 'Das Passwort muss zwischen 8 und 16 Zeichen lang sein. Das Passwort muss mindestens eine Ziffer enthalten.',
               type: 'value_error',
             },
           ],
@@ -118,6 +118,7 @@ describe('RegisterView', () => {
     const wrapper = mount(RegisterView)
 
     await fillAndSubmit(wrapper)
-    await vi.waitFor(() => expect(wrapper.text()).toContain('entspricht nicht den Richtlinien'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('zwischen 8 und 16 Zeichen'))
+    expect(wrapper.text()).toContain('mindestens eine Ziffer')
   })
 })

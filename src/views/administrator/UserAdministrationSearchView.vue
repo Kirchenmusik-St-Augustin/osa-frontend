@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Administrator/Users/Search.vue.
+// Search for users including soft-deleted ones.
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SearchTypeahead from '@/components/common/SearchTypeahead.vue'

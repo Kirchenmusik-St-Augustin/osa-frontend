@@ -5,11 +5,11 @@ import { useAuthStore } from '@/stores/auth'
 import { extractApiErrors } from '@/services/apiErrors'
 
 // Self-contained via the token in the URL alone -- no prior login required
-// (see the backend's verify_email endpoint docstring). Structurally
-// different from Legacy's VerifyEmail.vue (a blocking "please verify,
-// click to resend" gate shown to an already-logged-in-but-unverified
-// user), since our itsdangerous token already carries everything needed
-// to identify+verify the target user, with no separate login step first.
+// (see the backend's verify_email endpoint docstring): the itsdangerous
+// token already carries everything needed to identify+verify the target
+// user, with no separate login step first. Not to be confused with
+// VerifyEmailNoticeView.vue (the blocking "please verify, click to resend"
+// gate shown to an already-logged-in-but-unverified user).
 const title = 'E-Mail-Prüfung'
 const route = useRoute()
 const router = useRouter()

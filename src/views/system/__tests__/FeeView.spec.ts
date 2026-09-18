@@ -26,8 +26,8 @@ vi.mock('@/services/notifications', () => ({
 }))
 
 // vi.mock factories run above every import, so the mocked Modal class must
-// come from vi.hoisted() too (1:1 CoreelementView.spec.ts's own note on
-// this) -- a plain arrow function can't be used as a constructor.
+// come from vi.hoisted() too (same as CoreelementView.spec.ts) -- a plain
+// arrow function can't be used as a constructor.
 const { MockModal, mockModalShow, mockModalHide, mockModalDispose } = vi.hoisted(() => {
   const mockModalShow = vi.fn()
   const mockModalHide = vi.fn()
@@ -56,9 +56,7 @@ function rows(wrapper: ReturnType<typeof mount>) {
 
 describe('FeeView', () => {
   it('fetches and renders every fee as its own row, name and amount in separate cells', async () => {
-    // Legacy's table cell is just the raw number (`td.fw-bold {{
-    // fee.amount }}`), no "(amount,-)" wrapper -- that formatting was a
-    // deviation from an earlier list-group-based port.
+    // The table cell is just the raw number, no "(amount,-)" wrapper.
     mockItems.value = [
       makeFee({ id: 1, name: 'Chor', amount: 0 }),
       makeFee({ id: 2, name: 'Instrumentalist', amount: 60 }),
@@ -73,13 +71,11 @@ describe('FeeView', () => {
   })
 
   it('sorts by name ascending by default, regardless of the order fees arrive in', async () => {
-    // The real backend already pre-sorts by name (Fee::OrderByName scope,
-    // see fee_service.list_fees's docstring), so defaulting the sort here
-    // to name-ascending produces the identical real-world page-load
-    // result as Legacy more simply/robustly than trying to leave the
-    // arrival order untouched -- which Legacy's own initial-sort line
-    // never actually did either, it's dead code (see FeeView.vue's
-    // docstring).
+    // The real backend already pre-sorts by name (see
+    // fee_service.list_fees's docstring), so defaulting the sort here to
+    // name-ascending produces the identical page-load result more
+    // simply/robustly than trying to leave the arrival order untouched (see
+    // FeeView.vue's docstring).
     mockItems.value = [
       makeFee({ id: 1, name: 'Solist', amount: 130 }),
       makeFee({ id: 2, name: 'Chor', amount: 0 }),
@@ -104,9 +100,8 @@ describe('FeeView', () => {
     const names = () => rows(wrapper).map((row) => row.findAll('td')[0]?.text())
 
     // Name is already the default active sort column (ascending) --
-    // clicking it the first time flips to descending, 1:1 Legacy's own
-    // toggleSort('name') behaved the exact same way from its identical
-    // default state (orderCol/orderDirection both start as 'name'/asc).
+    // clicking it the first time flips to descending (the sort column/
+    // direction both start as 'name'/asc).
     await nameHeader.trigger('click')
     expect(names()).toEqual(['Solist', 'Instrumentalist', 'Chor'])
     expect(nameHeader.find('.fa-caret-down').exists()).toBe(true)
@@ -139,8 +134,8 @@ describe('FeeView', () => {
     await flushPromises()
 
     expect(mockSave).toHaveBeenCalledWith(null, { name: 'Solist', amount: 80 })
-    // Legacy's Fees/Index.vue toasts "Tarif gespeichert" (singular "Tarif",
-    // matching the page's own "Tarife verwalten" title) -- not "Honorar".
+    // The toast says "Tarif gespeichert" (singular "Tarif", matching the
+    // page's own "Tarife verwalten" title) -- not "Honorar".
     expect(mockShowToast).toHaveBeenCalledWith('Tarif gespeichert')
     expect(mockModalHide).toHaveBeenCalled()
   })
@@ -179,7 +174,7 @@ describe('FeeView', () => {
     expect(mockModalHide).not.toHaveBeenCalled()
   })
 
-  it('deletes a fee after the user confirms, using Legacy\'s generic "Element" confirm/toast copy', async () => {
+  it('deletes a fee after the user confirms, using the generic "Element" confirm/toast copy', async () => {
     mockItems.value = [makeFee({ id: 3 })]
     mockConfirmAction.mockResolvedValueOnce(true)
     mockRemove.mockResolvedValueOnce(undefined)
@@ -189,9 +184,9 @@ describe('FeeView', () => {
     await wrapper.find('button[title="löschen"]').trigger('click')
     await flushPromises()
 
-    // Legacy's deleteId() uses the generic "Soll das Element wirklich
-    // gelöscht werden?"/"Element gelöscht" copy here, not "Honorar" --
-    // same generic wording the Coreelement pages already use.
+    // The generic "Soll das Element wirklich gelöscht werden?"/"Element
+    // gelöscht" copy is used here, not "Honorar" -- same generic wording the
+    // Coreelement pages already use.
     expect(mockConfirmAction).toHaveBeenCalledWith('Soll das Element wirklich gelöscht werden?')
     expect(mockRemove).toHaveBeenCalledWith(3)
     expect(mockShowToast).toHaveBeenCalledWith('Element gelöscht')

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Common/Selfadmin/Profile/Form.vue. Unlike
-// UserFormView.vue (System-admin form), email/phone are required here and
-// there's no "E-Mail verifiziert"-hint line -- deliberate Legacy
-// differences, not omissions (see app/schemas/profile.py docstring).
+// Unlike UserFormView.vue (System-admin form), email/phone are required here
+// and there's no "E-Mail verifiziert"-hint line -- deliberate differences,
+// not omissions (see app/schemas/profile.py docstring).
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'

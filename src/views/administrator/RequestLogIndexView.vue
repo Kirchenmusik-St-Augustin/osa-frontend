@@ -1,10 +1,7 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Administrator/RequestLogs/Index.vue, EXCEPT
-// day-grouped instead of a flat user list (User decision 2026-08-12, real
-// functional change -- Legacy only has month granularity, no pixel-parity
-// requirement for this feature). Month selection itself (useMonthQuery/
-// MonthNavigator) is untouched, shared with SentEmailIndexView/
-// PerformanceCalendarView.
+// Request-log overview, day-grouped: the month's activity grouped by day.
+// Month selection itself (useMonthQuery/MonthNavigator) is shared with
+// SentEmailIndexView/PerformanceCalendarView.
 import { computed, ref, watch } from 'vue'
 import { useRequestLogs, type RequestLogDayGroup } from '@/composables/useRequestLogs'
 import { useMonthQuery } from '@/composables/useMonthQuery'

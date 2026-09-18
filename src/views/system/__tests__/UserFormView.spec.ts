@@ -143,7 +143,7 @@ describe('UserFormView', () => {
     expect(wrapper.text()).toContain('E-mail nicht verifiziert')
   })
 
-  it('shows both the name and the "Benutzerkonto erstellen" subtitle when editing (1:1 Legacy quirk)', async () => {
+  it('shows both the name and the "Benutzerkonto erstellen" subtitle when editing', async () => {
     mockGet.mockResolvedValueOnce(makeUser({ id: '5' }))
     const wrapper = mount(UserFormView, { props: { id: '5' } })
     await flushPromises()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Scores/Show.vue.
+// Read-only Show page of one score.
 import { onMounted, reactive, ref } from 'vue'
 import ScoreDataComponent from '@/components/scores/ScoreDataComponent.vue'
 import ScoreFieldsComponent from '@/components/scores/ScoreFieldsComponent.vue'

@@ -78,9 +78,8 @@ beforeEach(() => {
 
 describe('MessageToCastView', () => {
   it('fetches the page and the "all" recipients on mount, rendering the Nachname/Vorname/E-Mail/Telefon table', async () => {
-    // Legacy's ListUsergroupComponent/SelectorComponent default the ability
-    // dropdown to "alle" and fetch immediately on mount -- no manual
-    // selection required to see the full cast.
+    // The ability dropdown defaults to "alle" and fetches immediately on
+    // mount -- no manual selection required to see the full cast.
     mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
     mockGetMessageRecipients.mockResolvedValueOnce(recipients)
     const wrapper = mount(MessageToCastView, { props: { id: '1' } })
@@ -92,8 +91,7 @@ describe('MessageToCastView', () => {
     expect(rows).toHaveLength(2)
     expect(rows[0]?.text()).toContain('HUBER')
     expect(rows[0]?.find('input[type="checkbox"]').attributes('disabled')).toBeUndefined()
-    // MAYER has no email -- her switch is disabled, matching Legacy's
-    // `input(disabled, v-else)` for exactly this case.
+    // MAYER has no email -- her switch is disabled.
     expect(rows[1]?.text()).toContain('MAYER')
     expect(rows[1]?.find('input[type="checkbox"]').attributes('disabled')).toBeDefined()
   })
@@ -187,7 +185,7 @@ describe('MessageToCastView', () => {
     expect(sendButton?.attributes('disabled')).toBeUndefined()
   })
 
-  it('sends the message on confirm -- the actual bugfix regression test (Legacy: dead 405 route)', async () => {
+  it('sends the message on confirm', async () => {
     mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
     mockGetMessageRecipients.mockResolvedValueOnce(recipients)
     mockSendMessageToCast.mockResolvedValueOnce(undefined)
@@ -222,11 +220,10 @@ describe('MessageToCastView', () => {
   })
 
   it('only visually hides the "Mailing-Liste in Zwischenablage kopieren" links until a recipient is selected, keeping their line height reserved', async () => {
-    // Same pattern as CastView's/CastItem's reset links: Legacy-style
-    // v-if would collapse the row and make the page jump once a recipient
-    // gets selected -- `.invisible` (visibility:hidden, space kept) avoids
-    // that instead. Rendered twice (above and below the table), matching
-    // Legacy's ListUsergroupComponent doubling its ClipboardComponent.
+    // Same pattern as CastView's/CastItem's reset links: v-if would collapse
+    // the row and make the page jump once a recipient gets selected --
+    // `.invisible` (visibility:hidden, space kept) avoids that instead.
+    // Rendered twice (above and below the table).
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.assign(navigator, { clipboard: { writeText } })
     mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
@@ -265,16 +262,15 @@ describe('MessageToCastView', () => {
     expect(wrapper.findAll('button').some((button) => button.text() === 'Senden')).toBe(false)
     expect(wrapper.text()).toContain('Email-Versand aktuell deaktiviert')
     // The recipient dropdown/table itself stays visible -- only the
-    // message-composition block is swapped out (verified against Legacy's
-    // MessageToContactperson.vue, see EmailThresholdWarning.vue docstring).
+    // message-composition block is swapped out (see EmailThresholdWarning.vue
+    // docstring).
     expect(wrapper.find('table').exists()).toBe(true)
   })
 
   it('both "zurück" links (above and below the form) go to the calendar month of the performance, not its show page', async () => {
-    // Legacy's MessageToCast.vue renders "zurück" TWICE (before and after
-    // the recipient form) and links both to
-    // `route('...performances.index', { year, month })` (the calendar),
-    // never to the performance's own show/detail page.
+    // "zurück" is rendered TWICE (before and after the recipient form) and
+    // both link to the calendar (`year`/`month` query), never to the
+    // performance's own show/detail page.
     mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
     mockGetMessageRecipients.mockResolvedValueOnce(recipients)
     const wrapper = mount(MessageToCastView, { props: { id: '1' } })

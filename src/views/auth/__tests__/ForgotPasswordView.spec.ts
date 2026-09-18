@@ -12,7 +12,7 @@ beforeEach(() => {
 })
 
 describe('ForgotPasswordView', () => {
-  it('renders the Legacy card structure', () => {
+  it('renders the card structure', () => {
     const wrapper = mount(ForgotPasswordView)
 
     expect(wrapper.text()).toContain('Anmeldung')

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/System/Users/Form.vue.
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'
@@ -32,9 +31,8 @@ const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 const options = ref<UserFormOptions | null>(null)
 
-// Loaded-at-mount snapshot, not reactively tracked afterward -- 1:1
-// Legacy's `const initialEmail = form.email` (captured once, right after
-// useForm() is seeded from the server response).
+// Loaded-at-mount snapshot, not reactively tracked afterward (captured once,
+// right after the form is seeded from the server response).
 let initialEmail: string | null = null
 const emailVerifiedAt = ref<string | null>(null)
 const emailTouched = computed(() => initialEmail !== form.email)
@@ -58,10 +56,8 @@ onMounted(async () => {
   emailVerifiedAt.value = user.email_verified_at
 })
 
-// Legacy quirk (Form.vue): the "Benutzerkonto erstellen" subtitle has no
-// v-else on its own `page-subtitle` call, so it renders unconditionally --
-// even on Edit, alongside the name subtitle. Replicated 1:1 here, not
-// "fixed".
+// The "Benutzerkonto erstellen" subtitle renders unconditionally -- even on
+// Edit, alongside the name subtitle.
 const nameSubtitle = computed(() =>
   form.surname && form.givenname ? `${form.surname.toUpperCase()}, ${form.givenname}` : '',
 )

@@ -10,10 +10,8 @@ import type {
 
 export type { BookingStatus, PositionRef }
 
-// Field names are snake_case throughout (matching the backend's
-// app/schemas/booking.py 1:1) -- unlike usePerformances.ts, there is no
-// Legacy camelCase wire format to stay compatible with here, both sides of
-// this API are built from scratch in Schritt 6 (Schritt 6 plan A.3/B.1).
+// Field names are snake_case throughout, matching the backend's
+// app/schemas/booking.py.
 
 export interface CastMember {
   id: string
@@ -104,9 +102,9 @@ export interface Fee {
   amount: number
 }
 
-// Exported (not just an internal extends-base) because Schritt 7's
-// useSupport.ts needs the exact same shape 1:1 for /support/requests-and-
-// bookings -- backend names it PerformanceShortOutput, kept as
+// Exported (not just an internal extends-base) because useSupport.ts needs
+// the exact same shape for /support/requests-and-bookings -- backend names
+// it PerformanceShortOutput, kept as
 // PerformanceShortBase here to avoid a churny rename of this file's other
 // PerformanceShortBase-derived types.
 export interface PerformanceShortBase {

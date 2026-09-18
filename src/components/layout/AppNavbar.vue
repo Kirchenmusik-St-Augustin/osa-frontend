@@ -14,11 +14,9 @@ async function logout(): Promise<void> {
   await router.push({ name: 'login' })
 }
 
-// Legacy parity (NavigationGuards.vue): Bootstrap's Collapse has no
-// built-in "close on inner link click" behavior -- force the burger menu
-// closed on every navigation. router.afterEach covers both link clicks
-// and back/forward navigation in one hook (Legacy needed a separate
-// popstate listener only because of Inertia's own event system).
+// Bootstrap's Collapse has no built-in "close on inner link click" behavior
+// -- force the burger menu closed on every navigation. router.afterEach
+// covers both link clicks and back/forward navigation in one hook.
 const navbarElement = useTemplateRef<HTMLDivElement>('navbarElement')
 let navbarCollapse: Collapse | null = null
 
@@ -110,8 +108,8 @@ onUnmounted(() => {
             </div>
           </div>
         </li>
-        <!-- Item order matches Legacy exactly: Benutzerverzeichnis,
-             Benutzerkonten verwalten, Tarife verwalten. Each link is gated
+        <!-- Item order: Benutzerverzeichnis, Benutzerkonten verwalten,
+             Tarife verwalten. Each link is gated
              on the permission its route actually requires (userMaintain for
              the first two, feeMaintain for the third) -- those are distinct
              permissions (userMaintain also covers administrators without

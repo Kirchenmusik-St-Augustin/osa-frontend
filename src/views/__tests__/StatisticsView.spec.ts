@@ -49,9 +49,8 @@ describe('StatisticsView', () => {
     expect(wrapper.text()).toContain('Proprium-Kompositionen')
     expect(wrapper.text()).toContain('30')
     expect(wrapper.text()).toContain('Partituren im Archiv')
-    // Legacy's declined-but-partially-relevant vue-countup-v3 still
-    // thousands-groups every badge with a literal comma (its own
-    // hardcoded separator, not locale-aware) -- 1274 must render "1,274".
+    // Every badge is thousands-grouped with a literal comma (hardcoded
+    // separator, not locale-aware) -- 1274 must render "1,274".
     expect(wrapper.text()).toContain('1,274')
   })
 
@@ -67,7 +66,7 @@ describe('StatisticsView', () => {
     expect(wrapper.text()).toContain('214')
   })
 
-  it('wraps every badge in an .h3 (1:1 Legacy: larger badge text, not the default badge size)', async () => {
+  it('wraps every badge in an .h3 (larger badge text, not the default badge size)', async () => {
     mockGet.mockResolvedValueOnce(makeStats())
     const wrapper = mount(StatisticsView)
     await flushPromises()

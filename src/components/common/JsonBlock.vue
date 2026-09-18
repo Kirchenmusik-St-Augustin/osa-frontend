@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-// Lean custom alternative to Legacy's `vue-json-viewer` package: no
-// collapsible tree, but no new npm dependency for a single page either
-// (AHA principle). Content-complete -- indented JSON.stringify text.
+// Lean custom alternative to a JSON viewer package: no collapsible tree, but
+// no new npm dependency for a single page either (AHA principle).
+// Content-complete -- indented JSON.stringify text.
 const props = defineProps<{ value: unknown }>()
 
 const formatted = computed(() => JSON.stringify(props.value, null, 2))

@@ -6,16 +6,14 @@ import { useFees, type Fee } from '@/composables/useFees'
 import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
-// Deliberately its own small modal-edit page (Legacy's Fee/Index.vue is its
-// own dedicated controller under content/system/fees, not part of the
-// generic Coreelement mechanism -- see app/db/models/fee.py's docstring).
-// Kept as a standalone copy of CoreelementView.vue's pattern rather than
-// forcing Fee into COREELEMENT_CONFIG, which has no `order` column to move
-// (Schritt 6 plan B.3). Lives under
-// views/system/ (not views/administrator/), matching Legacy's own page
-// location and FeePolicy::maintain()'s role-'disponent' gate -- corrected
-// 2026-07-31 (User-reported: was wrongly wired under /administrator/fees
-// with the Coreelement types' administrator-Flag gate).
+// Deliberately its own small modal-edit page (fees are administered through
+// their own dedicated service, not the generic Coreelement mechanism -- see
+// app/db/models/fee.py's docstring). Kept as a standalone copy of
+// CoreelementView.vue's pattern rather than forcing Fee into
+// COREELEMENT_CONFIG, which has no `order` column to move. Lives under
+// views/system/ (not views/administrator/), matching the role-'disponent'
+// gate (feeMaintain) rather than the Coreelement types' administrator-Flag
+// gate.
 const { items, fetchList, save, remove } = useFees()
 
 const editForm = reactive({ name: '', amount: 0 })
@@ -38,17 +36,12 @@ onBeforeUnmount(() => {
   modalInstance = null
 })
 
-// 1:1 port of Legacy's toggleSort()/orderCol/orderDirection -- both start
-// on name/ascending, so the FIRST click on "Name" flips to descending, not
-// a no-op (same quirk Legacy itself has from the same default state).
-// Clicking the currently-inactive column switches to it and resets to
-// ascending. Always sorting (rather than trusting whatever order `items`
-// arrives in) matches Legacy's real page-load result just as well, more
-// simply: the backend already returns fees pre-ordered by name
-// (Fee::OrderByName global scope, see fee_service.list_fees's docstring),
-// and Legacy's OWN initial `ref(orderBy(...), "name")` line is dead code
-// anyway (a misplaced paren feeds "name" to ref()'s second, nonexistent
-// argument, never to orderBy()'s iteratee).
+// The sort starts on name/ascending, so the FIRST click on "Name" flips to
+// descending, not a no-op. Clicking the currently-inactive column switches
+// to it and resets to ascending. Always sorting (rather than trusting
+// whatever order `items` arrives in) is simpler: the backend already
+// returns fees pre-ordered by name (see fee_service.list_fees's docstring),
+// so the initial state matches.
 type SortColumn = 'name' | 'amount'
 const sortColumn = ref<SortColumn>('name')
 const sortDirection = ref<'asc' | 'desc'>('asc')

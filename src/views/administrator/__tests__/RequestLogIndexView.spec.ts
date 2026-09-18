@@ -57,7 +57,7 @@ describe('RequestLogIndexView', () => {
     expect(wrapper.text()).toContain('SCHINDLER, Margot')
   })
 
-  it('shows the exact Legacy empty-state text when there are none', async () => {
+  it('shows the empty-state text when there are none', async () => {
     mockListDaysWithUsersForMonth.mockResolvedValueOnce([])
     const wrapper = mount(RequestLogIndexView)
     await flushPromises()
@@ -95,7 +95,7 @@ describe('RequestLogIndexView', () => {
     expect(wrapper.findAll('.c-pointer')).toHaveLength(2)
   })
 
-  it('renders the nested user list as a striped table, 1:1 Legacy style', async () => {
+  it('renders the nested user list as a striped table', async () => {
     mockListDaysWithUsersForMonth.mockResolvedValueOnce([
       makeDayGroup({
         users: [

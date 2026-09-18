@@ -105,10 +105,10 @@ describe('BillingView', () => {
   })
 
   it('hides zero-sum type rows in the summary and shows the count for non-zero ones', async () => {
-    // Legacy hides "Stimmen"/"Choraufgaben" summary rows entirely when
-    // their sum is 0 (only "Instrumente (1)" is shown for makeBilling()'s
-    // default fixture), unlike the item sections above it (whose headings
-    // stay visible regardless, replicating Legacy's own dead v-if bug).
+    // "Stimmen"/"Choraufgaben" summary rows are hidden entirely when their
+    // sum is 0 (only "Instrumente (1)" is shown for makeBilling()'s default
+    // fixture), unlike the item sections above it (whose headings stay
+    // visible regardless).
     mockGetBilling.mockResolvedValueOnce(makeBilling())
     const wrapper = mount(BillingView, { props: { id: '1' } })
     await flushPromises()
@@ -136,7 +136,7 @@ describe('BillingView', () => {
     expect(wrapper.text()).not.toContain('Gesamt')
   })
 
-  it('renders both action buttons as btn-primary, matching Legacy (no btn-secondary)', async () => {
+  it('renders both action buttons as btn-primary (no btn-secondary)', async () => {
     mockGetBilling.mockResolvedValueOnce(makeBilling())
     const wrapper = mount(BillingView, { props: { id: '1' } })
     await flushPromises()
@@ -149,7 +149,7 @@ describe('BillingView', () => {
     }
   })
 
-  it('uses the narrower col-md-7 column, matching Legacy (not col-md-8)', async () => {
+  it('uses the narrower col-md-7 column (not col-md-8)', async () => {
     mockGetBilling.mockResolvedValueOnce(makeBilling())
     const wrapper = mount(BillingView, { props: { id: '1' } })
     await flushPromises()
@@ -172,9 +172,8 @@ describe('BillingView', () => {
   })
 
   it('both "zurück" links go to the calendar month of the performance, not its show page', async () => {
-    // Legacy's Billing.vue links "zurück" (both instances) to
-    // `route('...performances.index', { year, month })` (the calendar),
-    // never to the performance's own show/detail page.
+    // Both "zurück" links go to the calendar (`year`/`month` query), never to
+    // the performance's own show/detail page.
     mockGetBilling.mockResolvedValueOnce(makeBilling())
     const wrapper = mount(BillingView, { props: { id: '1' } })
     await flushPromises()
@@ -186,7 +185,7 @@ describe('BillingView', () => {
     }
   })
 
-  it('centers the Instrumente/Stimmen/Choraufgaben/Zusammenfassung subtitles like Legacy', async () => {
+  it('centers the Instrumente/Stimmen/Choraufgaben/Zusammenfassung subtitles', async () => {
     mockGetBilling.mockResolvedValueOnce(makeBilling())
     const wrapper = mount(BillingView, { props: { id: '1' } })
     await flushPromises()

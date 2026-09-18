@@ -1,10 +1,8 @@
 <script setup lang="ts">
-// No Legacy equivalent -- adapted from PrimeVue's <ProgressBar> concept to
-// a custom animated bar (osa-frontend has no PrimeVue dependency).
-// Bootstrap's own
-// .progress-bar-striped (a single-hue bar with a semi-transparent white
-// overlay) was tried first but read as too low-contrast in practice (User
-// feedback, 2026-08-21) -- replaced with a two-color stripe pattern using
+// Custom animated bar (adapted from PrimeVue's <ProgressBar> concept -- this
+// app has no PrimeVue dependency). Bootstrap's own .progress-bar-striped (a
+// single-hue bar with a semi-transparent white overlay) reads as too
+// low-contrast in practice, so this uses a two-color stripe pattern with
 // $primary (the navbar's own background color) and $warning (matching the
 // navbar's music-note icon).
 import { useLoadingStore } from '@/stores/loading'

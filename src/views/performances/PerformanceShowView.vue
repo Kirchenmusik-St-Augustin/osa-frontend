@@ -5,10 +5,8 @@ import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 import { usePerformances, type PerformanceShow } from '@/composables/usePerformances'
 import { parseWallClock } from '@/services/dateFormat'
 
-// Casting is deliberately not shown here -- Legacy's own Show.php/Show.vue
-// disable it ("showing casts is disabled as requested by Peter
-// Tiefengraber"), and the Booking domain doesn't exist in this backend yet
-// anyway (Schritt 6).
+// Casting is deliberately not shown here (showing casts on the Show page is
+// disabled on request).
 const props = defineProps<{ id: string }>()
 const { getDetail } = usePerformances()
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Common/Selfadmin/Profile/Show.vue, plus a
-// deployment-environment footer (no Legacy equivalent -- pure dev/ops aid,
-// not a parity concern).
+// Profile Show page, plus a deployment-environment footer (a pure dev/ops
+// aid).
 import { onMounted, ref } from 'vue'
 import UserDataCard from '@/components/common/UserDataCard.vue'
 import { useProfile } from '@/composables/useProfile'

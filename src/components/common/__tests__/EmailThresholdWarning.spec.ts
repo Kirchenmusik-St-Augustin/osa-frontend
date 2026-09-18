@@ -52,7 +52,7 @@ describe('EmailThresholdWarning', () => {
       expect(wrapper.find('.card').exists()).toBe(false)
     })
 
-    it('renders the 1:1 Legacy warning card with the real threshold values', () => {
+    it('renders the warning card with the real threshold values', () => {
       mockKillSwitch = { active: true, period_days: 30, threshold: 950 }
       const wrapper = mount(EmailThresholdWarning, { props: { variant: 'card' } })
 

@@ -18,8 +18,8 @@ const fees: Fee[] = [
 ]
 
 // The candidate list lives inside the collapsed MultiSelectDropdown --
-// open it before asserting on its contents (1:1 Legacy's "N ausgewählt"
-// toggle behavior).
+// open it before asserting on its contents (the "N ausgewählt" toggle
+// behavior).
 async function openDropdown(wrapper: VueWrapper): Promise<void> {
   await wrapper.find('.c-pointer').trigger('click')
 }

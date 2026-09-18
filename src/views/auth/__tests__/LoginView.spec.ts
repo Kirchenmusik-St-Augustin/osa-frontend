@@ -48,7 +48,7 @@ beforeEach(() => {
 })
 
 describe('LoginView', () => {
-  it('renders the Legacy card structure', () => {
+  it('renders the card structure', () => {
     const wrapper = mountLoginView()
 
     expect(wrapper.text()).toContain('Anmeldung.')

@@ -12,12 +12,10 @@ import PropriumSetup from './PropriumSetup.vue'
 
 // Structural subset shared by PerformanceCalendarItem and PerformanceShow --
 // this card is used on both the calendar and (with showMenu off) the Show
-// page, 1:1 Legacy's dual-purpose PerformanceCardComponent.vue. `user_booking`
-// is optional -- only the calendar (PerformanceCalendarItem) carries it,
-// Cast/Billing/RequestsAndBookings/MessageToCast's own PerformanceShortBase
-// don't need the self-service badge on their own card (Schritt 6 plan B.4
-// correction: Legacy's Show.vue passes neither with-status nor
-// booking-trigger either).
+// page. `user_booking` is optional -- only the calendar
+// (PerformanceCalendarItem) carries it, Cast/Billing/RequestsAndBookings/
+// MessageToCast's own PerformanceShortBase don't need the self-service
+// badge on their own card.
 export interface PerformanceCardData {
   id: string
   schedule: string
@@ -55,8 +53,7 @@ const authStore = useAuthStore()
 const rehearsalsOpen = ref(props.initShowRehearsals)
 const propriumOpen = ref(props.initShowProprium)
 
-// Legacy's `upcoming` computed: `moment(schedule).isAfter()` (no argument,
-// i.e. "is this after right now").
+// "Is this after right now".
 const upcoming = computed(() => parseWallClock(props.performance.schedule).getTime() > Date.now())
 </script>
 

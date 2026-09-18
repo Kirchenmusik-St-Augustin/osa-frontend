@@ -1,12 +1,10 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Components/Common/FormElements/FormSelect.vue,
-// simplified for TypeScript: instead of Legacy's dynamic optionsKey/
-// optionsLabel lookup, call sites normalize their data to {id, label}
-// up front (keeps this component fully typed, at the cost of one trivial
-// .map() per call site -- a deliberate tradeoff over a generic,
-// type-unsafe lookup). `readonly`/`small`/`titleSmall` added for Schritt 8
-// (Scores) -- additive, defaults match every existing call site's
-// current look.
+// Select control, fully typed: instead of a dynamic optionsKey/optionsLabel
+// lookup, call sites normalize their data to {id, label} up front (at the
+// cost of one trivial .map() per call site -- a deliberate tradeoff over a
+// generic, type-unsafe lookup). `readonly`/`small`/`titleSmall` support the
+// config-driven Scores field grid -- additive, defaults match every other
+// call site's look.
 export interface FormSelectOption {
   id: string
   label: string

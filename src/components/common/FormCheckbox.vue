@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Components/Common/FormElements/FormCheckbox.vue
-// (Bootstrap checkbox/switch with a bold label).
+// Bootstrap checkbox/switch with a bold label.
 const model = defineModel<boolean>({ required: true })
 
 withDefaults(

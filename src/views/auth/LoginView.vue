@@ -38,9 +38,9 @@ async function submit(): Promise<void> {
     await authStore.login(email.value, password.value)
     await redirectAfterLogin()
   } catch (error) {
-    // Hard Legacy parity: login failures (unknown email, wrong password,
-    // throttled, locked account) render in the SAME visual slot as
-    // Legacy's `form.errors.email` -- there is no separate banner.
+    // Login failures (unknown email, wrong password, throttled, locked
+    // account) render in the SAME visual slot as the email field's error --
+    // there is no separate banner.
     const { fieldErrors: fe, generalError } = extractApiErrors(error)
     fieldErrors.value = generalError ? { email: generalError, ...fe } : fe
   } finally {
@@ -49,11 +49,10 @@ async function submit(): Promise<void> {
 }
 
 // Google Sign-In: ID-token ("credential") flow via Google Identity Services
-// (vue3-google-login), not Legacy's server-redirect Socialite dance (see
-// the backend's google_callback endpoint docstring for the full reasoning)
-// -- same business capability (log in if already linked, link via local
-// password if not linked yet), leaner mechanism given this backend is
-// stateless-JWT.
+// (vue3-google-login) rather than a server-redirect OAuth dance (see the
+// backend's google_callback endpoint docstring for the full reasoning): log
+// in if already linked, link via local password if not linked yet -- a
+// lean mechanism given this backend is stateless-JWT.
 const showLinkForm = ref(false)
 const pendingCredential = ref<string | null>(null)
 const linkPassword = ref('')
@@ -178,10 +177,10 @@ function cancelLinkAccount(): void {
             </div>
             <div class="mb-3">
               <label class="form-label" for="link-password">Passwort</label>
-              <!-- Deliberate deviation from Legacy (no `required` there): this
-                   endpoint is rate-limited to 5 requests per hour, so an empty
-                   submit must be stopped by the browser instead of burning an
-                   attempt on a request that can only fail. -->
+              <!-- `required` is deliberate: this endpoint is rate-limited to 5
+                   requests per hour, so an empty submit must be stopped by the
+                   browser instead of burning an attempt on a request that can
+                   only fail. -->
               <input
                 id="link-password"
                 v-model="linkPassword"

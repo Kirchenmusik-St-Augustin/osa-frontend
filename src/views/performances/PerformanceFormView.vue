@@ -182,7 +182,7 @@ async function selectOrdinariumwork(id: string): Promise<void> {
   const [work, setup] = await Promise.all([getOrdinariumwork(id), getSetup(id)])
   form.ordinariumwork = { id: work.id, label: `${work.artist_name}: ${work.name}` }
   // Choirjobs are deliberately left untouched -- Ordinariumworks have no
-  // choirjob positions at all (1:1 Legacy's setOrdinariumwork()).
+  // choirjob positions at all.
   form.setup.instruments = setup.instruments
   form.setup.voices = setup.voices
   ordinariumworkModalInstance?.hide()
@@ -248,8 +248,7 @@ function addPropriumelement(): void {
     description: work.description,
     demanding: work.demanding,
   }
-  // Rebuilt in the propriumelements' canon order, not insertion order --
-  // 1:1 Legacy's addPropriumelement().
+  // Rebuilt in the propriumelements' canon order, not insertion order.
   const updated = [...form.proprium, newItem]
   form.proprium = available.value.propriumelements
     .map((candidate) => updated.find((item) => item.propriumelement_id === candidate.id))

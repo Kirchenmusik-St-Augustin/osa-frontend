@@ -136,7 +136,7 @@ describe('MessageToContactpersonView', () => {
     expect(mockSendMessageToContactperson).not.toHaveBeenCalled()
   })
 
-  it("shows the exact (typo'd) Legacy error message on a failed send", async () => {
+  it('shows the error message on a failed send', async () => {
     mockGetContactpersons.mockResolvedValueOnce(makeRoles())
     mockSendMessageToContactperson.mockRejectedValueOnce(new Error('boom'))
     const wrapper = mount(MessageToContactpersonView)

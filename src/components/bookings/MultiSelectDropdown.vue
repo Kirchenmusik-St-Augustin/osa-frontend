@@ -2,22 +2,17 @@
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import type { BookableUser } from '@/composables/useBookings'
 
-// Port of Legacy's MultiSelectComponent.vue -- a badge button ("N
-// ausgewählt") that toggles a floating, tabbed dropdown (one tab per
-// group, e.g. "Anfragen"/"direkt buchen") listing selectable candidates.
-// Legacy drives the tabs via Bootstrap's own data-bs-toggle="tab" JS,
-// decoupled from Vue's reactivity -- reimplemented here as a plain Vue
-// ref instead, since piggy-backing on Bootstrap's imperative DOM toggling
-// for state Vue itself needs to read/write would be a fragile double
-// source of truth. Same visible tab-switch behavior, no Bootstrap JS
-// dependency for it. Closing on an outside click (Legacy: vue3-click-away)
-// is reimplemented as a small local document-click listener instead of
-// pulling in that package for one use site.
+// A badge button ("N ausgewählt") that toggles a floating, tabbed dropdown
+// (one tab per group, e.g. "Anfragen"/"direkt buchen") listing selectable
+// candidates. The active tab is a plain Vue ref -- driving the tabs via
+// Bootstrap's imperative data-bs-toggle="tab" JS would be a fragile double
+// source of truth for state Vue itself needs to read/write. Closing on an
+// outside click is a small local document-click listener instead of pulling
+// in a package for one use site.
 //
-// Deliberate parity deviation (User-confirmed 2026-07-31): Legacy opens the
-// panel downward, which can cover the "hinzufügen"/"zurückweisen" buttons
-// below it. Opens upward here instead (see .dropdown's `bottom: 100%` in
-// <style> below) so those buttons stay reachable while the panel is open.
+// The panel opens upward (see .dropdown's `bottom: 100%` in <style> below)
+// so the "hinzufügen"/"zurückweisen" buttons below it stay reachable while
+// the panel is open.
 export interface MultiSelectGroup {
   label: string
   values: BookableUser[]
@@ -65,11 +60,11 @@ watch(
       <i class="fas fa-caret-down px-1 text-primary"></i>
     </span>
     <!--
-      A real block-level div (not a span) -- Legacy's own .multiselect div
-      has no explicit width, so it fills the containing column and gives
-      the dropdown's `width: 140%` below something meaningful to resolve
-      against. An inline wrapper here collapses to near-zero width, which
-      is what silently shrank the dropdown to a sliver before this fix.
+      A real block-level div (not a span) -- .multiselect has no explicit
+      width, so it fills the containing column and gives the dropdown's
+      `width: 140%` below something meaningful to resolve against. An inline
+      wrapper here would collapse to near-zero width and silently shrink the
+      dropdown to a sliver.
     -->
     <div class="multiselect">
       <div v-if="isOpen" class="dropdown border rounded p-1 text-nowrap bg-white">
