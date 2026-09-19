@@ -1,22 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import api from '@/services/api'
 import { extractApiErrors } from '@/services/apiErrors'
+import { useAuthStore } from '@/stores/auth'
 
 const title = 'Passwort setzen'
+const authStore = useAuthStore()
 
 const email = ref('')
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 const submitted = ref(false)
 
-// No auth store action for this -- forgot-password is a guest-only,
-// stateless fire-and-forget call (no token/profile to store on success).
 async function submit(): Promise<void> {
   fieldErrors.value = {}
   submitting.value = true
   try {
-    await api.post('/auth/forgot-password', { email: email.value })
+    await authStore.forgotPassword(email.value)
     submitted.value = true
   } catch (error) {
     const { fieldErrors: fe } = extractApiErrors(error)

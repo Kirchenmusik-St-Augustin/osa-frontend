@@ -1,16 +1,14 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Components/Common/QuantitySetupComponent.vue --
-// read-only table used directly by Ordinariumwork's Show page, and
-// reused (with-controls) as the left-hand table inside QuantityEditor.vue.
-// Native `title` attributes replace Legacy's vue-tippy tooltips (same
-// hover-text UX, no extra dependency for three tooltip strings).
+// Read-only table used directly by Ordinariumwork's Show page, and reused
+// (with-controls) as the left-hand table inside QuantityEditor.vue. Native
+// `title` attributes serve as tooltips (hover-text UX, no extra dependency
+// for three tooltip strings).
 export interface QuantitySetupEntry {
   id: string
   name: string
   quantity: number
   // Omitted/true = active; explicitly false flags an archived Instrument/
-  // Voice/Choirjob still present in this setup (osa-only addition,
-  // outside the structural 1:1 transfer's scope) -- e.g. copied in from an
+  // Voice/Choirjob still present in this setup -- e.g. copied in from an
   // Ordinariumwork's own setup, which is deliberately never re-filtered.
   active?: boolean
 }

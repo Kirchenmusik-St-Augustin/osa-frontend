@@ -94,6 +94,14 @@ describe('UserFormView', () => {
     expect(mockPush).toHaveBeenCalledWith({ name: 'system-users-show', params: { id: '9' } })
   })
 
+  it('shows the "Benutzerkonto erstellen" subtitle when creating', async () => {
+    const wrapper = mount(UserFormView, { props: {} })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Benutzerkonto erstellen')
+    expect(wrapper.text()).not.toContain('Benutzerkonto bearbeiten')
+  })
+
   it('shows the "Pflichtfeld" hint while email is empty', async () => {
     const wrapper = mount(UserFormView, { props: {} })
     await flushPromises()
@@ -143,13 +151,13 @@ describe('UserFormView', () => {
     expect(wrapper.text()).toContain('E-mail nicht verifiziert')
   })
 
-  it('shows both the name and the "Benutzerkonto erstellen" subtitle when editing (1:1 Legacy quirk)', async () => {
+  it('shows both the name and the "Benutzerkonto bearbeiten" subtitle when editing', async () => {
     mockGet.mockResolvedValueOnce(makeUser({ id: '5' }))
     const wrapper = mount(UserFormView, { props: { id: '5' } })
     await flushPromises()
 
     expect(wrapper.text()).toContain('SCHINDLER, Margot')
-    expect(wrapper.text()).toContain('Benutzerkonto erstellen')
+    expect(wrapper.text()).toContain('Benutzerkonto bearbeiten')
   })
 
   it('hides the Rollen picker for a non-administrator', async () => {

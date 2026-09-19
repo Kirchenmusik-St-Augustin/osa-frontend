@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UserDataCard from '../UserDataCard.vue'
 import type { User } from '@/composables/useUsers'
+import { formatUtcDateTime } from '@/services/dateFormat'
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
@@ -61,6 +62,15 @@ describe('UserDataCard', () => {
   it('shows "nicht bekannt" when auth_lastsignal is unset', () => {
     const wrapper = mount(UserDataCard, { props: { user: makeUser({ auth_lastsignal: null }) } })
     expect(wrapper.text()).toContain('nicht bekannt')
+  })
+
+  it('shows the formatted last-activity timestamp when auth_lastsignal is set', () => {
+    const wrapper = mount(UserDataCard, {
+      props: { user: makeUser({ auth_lastsignal: '2026-09-01T08:30:00+00:00' }) },
+    })
+
+    expect(wrapper.text()).not.toContain('nicht bekannt')
+    expect(wrapper.text()).toContain(formatUtcDateTime('2026-09-01T08:30:00+00:00'))
   })
 
   it('shows the administrator and gesperrt badges only when set', () => {

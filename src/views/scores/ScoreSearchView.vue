@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Scores/Search.vue.
+// Score search.
 import { useRouter } from 'vue-router'
 import SearchTypeahead from '@/components/common/SearchTypeahead.vue'
 import { useScores } from '@/composables/useScores'

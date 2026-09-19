@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api from '@/services/api'
 import { extractApiErrors } from '@/services/apiErrors'
+import { useAuthStore } from '@/stores/auth'
 
 const title = 'Passwort setzen'
+const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -21,7 +22,7 @@ async function submit(): Promise<void> {
   generalError.value = null
   submitting.value = true
   try {
-    await api.post('/auth/reset-password', {
+    await authStore.resetPassword({
       email: email.value,
       token,
       password: password.value,
@@ -61,7 +62,13 @@ async function submit(): Promise<void> {
             </div>
             <div class="mb-3">
               <label class="form-label" for="password">Passwort</label>
-              <input id="password" v-model="password" type="password" class="form-control" />
+              <input
+                id="password"
+                v-model="password"
+                type="password"
+                class="form-control"
+                autocomplete="new-password"
+              />
               <small class="text-danger">{{ fieldErrors['password'] }}</small>
             </div>
             <div class="mb-3">
@@ -72,6 +79,7 @@ async function submit(): Promise<void> {
                 type="password"
                 class="form-control"
                 required
+                autocomplete="new-password"
               />
               <small class="text-danger">{{ fieldErrors['password_confirmation'] }}</small>
             </div>

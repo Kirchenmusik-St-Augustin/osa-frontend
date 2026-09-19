@@ -1,10 +1,8 @@
 <script setup lang="ts">
-// No Legacy equivalent -- adapted from PrimeVue's <ProgressBar> concept to
-// a custom animated bar (osa-frontend has no PrimeVue dependency).
-// Bootstrap's own
-// .progress-bar-striped (a single-hue bar with a semi-transparent white
-// overlay) was tried first but read as too low-contrast in practice (User
-// feedback, 2026-08-21) -- replaced with a two-color stripe pattern using
+// Custom animated bar (adapted from PrimeVue's <ProgressBar> concept -- this
+// app has no PrimeVue dependency). Bootstrap's own .progress-bar-striped (a
+// single-hue bar with a semi-transparent white overlay) reads as too
+// low-contrast in practice, so this uses a two-color stripe pattern with
 // $primary (the navbar's own background color) and $warning (matching the
 // navbar's music-note icon).
 import { useLoadingStore } from '@/stores/loading'
@@ -19,8 +17,8 @@ const loadingStore = useLoadingStore()
 <style scoped>
 /* Above the sticky-top navbar (Bootstrap's $zindex-sticky: 1020) and any
    fixed element (1030), below Bootstrap's own offcanvas-backdrop/modal
-   levels (1040+) -- see bootstrap/scss/_variables.scss. SweetAlert2
-   toasts/dialogs sit at 1060, so they always stay above this bar. */
+   levels (1040+) -- see bootstrap/scss/_variables.scss. Modals and the
+   toast container (1090) sit above it, so they always stay above this bar. */
 .global-loading-bar {
   position: fixed;
   top: 0;

@@ -37,8 +37,7 @@ const submitting = ref(false)
 // QuantityEditor snapshots its model at creation time to power the
 // "reset to original values" link -- gating the form behind `ready` means
 // it's only ever mounted once every async fetch (composer list, available
-// positions, and -- on edit -- the existing work/setup) has resolved,
-// matching Legacy's SSR props being complete before the component exists.
+// positions, and -- on edit -- the existing work/setup) has resolved.
 const ready = ref(false)
 
 onMounted(async () => {

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { PerformancePropriumItem } from '@/composables/usePerformances'
 
-// 1:1 port of Legacy's Components/Common/PropriumSetupComponent.vue --
-// read-only display used on the calendar card, reused with-controls inside
+// Read-only display used on the calendar card, reused with-controls inside
 // the Proprium editor modal (PerformanceFormView.vue).
 withDefaults(
   defineProps<{

@@ -1,9 +1,6 @@
 <script setup lang="ts">
-// Day+user-scoped detail page, adapted from Legacy's Content/Administrator/
-// RequestLogs/IndexUser.vue -- Legacy only has month granularity (flat
-// entry list grouped client-side by day); here the backend already scopes
-// to exactly one day, so no client-side day-grouping is needed anymore
-// (User decision 2026-08-12, real functional change).
+// Day+user-scoped detail page: the backend already scopes to exactly one
+// day, so no client-side day-grouping is needed.
 import { ref, watch } from 'vue'
 import { useRequestLogs, type RequestLogEntry } from '@/composables/useRequestLogs'
 import { useDayQuery } from '@/composables/useDayQuery'

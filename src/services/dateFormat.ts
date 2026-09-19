@@ -1,11 +1,9 @@
-// Small, dependency-free German date-formatting helper -- Legacy formats
-// dates via moment.js's German locale; this project has no date library, and
-// pulling in moment/dayjs just for text formatting (as opposed to the
-// Flatpickr *widget*, which was a deliberate pixel-parity exception) would
-// be exactly the kind of unnecessary dependency the project's lean/
-// no-over-engineering principle warns against. These arrays mirror moment's de.js locale tokens
-// (`monthsShort`/`months`/`weekdaysMin`) so the rendered text matches
-// Legacy byte for byte.
+// Small, dependency-free German date-formatting helper -- this project has no
+// date library, and pulling in moment/dayjs just for text formatting (as
+// opposed to the Flatpickr *widget*) would be exactly the kind of
+// unnecessary dependency the project's lean/no-over-engineering principle
+// warns against. These arrays hold the German month/weekday names
+// (short/full/weekday-min).
 const MONTHS_SHORT = [
   'Jan.',
   'Feb.',
@@ -42,20 +40,16 @@ function pad(value: number): string {
 
 // The backend serializes `schedule` fields as a naive, offset-free string
 // representing local wall-clock time in Settings.app_timezone (default
-// Europe/Vienna) -- those DB columns are still declared without a
-// timezone (a real TIMESTAMPTZ migration is a separate, not-yet-started
-// step), and unlike created_at/updated_at (genuinely UTC audit columns),
-// `schedule` is a
-// user-entered value that mirrors Legacy's Carbon under
-// config('app.timezone') (see osa-backend's app/core/datetime_utils.py::
-// local_now()). It carries NO timezone of its own and must never be run
-// through real UTC conversion: `new Date(iso)` treats an offset-free ISO
-// string as UTC and converts it to the viewer's browser-local time on
-// read, and `date.toISOString()` does the same in reverse on write --
-// both silently shift the value by the viewer's UTC offset (this broke
-// the July 2026 calendar by +2h under CEST before this fix). Instead we
-// read/write the wall-clock digits directly, matching how Legacy's own
-// moment.js formatting behaves on a naive value.
+// Europe/Vienna) -- those DB columns are deliberately kept without a
+// timezone (unlike created_at/updated_at, which are genuinely UTC audit
+// columns), since `schedule` is a user-entered wall-clock value (see
+// osa-backend's app/core/datetime_utils.py::local_now()). It carries NO
+// timezone of its own and must never be run through real UTC conversion:
+// `new Date(iso)` treats an offset-free ISO string as UTC and converts it
+// to the viewer's browser-local time on read, and `date.toISOString()` does
+// the same in reverse on write -- both silently shift the value by the
+// viewer's UTC offset (+2h under CEST). Instead we read/write the
+// wall-clock digits directly.
 const WALL_CLOCK_PATTERN = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/
 
 export function parseWallClock(value: string): Date {
@@ -91,8 +85,7 @@ function formatReadable(date: Date): string {
   return `${date.getDate()}. ${MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-// Mirrors Legacy's helper.js `datetimeReadable()` ("D. MMM YYYY, HH:mm"),
-// e.g. "2. Aug 2026, 11:00".
+// "D. MMM YYYY, HH:mm", e.g. "2. Aug 2026, 11:00".
 export function formatDateTime(iso: string): string {
   return formatReadable(parseWallClock(iso))
 }
@@ -104,8 +97,7 @@ export function formatDateTime(iso: string): string {
 // they go through a normal Date() parse + the browser's local-timezone
 // getters instead of parseWallClock's raw-digit read. Assumes the viewer
 // is in the app's own timezone (Europe/Vienna) for the rendered wall-clock
-// numbers to be meaningful, same assumption Legacy's server-rendered pages
-// make implicitly.
+// numbers to be meaningful.
 export function formatUtcDateTime(iso: string): string {
   return formatReadable(new Date(iso))
 }
@@ -134,9 +126,8 @@ export function parseUtcInstantDate(iso: string): { year: number; month: number;
   return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() }
 }
 
-// Mirrors moment.js's localized "LL" format ("D. MMMM YYYY", e.g.
-// "12. Juni 2026") used by Legacy's RequestLogs/IndexUser.vue to group log
-// entries by day. UTC-instant input, same browser-local-getter approach as
+// "D. MMMM YYYY", e.g. "12. Juni 2026", used to group log entries by day.
+// UTC-instant input, same browser-local-getter approach as
 // formatUtcDateTime -- no time component.
 export function formatDateOnly(iso: string): string {
   const { year, month, day } = parseUtcInstantDate(iso)
@@ -174,8 +165,7 @@ export function parseCalendarDate(iso: string): { year: number; month: number; d
   return { year, month, day }
 }
 
-// Mirrors moment.js's "HH:mm:ss" format used per-row in Legacy's
-// RequestLogs/IndexUser.vue table. UTC-instant input.
+// "HH:mm:ss", used per-row in the request-log table. UTC-instant input.
 export function formatTimeOnly(iso: string): string {
   const date = new Date(iso)
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`

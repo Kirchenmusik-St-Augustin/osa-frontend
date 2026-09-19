@@ -22,7 +22,7 @@ export interface DirectoryEntry {
 
 export type DirectoryPositionType = 'instruments' | 'voices' | 'choirjobs'
 
-// UI-independent API layer for Schritt 7's Benutzerverzeichnis (System),
+// UI-independent API layer for the Benutzerverzeichnis (System),
 // mirrors useUsers.ts's shape.
 export function useUserdirectory() {
   async function getAbilities(): Promise<DirectoryAbilities> {

@@ -1,8 +1,8 @@
 import api from '@/services/api'
 import type { PerformanceShortBase } from '@/composables/useBookings'
 
-// UI-independent API layer for Schritt 7's Selfadmin-Support (5a "Meine
-// Anfragen und Buchungen", 5b "Meine Ansprechpersonen") -- mirrors
+// UI-independent API layer for the self-service support pages ("Meine
+// Anfragen und Buchungen", "Meine Ansprechpersonen") -- mirrors
 // useProfile.ts's shape. PerformanceShortBase is the exact wire shape of the
 // backend's PerformanceShortOutput (see app/schemas/booking.py).
 
@@ -33,9 +33,8 @@ export function useSupport() {
   }
 
   // Always resolves 200 -- the backend silently no-ops for a missing/
-  // unverified recipient (1:1 Legacy quirk, see support_service.
-  // send_message_to_contactperson's docstring), the caller never learns
-  // whether a real send happened.
+  // unverified recipient (see support_service.send_message_to_contactperson's
+  // docstring), the caller never learns whether a real send happened.
   async function sendMessageToContactperson(recipientId: string, message: string): Promise<void> {
     await api.post('/support/message-to-contactperson', {
       recipient_id: recipientId,

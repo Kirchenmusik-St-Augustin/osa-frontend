@@ -56,7 +56,7 @@ describe('RequestLogShowView', () => {
     expect(wrapper.findAll('pre')).toHaveLength(2)
   })
 
-  it('shows an empty array for a null response body, 1:1 Legacy\'s "?? []" fallback', async () => {
+  it('shows an empty array for a null response body', async () => {
     mockGet.mockResolvedValueOnce(makeEntry({ response_content: null }))
     const wrapper = mount(RequestLogShowView, { props: { id: '1' } })
     await flushPromises()
@@ -89,7 +89,7 @@ describe('RequestLogShowView', () => {
     expect(backLink.props('to')).toEqual({ name: 'administrator-request-logs-index' })
   })
 
-  it('shows "zurück" as a primary button both above and below the fields, 1:1 Legacy', async () => {
+  it('shows "zurück" as a primary button both above and below the fields', async () => {
     mockGet.mockResolvedValueOnce(makeEntry())
     const wrapper = mount(RequestLogShowView, { props: { id: '1' } })
     await flushPromises()
@@ -101,7 +101,7 @@ describe('RequestLogShowView', () => {
     }
   })
 
-  it("renders each field label on its own line above the value, 1:1 Legacy's LogDetail", async () => {
+  it('renders each field label on its own line above the value', async () => {
     mockGet.mockResolvedValueOnce(makeEntry())
     const wrapper = mount(RequestLogShowView, { props: { id: '1' } })
     await flushPromises()

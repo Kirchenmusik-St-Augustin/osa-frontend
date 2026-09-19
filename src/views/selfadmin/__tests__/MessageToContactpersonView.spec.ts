@@ -136,7 +136,7 @@ describe('MessageToContactpersonView', () => {
     expect(mockSendMessageToContactperson).not.toHaveBeenCalled()
   })
 
-  it("shows the exact (typo'd) Legacy error message on a failed send", async () => {
+  it('shows the error message on a failed send', async () => {
     mockGetContactpersons.mockResolvedValueOnce(makeRoles())
     mockSendMessageToContactperson.mockRejectedValueOnce(new Error('boom'))
     const wrapper = mount(MessageToContactpersonView)
@@ -148,7 +148,7 @@ describe('MessageToContactpersonView', () => {
     await sendButton?.trigger('click')
     await flushPromises()
 
-    expect(mockShowToast).toHaveBeenCalledWith('Nachricht konnte nicht versanct werden.', true)
+    expect(mockShowToast).toHaveBeenCalledWith('Nachricht konnte nicht versandt werden.', true)
   })
 
   it('replaces the message-textarea+senden block with the kill-switch card while active, keeping the dropdown and description cards visible', async () => {

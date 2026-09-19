@@ -9,7 +9,7 @@ export interface EmailKillSwitchStatus {
 }
 
 export interface AuthUser {
-  id: number
+  id: string
   email: string
   email_verified_at: string | null
   surname: string
@@ -24,6 +24,13 @@ export interface RegisterPayload {
   givenname: string
   email: string
   phone: string
+  password: string
+  password_confirmation: string
+}
+
+export interface ResetPasswordPayload {
+  email: string
+  token: string
   password: string
   password_confirmation: string
 }
@@ -111,6 +118,14 @@ export const useAuthStore = defineStore('auth', () => {
     await api.post('/auth/resend-verification-email')
   }
 
+  async function forgotPassword(email: string): Promise<void> {
+    await api.post('/auth/forgot-password', { email })
+  }
+
+  async function resetPassword(payload: ResetPasswordPayload): Promise<void> {
+    await api.post('/auth/reset-password', payload)
+  }
+
   async function logout(): Promise<void> {
     try {
       await api.post('/auth/logout')
@@ -152,6 +167,8 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     verifyEmail,
     resendVerificationEmail,
+    forgotPassword,
+    resetPassword,
     logout,
     restoreSession,
   }

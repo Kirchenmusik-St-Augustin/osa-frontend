@@ -12,17 +12,6 @@ import type {
 import type { Ordinariumwork, OrdinariumworkSetup } from '@/composables/useOrdinariumworks'
 import type { Propriumwork } from '@/composables/usePropriumworks'
 
-const { MockModal, mockModalShow, mockModalHide } = vi.hoisted(() => {
-  const mockModalShow = vi.fn()
-  const mockModalHide = vi.fn()
-  class MockModal {
-    show = mockModalShow
-    hide = mockModalHide
-  }
-  return { MockModal, mockModalShow, mockModalHide }
-})
-vi.mock('bootstrap', () => ({ Modal: MockModal }))
-
 const mockPush = vi.fn().mockResolvedValue(undefined)
 let mockQuery: Record<string, string> = {}
 vi.mock('vue-router', async (importOriginal) => ({
@@ -125,6 +114,21 @@ function findSetupToggle(wrapper: ReturnType<typeof mount>) {
     .find((div) => div.text().includes('Positionskonfiguration'))
 }
 
+// The Ordinarium selector lives in a dialog that only exists while it is open,
+// and picking a work closes it again -- so every pick is: open, choose.
+async function openOrdinariumworkModal(wrapper: ReturnType<typeof mount>): Promise<void> {
+  const trigger = wrapper
+    .findAll('small')
+    .find((element) => element.text() === 'Ordinarium-Komposition auswählen')
+  await trigger!.trigger('click')
+}
+
+async function pickOrdinariumwork(wrapper: ReturnType<typeof mount>, id: string): Promise<void> {
+  await openOrdinariumworkModal(wrapper)
+  await wrapper.findComponent(SearchTypeahead).vm.$emit('select', id)
+  await flushPromises()
+}
+
 beforeEach(() => {
   vi.resetAllMocks()
   mockQuery = { year: '2026', month: '8' }
@@ -167,17 +171,17 @@ describe('PerformanceFormView -- create mode', () => {
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
-    await flushPromises()
+    expect(wrapper.find('.modal').exists()).toBe(false)
+    await openOrdinariumworkModal(wrapper)
+    expect(wrapper.find('.modal').exists()).toBe(true)
+    await pickOrdinariumwork(wrapper, '5')
 
     expect(mockGetOrdinariumwork).toHaveBeenCalledWith('5')
     expect(mockGetSetup).toHaveBeenCalledWith('5')
     expect(wrapper.text()).toContain('MOZART, Wolfgang: Krönungsmesse')
     expect(findSaveButton(wrapper)?.attributes('disabled')).toBeUndefined()
-    // Regression guard: the modal instance must actually be wired to the
-    // template ref (a naming collision between the plain Modal-instance
-    // variable and the ref name silently broke this once already).
-    expect(mockModalHide).toHaveBeenCalled()
+    // Picking a work closes the selector dialog again.
+    expect(wrapper.find('.modal').exists()).toBe(false)
   })
 
   it("creates a performance and navigates to the saved schedule's calendar month", async () => {
@@ -197,8 +201,7 @@ describe('PerformanceFormView -- create mode', () => {
     } as PerformanceResponse)
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
-    await flushPromises()
+    await pickOrdinariumwork(wrapper, '5')
 
     await wrapper.find('select#performance-location').setValue('1')
     await findSaveButton(wrapper)?.trigger('click')
@@ -231,8 +234,7 @@ describe('PerformanceFormView -- create mode', () => {
     })
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
-    await flushPromises()
+    await pickOrdinariumwork(wrapper, '5')
 
     await findSaveButton(wrapper)?.trigger('click')
     await flushPromises()
@@ -273,10 +275,8 @@ describe('PerformanceFormView -- create mode', () => {
     await flushPromises()
     await findSetupToggle(wrapper)!.trigger('click')
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
-    await flushPromises()
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '6')
-    await flushPromises()
+    await pickOrdinariumwork(wrapper, '5')
+    await pickOrdinariumwork(wrapper, '6')
 
     const instrumentsEditor = wrapper.findAllComponents(QuantityEditor)[0]!
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('5')
@@ -313,8 +313,7 @@ describe('PerformanceFormView -- create mode', () => {
     await findSetupToggle(wrapper)!.trigger('click')
     expect(wrapper.text()).not.toContain('auf derz. Werte zurücksetzen')
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
-    await flushPromises()
+    await pickOrdinariumwork(wrapper, '5')
 
     // If the baseline were still the empty array from the pre-selection
     // mount, this would incorrectly show the reset link.
@@ -338,8 +337,7 @@ describe('PerformanceFormView -- create mode', () => {
     } as PerformanceResponse)
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '5')
-    await flushPromises()
+    await pickOrdinariumwork(wrapper, '5')
 
     // Deliberately does NOT set select#performance-location or a
     // conductor -- the point of this test is that both are already
@@ -433,8 +431,7 @@ describe('PerformanceFormView -- edit mode', () => {
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('3')
     expect(instrumentsEditor.text()).not.toContain('auf derz. Werte zurücksetzen')
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '6')
-    await flushPromises()
+    await pickOrdinariumwork(wrapper, '6')
 
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('9')
     expect(instrumentsEditor.text()).toContain('auf derz. Werte zurücksetzen')
@@ -491,10 +488,9 @@ describe('PerformanceFormView -- Proprium editor', () => {
     await flushPromises()
 
     await wrapper.find('.fa-plus-circle').trigger('click')
-    expect(mockModalShow).toHaveBeenCalled()
-    // Two modals each embed their own SearchTypeahead (Ordinarium + Proprium)
-    // -- scope to #propriumModal so this doesn't accidentally hit the other.
-    await wrapper.find('#propriumModal').findComponent(SearchTypeahead).vm.$emit('select', '7')
+    expect(wrapper.find('.modal').exists()).toBe(true)
+    // Only the Proprium dialog is open, so this is its own SearchTypeahead.
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '7')
     await flushPromises()
     const addButton = wrapper.findAll('button').find((button) => button.text() === 'Hinzufügen')
     await addButton?.trigger('click')
@@ -502,9 +498,32 @@ describe('PerformanceFormView -- Proprium editor', () => {
 
     expect(wrapper.text()).toContain('Gregorianik I')
     expect(wrapper.text()).toContain('Introitus')
-    expect(mockModalHide).toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(false)
 
     await wrapper.find('.fa-trash').trigger('click')
     expect(wrapper.text()).not.toContain('Gregorianik I')
+  })
+})
+
+describe('PerformanceFormView -- modal lifecycle', () => {
+  it('lets the user leave the Ordinarium selector without picking anything', async () => {
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+    await openOrdinariumworkModal(wrapper)
+
+    await wrapper.find('.modal').trigger('keydown', { key: 'Escape' })
+
+    expect(wrapper.find('.modal').exists()).toBe(false)
+  })
+
+  it('releases the page scroll lock when unmounted while a dialog is open', async () => {
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+    await openOrdinariumworkModal(wrapper)
+    expect(document.body.classList.contains('modal-open')).toBe(true)
+
+    wrapper.unmount()
+
+    expect(document.body.classList.contains('modal-open')).toBe(false)
   })
 })

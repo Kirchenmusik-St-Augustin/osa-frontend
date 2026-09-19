@@ -60,7 +60,7 @@ describe('MyRequestsAndBookingsView', () => {
     expect(wrapper.text()).toContain('Krönungsmesse')
   })
 
-  it('shows the exact Legacy empty-state text when there are none', async () => {
+  it('shows the empty-state text when there are none', async () => {
     mockGetMyRequestsAndBookings.mockResolvedValueOnce([])
     const wrapper = mount(MyRequestsAndBookingsView)
     await flushPromises()

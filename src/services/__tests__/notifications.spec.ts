@@ -1,61 +1,53 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import Swal from 'sweetalert2'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { confirmAction, showToast } from '../notifications'
-
-vi.mock('sweetalert2', () => ({
-  default: { fire: vi.fn() },
-}))
-
-const mockedSwal = vi.mocked(Swal)
+import { useNotificationStore } from '@/stores/notifications'
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  setActivePinia(createPinia())
 })
 
 describe('confirmAction', () => {
-  it('resolves true when the user confirms', async () => {
-    mockedSwal.fire.mockResolvedValueOnce({ isConfirmed: true } as never)
+  it('asks the given question and resolves true when the user confirms', async () => {
+    const store = useNotificationStore()
 
-    const result = await confirmAction('Soll das Element wirklich gelöscht werden?')
+    const answer = confirmAction('Soll das Element wirklich gelöscht werden?')
+    expect(store.confirmationMessage).toBe('Soll das Element wirklich gelöscht werden?')
+    store.answerConfirmation(true)
 
-    expect(result).toBe(true)
-    expect(mockedSwal.fire).toHaveBeenCalledWith(
-      expect.objectContaining({
-        text: 'Soll das Element wirklich gelöscht werden?',
-        confirmButtonColor: 'salmon',
-        denyButtonColor: 'darkgray',
-      }),
-    )
+    await expect(answer).resolves.toBe(true)
   })
 
   it('resolves false when the user denies', async () => {
-    mockedSwal.fire.mockResolvedValueOnce({ isConfirmed: false } as never)
+    const store = useNotificationStore()
 
-    const result = await confirmAction()
+    const answer = confirmAction()
+    store.answerConfirmation(false)
 
-    expect(result).toBe(false)
+    await expect(answer).resolves.toBe(false)
+  })
+
+  it('falls back to a generic question when none is given', () => {
+    const store = useNotificationStore()
+
+    void confirmAction()
+
+    expect(store.confirmationMessage).toBe('Soll diese Aktion wirklich ausgeführt werden')
   })
 })
 
 describe('showToast', () => {
-  it('fires a green success toast by default', () => {
+  it('raises a success toast by default', () => {
     showToast('Element gespeichert')
 
-    expect(mockedSwal.fire).toHaveBeenCalledWith(
-      expect.objectContaining({
-        icon: 'success',
-        title: 'Element gespeichert',
-        background: 'green',
-        position: 'bottom-start',
-      }),
-    )
+    expect(useNotificationStore().toasts).toEqual([
+      { id: expect.any(Number), message: 'Element gespeichert', isError: false },
+    ])
   })
 
-  it('fires a red error toast when isError is true', () => {
+  it('raises an error toast when isError is true', () => {
     showToast('Ein unerwarteter Fehler ist aufgetreten.', true)
 
-    expect(mockedSwal.fire).toHaveBeenCalledWith(
-      expect.objectContaining({ icon: 'error', background: 'red' }),
-    )
+    expect(useNotificationStore().toasts[0]).toMatchObject({ isError: true })
   })
 })

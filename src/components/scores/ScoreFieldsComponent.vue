@@ -1,12 +1,11 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Scores/ScoreFieldsComponent.vue -- the fixed,
-// manually laid-out grid for all 94 Score fields. Deliberately NOT a
-// generic loop over every field (Legacy's own grid isn't uniform either:
-// field groupings/column widths vary section to section).
+// The fixed, manually laid-out grid for all 94 Score fields. Deliberately
+// NOT a generic loop over every field (the grid isn't uniform: field
+// groupings/column widths vary section to section).
 import ScoreFieldsFieldComponent from './ScoreFieldsFieldComponent.vue'
 import type { ScoreFieldConfig } from '@/composables/useScores'
 
-const model = defineModel<Record<string, string | number>>({ required: true })
+const model = defineModel<Record<string, string | number | null>>({ required: true })
 
 const props = withDefaults(
   defineProps<{
@@ -21,8 +20,8 @@ const props = withDefaults(
 )
 
 // Holdings section: row label + field-key prefix. Only "orch" has no
-// "*anz" column at all (checked per-row below via hasAnzField, 1:1 the
-// real schema -- "orgel" does have one).
+// "*anz" column at all (checked per-row below via hasAnzField -- "orgel"
+// does have one).
 const PART_GROUPS: { name: string; label: string }[] = [
   { name: 'part1', label: 'Partitur 1' },
   { name: 'part2', label: 'Partitur 2' },
@@ -38,12 +37,11 @@ const PART_GROUPS: { name: string; label: string }[] = [
   { name: 'orch', label: 'Orchester' },
 ]
 
-// Instrumentation grid: 6 rows x 4 columns, field-KEY order only --
-// Legacy's own local label map for this section (`instruments` in its
-// ScoreFieldsComponent.vue) is dead code, never actually passed to its
-// field renderer (which reads `fieldsConfig[name].label` via `with-title`
-// instead) -- only the grouping/order below is real. Kept as the exact
-// same odd (non-alphabetical) grouping so the physical layout matches.
+// Instrumentation grid: 6 rows x 4 columns, field-KEY order only -- the
+// labels come from `fieldsConfig[name].label` (rendered via `with-title`),
+// so only the grouping/order below is meaningful. Kept as the exact same
+// odd (non-alphabetical) grouping so the layout matches the physical
+// archive card.
 const INSTRUMENT_GRID: string[][] = [
   ['violine1', 'trompete1', 'trombten', 'klarinette2'],
   ['violine2', 'trompete2', 'trombbass', 'oboe1'],

@@ -49,7 +49,7 @@ describe('PerformanceShowView', () => {
     expect(wrapper.text()).toContain('Krönungsmesse')
   })
 
-  it('never renders a Besetzung/cast section (disabled 1:1 Legacy)', async () => {
+  it('never renders a Besetzung/cast section (disabled by design)', async () => {
     mockGetDetail.mockResolvedValueOnce(makeShow())
     const wrapper = mount(PerformanceShowView, { props: { id: '1' } })
     await flushPromises()

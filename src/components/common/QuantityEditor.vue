@@ -7,15 +7,13 @@ export interface AvailablePosition {
   name: string
 }
 
-// 1:1 port of Legacy's Components/Common/QuantityEditorComponent.vue --
-// interactive setup editor used twice by Ordinariumwork's Form (once for
-// instruments, once for voices). Relies on the PARENT having already
-// fully loaded `modelValue` (e.g. from the Ordinariumwork's existing
-// setup on edit) before this component is created -- like Legacy, whose
-// server-rendered Inertia props are already complete at component-setup
-// time, `setupOrig` below snapshots whatever `modelValue` holds the
-// instant this runs, so the "reset to original values" link only works
-// correctly once the caller gates rendering behind its own loading state.
+// Interactive setup editor used twice by Ordinariumwork's Form (once for
+// instruments, once for voices). Relies on the PARENT having already fully
+// loaded `modelValue` (e.g. from the Ordinariumwork's existing setup on
+// edit) before this component is created: `setupOrig` below snapshots
+// whatever `modelValue` holds the instant this runs, so the "reset to
+// original values" link only works correctly once the caller gates
+// rendering behind its own loading state.
 const setup = defineModel<QuantitySetupEntry[]>({ required: true })
 const props = defineProps<{ available: AvailablePosition[] }>()
 
@@ -52,8 +50,7 @@ function add(): void {
   const item = props.available.find((candidate) => candidate.id === selectedUnused.value)
   if (!item) return
   const updated = [...setup.value, { id: item.id, name: item.name, quantity: 1 }]
-  // Rebuilt in `available`'s canonical order, not insertion order --
-  // 1:1 Legacy's add().
+  // Rebuilt in `available`'s canonical order, not insertion order.
   setup.value = props.available
     .map((candidate) => updated.find((entry) => entry.id === candidate.id))
     .filter((entry): entry is QuantitySetupEntry => entry !== undefined)

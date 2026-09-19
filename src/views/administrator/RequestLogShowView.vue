@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Administrator/RequestLogs/Show.vue
-// (LogDetail field list).
+// Field list of one request-log entry.
 import { computed, onMounted, ref } from 'vue'
 import { useRequestLogs, type RequestLogShow } from '@/composables/useRequestLogs'
 import { formatUtcDateTime, parseUtcInstantDate } from '@/services/dateFormat'
@@ -15,10 +14,9 @@ onMounted(async () => {
   entry.value = await get(props.id)
 })
 
-// Legacy's "zurück" returns to IndexUser for the month/user the entry's
+// "zurück" returns to the day+user-scoped list for the day/user the entry's
 // own created_at/user_id belong to -- not necessarily "now" or the
-// currently logged-in admin. Day-granularity update (2026-08-12): the
-// target view is now day+user-scoped, so the day is extracted here too.
+// currently logged-in admin.
 const backTarget = computed(() => {
   if (!entry.value || entry.value.user_id === null) {
     return { name: 'administrator-request-logs-index' as const }

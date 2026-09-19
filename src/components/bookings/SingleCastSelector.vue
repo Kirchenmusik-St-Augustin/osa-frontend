@@ -10,19 +10,17 @@ import type {
 import MultiSelectDropdown, { type MultiSelectGroup } from './MultiSelectDropdown.vue'
 import PopularModal from './PopularModal.vue'
 
-// Port of Legacy's SingleCastSelectorComponent.vue -- candidate picker for
-// one position: a collapsed "N ausgewählt" dropdown (MultiSelectDropdown,
-// tabbed "Anfragen"/"direkt buchen") instead of two permanently-expanded
-// candidate lists, a Fee preset dropdown, and the optional ⭐
-// popular-bookings suggestion modal. The whole panel disappears once there
-// is nobody left to pick (Legacy: `v-if="selectOptions.length"`).
+// Candidate picker for one position: a collapsed "N ausgewählt" dropdown
+// (MultiSelectDropdown, tabbed "Anfragen"/"direkt buchen") instead of two
+// permanently-expanded candidate lists, a Fee preset dropdown, and the
+// optional ⭐ popular-bookings suggestion modal. The whole panel disappears
+// once there is nobody left to pick.
 const props = defineProps<{
   allBooked: BookableUser[]
   notBooked: NotBookedEntry[]
   bookable: BookableGroup
   fees: Fee[]
   popular?: PopularItem
-  modalId: string
 }>()
 
 // voice_name/voice_order are only ever populated for choirjobs candidates
@@ -41,17 +39,16 @@ const emit = defineEmits<{
   'add-to': [payload: { stack: 'cast' | 'notBooked'; candidates: Candidate[] }]
 }>()
 
-// Default Fee looked up by name (unique per fees_name_key) -- mirrors
-// Legacy's own hardcoded selector default (`find(props.fees, ["id", 3])`),
-// but a stable business key instead of a raw PK: since the UUIDv7
-// migration, a Fee's id is server-generated and unpredictable, so there is
-// no literal id left to hardcode a default against.
+// Default Fee looked up by name (unique per fees_name_key) -- a stable
+// business key instead of a raw PK: a Fee's id is server-generated and
+// unpredictable, so there is no literal id to hardcode a default against.
 const DEFAULT_FEE_NAME = 'Instrumentalist'
 
 const selectedFeeId = ref<string>(
   props.fees.find((fee) => fee.name === DEFAULT_FEE_NAME)?.id ?? props.fees[0]?.id ?? '',
 )
 const selectedCandidateIds = ref<string[]>([])
+const popularOpen = ref(false)
 
 const excludedIds = computed(() => {
   const ids = new Set<string>()
@@ -106,14 +103,13 @@ function addTo(stack: 'cast' | 'notBooked'): void {
         v-if="popular"
         type="button"
         class="btn btn-sm"
-        data-bs-toggle="modal"
-        :data-bs-target="`#popular${modalId}`"
         title="populäre Buchungen"
+        @click="popularOpen = true"
       >
         <i class="fas fa-star text-primary"></i>
       </button>
     </div>
-    <PopularModal v-if="popular" :modal-id="modalId" :popular="popular" />
+    <PopularModal v-if="popular" v-model="popularOpen" :popular="popular" />
 
     <MultiSelectDropdown v-model="selectedCandidateIds" :options="selectGroups" />
 

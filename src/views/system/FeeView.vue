@@ -1,21 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, useTemplateRef } from 'vue'
-import { Modal } from 'bootstrap'
+import { computed, onMounted, reactive, ref } from 'vue'
+import AppModal from '@/components/common/AppModal.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import { useFees, type Fee } from '@/composables/useFees'
 import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
-// Deliberately its own small modal-edit page (Legacy's Fee/Index.vue is its
-// own dedicated controller under content/system/fees, not part of the
-// generic Coreelement mechanism -- see app/db/models/fee.py's docstring).
-// Kept as a standalone copy of CoreelementView.vue's pattern rather than
-// forcing Fee into COREELEMENT_CONFIG, which has no `order` column to move
-// (Schritt 6 plan B.3). Lives under
-// views/system/ (not views/administrator/), matching Legacy's own page
-// location and FeePolicy::maintain()'s role-'disponent' gate -- corrected
-// 2026-07-31 (User-reported: was wrongly wired under /administrator/fees
-// with the Coreelement types' administrator-Flag gate).
+// Deliberately its own small modal-edit page (fees are administered through
+// their own dedicated service, not the generic Coreelement mechanism -- see
+// app/db/models/fee.py's docstring). Kept as a standalone copy of
+// CoreelementView.vue's pattern rather than forcing Fee into
+// COREELEMENT_CONFIG, which has no `order` column to move. Lives under
+// views/system/ (not views/administrator/), matching the role-'disponent'
+// gate (feeMaintain) rather than the Coreelement types' administrator-Flag
+// gate.
 const { items, fetchList, save, remove } = useFees()
 
 const editForm = reactive({ name: '', amount: 0 })
@@ -23,27 +21,16 @@ const editingId = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 
-const modalElement = useTemplateRef<HTMLDivElement>('editModal')
-let modalInstance: Modal | null = null
+const modalOpen = ref(false)
 
-onMounted(async () => {
-  if (modalElement.value) {
-    modalInstance = new Modal(modalElement.value, { backdrop: 'static', keyboard: false })
-  }
-  await fetchList()
-})
+onMounted(fetchList)
 
-// 1:1 port of Legacy's toggleSort()/orderCol/orderDirection -- both start
-// on name/ascending, so the FIRST click on "Name" flips to descending, not
-// a no-op (same quirk Legacy itself has from the same default state).
-// Clicking the currently-inactive column switches to it and resets to
-// ascending. Always sorting (rather than trusting whatever order `items`
-// arrives in) matches Legacy's real page-load result just as well, more
-// simply: the backend already returns fees pre-ordered by name
-// (Fee::OrderByName global scope, see fee_service.list_fees's docstring),
-// and Legacy's OWN initial `ref(orderBy(...), "name")` line is dead code
-// anyway (a misplaced paren feeds "name" to ref()'s second, nonexistent
-// argument, never to orderBy()'s iteratee).
+// The sort starts on name/ascending, so the FIRST click on "Name" flips to
+// descending, not a no-op. Clicking the currently-inactive column switches
+// to it and resets to ascending. Always sorting (rather than trusting
+// whatever order `items` arrives in) is simpler: the backend already
+// returns fees pre-ordered by name (see fee_service.list_fees's docstring),
+// so the initial state matches.
 type SortColumn = 'name' | 'amount'
 const sortColumn = ref<SortColumn>('name')
 const sortDirection = ref<'asc' | 'desc'>('asc')
@@ -77,7 +64,7 @@ function resetForm(): void {
 function openCreateModal(): void {
   editingId.value = null
   resetForm()
-  modalInstance?.show()
+  modalOpen.value = true
 }
 
 function openEditModal(fee: Fee): void {
@@ -85,11 +72,11 @@ function openEditModal(fee: Fee): void {
   editForm.name = fee.name
   editForm.amount = fee.amount
   fieldErrors.value = {}
-  modalInstance?.show()
+  modalOpen.value = true
 }
 
 function closeModal(): void {
-  modalInstance?.hide()
+  modalOpen.value = false
   resetForm()
 }
 
@@ -124,47 +111,38 @@ async function deleteItem(fee: Fee): Promise<void> {
 <template>
   <h2 class="h2 text-center mb-4">Tarife verwalten</h2>
 
-  <div
-    id="editModal"
-    ref="editModal"
-    class="modal fade"
-    tabindex="-1"
-    data-bs-backdrop="static"
-    data-bs-keyboard="false"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Bearbeiten</h5>
-        </div>
-        <div class="modal-body">
-          <FormInput
-            id="fee-name"
-            v-model="editForm.name"
-            title="Name"
-            required
-            :error="fieldErrors['name']"
-          />
-          <FormInput
-            id="fee-amount"
-            v-model="editForm.amount"
-            title="Betrag"
-            type="number"
-            :min="0"
-            :max="999"
-            required
-            :error="fieldErrors['amount']"
-          />
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="closeModal">Schließen</button>
-          <button type="button" class="btn btn-primary" :disabled="submitting" @click="submitForm">
-            Speichern
-          </button>
-        </div>
+  <AppModal v-model="modalOpen" :dismissible="false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bearbeiten</h5>
+      </div>
+      <div class="modal-body">
+        <FormInput
+          id="fee-name"
+          v-model="editForm.name"
+          title="Name"
+          required
+          :error="fieldErrors['name']"
+        />
+        <FormInput
+          id="fee-amount"
+          v-model="editForm.amount"
+          title="Betrag"
+          type="number"
+          :min="0"
+          :max="999"
+          required
+          :error="fieldErrors['amount']"
+        />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" @click="closeModal">Schließen</button>
+        <button type="button" class="btn btn-primary" :disabled="submitting" @click="submitForm">
+          Speichern
+        </button>
       </div>
     </div>
-  </div>
+  </AppModal>
 
   <div class="text-center">
     <button type="button" class="btn btn-secondary my-3" @click="openCreateModal">anlegen</button>

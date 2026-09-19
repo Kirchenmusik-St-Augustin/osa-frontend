@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Administrator/SentEmails/Show.vue.
+// Detail view of one sent mail.
 import { computed, onMounted, ref } from 'vue'
 import { useSentEmails, type SentEmailShow } from '@/composables/useSentEmails'
 import { formatUtcDateTime, parseUtcInstantDate } from '@/services/dateFormat'
@@ -13,8 +13,8 @@ onMounted(async () => {
   email.value = await get(props.id)
 })
 
-// Legacy's "zurück" returns to the Index for the month the email's own
-// `datetime` (created_at) falls in -- not necessarily "now".
+// "zurück" returns to the Index for the month the email's own `datetime`
+// (created_at) falls in -- not necessarily "now".
 const backTarget = computed(() => {
   if (!email.value) return { name: 'administrator-sent-emails-index' as const }
   const { year, month } = parseUtcInstantDate(email.value.datetime)
@@ -73,7 +73,13 @@ const mailerBadgeClass = computed(() =>
       <div class="row mb-3">
         <div class="col-md-2 fw-bold">Nachricht:</div>
         <div class="col-md-10">
-          <iframe :srcdoc="email.body ?? ''" class="border-top" width="100%" height="1000px" />
+          <iframe
+            :srcdoc="email.body ?? ''"
+            sandbox=""
+            class="border-top"
+            width="100%"
+            height="1000px"
+          />
         </div>
       </div>
     </div>

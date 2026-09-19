@@ -22,9 +22,8 @@ function isValidationErrorItem(value: unknown): value is ValidationErrorItem {
 
 // Maps FastAPI's two error-response shapes (see main.py's exception
 // handlers) to something every Auth view can render the same way: a
-// per-field message (shown under the matching input, mirroring Legacy's
-// Inertia form.errors.<field>) or a single general message (login
-// failures, throttling, IDOR-safe 404s, ...).
+// per-field message (shown under the matching input) or a single general
+// message (login failures, throttling, IDOR-safe 404s, ...).
 export function extractApiErrors(error: unknown): ApiFieldErrors {
   const axiosError = error as AxiosError<ErrorDetailBody>
   const detail = axiosError.response?.data?.detail

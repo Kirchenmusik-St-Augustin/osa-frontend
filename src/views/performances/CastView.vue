@@ -14,14 +14,10 @@ import {
 import { confirmAction, showToast } from '@/services/notifications'
 import { parseWallClock } from '@/services/dateFormat'
 
-// Port of Legacy's Cast.vue -- the disponent-only Besetzung/Casting page.
-// Only disponent may reach this route at all (see router meta), so no
-// separate cast-vs-view-only mode exists here. Legacy renders each position
-// type as a literal (nested-table) HTML <table> with "Name"/"gebucht"
-// column headers -- ported here as a plain header row above a list-group
-// instead of a real <table> (verified live against
-// osa.dev.schimpl.cc/content/music/performances/{id}/cast): same visible
-// information and column labels, without copying Legacy's
+// The disponent-only Besetzung/Casting page. Only disponent may reach this
+// route at all (see router meta), so no separate cast-vs-view-only mode
+// exists here. Each position type is a plain "Name"/"gebucht" header row
+// above a list-group instead of a real <table>, avoiding
 // table-inside-a-table-cell markup.
 const props = defineProps<{ id: string }>()
 const performanceId = computed(() => props.id)
@@ -46,7 +42,7 @@ const formOrig = ref('')
 
 // Vue-Proxy wrapped values can't go through structuredClone() -- a JSON
 // round-trip is the established, simple deep-clone pattern for this plain
-// id/name/fee data (1:1 QuantityEditor.vue's cloneSetup()).
+// id/name/fee data (same as QuantityEditor.vue's cloneSetup()).
 function setForm(data: CastFormData): void {
   form.cast = JSON.parse(JSON.stringify(data.cast)) as CastFormData['cast']
   form.not_booked = JSON.parse(JSON.stringify(data.not_booked)) as CastFormData['not_booked']
@@ -60,10 +56,9 @@ onMounted(async () => {
 
 const castChanged = computed(() => JSON.stringify(form) !== formOrig.value)
 
-// Legacy's "zurück" AND a successful "speichern" both go to the calendar
-// month of the performance's own schedule (PerformanceController::cast()/
-// saveCast() `to_route('...performances.index', ['year' => ..., 'month' =>
-// ...])`) -- never to the performance's own show/detail page.
+// "zurück" AND a successful "speichern" both go to the calendar month of the
+// performance's own schedule -- never to the performance's own show/detail
+// page.
 const backTarget = computed(() => {
   if (!page.value) return { name: 'home' as const }
   const scheduleDate = parseWallClock(page.value.schedule)

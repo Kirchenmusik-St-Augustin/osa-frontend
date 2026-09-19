@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/System/Users/RequestsAndBookings.vue -- a
-// plain table (NOT PerformanceCard, unlike the Selfadmin counterpart in
+// A plain table (NOT PerformanceCard, unlike the Selfadmin counterpart in
 // MyRequestsAndBookingsView.vue), backed by the exact same generic backend
 // function (GET /users/{id}/requests-and-bookings, see
 // app/api/router_includes/user.py).

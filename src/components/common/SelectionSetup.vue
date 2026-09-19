@@ -1,11 +1,10 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/System/Users/Form/SelectionSetup.vue --
-// assigns/removes Instrument/Voice/Choirjob/Role items on the User form
-// (Schritt 7). Left column lists every `available` item, but only renders
-// a removable row for ones currently in the model; right column has an
-// "add" dropdown+button for the unused rest, plus a reset-to-last-saved
-// link. No FormSelect.vue reuse here -- Legacy's own dropdown has no
-// visible label above it, and FormSelect.vue always renders one.
+// Assigns/removes Instrument/Voice/Choirjob/Role items on the User form.
+// Left column lists every `available` item, but only renders a removable
+// row for ones currently in the model; right column has an "add"
+// dropdown+button for the unused rest, plus a reset-to-last-saved link. No
+// FormSelect.vue reuse here -- this dropdown has no visible label above it,
+// and FormSelect.vue always renders one.
 import { computed, ref, watch } from 'vue'
 
 export interface SelectableItem {
@@ -20,8 +19,7 @@ const props = defineProps<{
   available: SelectableItem[]
 }>()
 
-// Snapshot at mount, NOT reactively tracked afterward -- 1:1 Legacy's
-// `cloneDeep(props.modelValue)` inside `reactive({...})`.
+// Snapshot at mount, NOT reactively tracked afterward.
 const savedValue: SelectableItem[] = model.value.map((item) => ({ ...item }))
 
 const assignedIds = computed(() => new Set(model.value.map((item) => item.id)))
@@ -30,8 +28,7 @@ const unused = computed(() => props.available.filter((item) => !assignedIds.valu
 // The "assigned" column below must show EVERY item currently in the model,
 // not just the ones still present in `available` -- an item can be
 // assigned-but-missing-from-available for a real reason (e.g. an archived
-// Instrument/Voice/Choirjob, outside the structural 1:1 transfer's scope):
-// `available` is filtered to active-only server-side, but an already-
+// Instrument/Voice/Choirjob): `available` is filtered to active-only server-side, but an already-
 // assigned item must stay visible/removable regardless. Anything only in
 // this second half is, by construction, no longer offered -- flagged
 // below without needing a dedicated `active` field on SelectableItem.

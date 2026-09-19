@@ -20,9 +20,8 @@ const router = createRouter({
       component: AppLayout,
       children: [
         {
-          // The de-facto app home -- Legacy redirects '/' straight to the
-          // performances calendar (routes/web.php), there is no separate
-          // "home" concept or nav entry for it.
+          // The de-facto app home -- '/' shows the performances calendar,
+          // there is no separate "home" concept or nav entry for it.
           path: '',
           name: 'home',
           component: () => import('@/views/performances/PerformanceCalendarView.vue'),
@@ -70,7 +69,7 @@ const router = createRouter({
         {
           // No past-lock check client-side (consistent with
           // performances-edit above) -- billing is the one Booking-domain
-          // page Legacy's own policy never locks by schedule either, see
+          // page that is never locked by schedule either, see
           // booking_service.get_billing's docstring.
           path: `performances/:id(${UUID_PATTERN})/billing`,
           name: 'performances-billing',
@@ -138,8 +137,7 @@ const router = createRouter({
           meta: { title: 'E-Mail-Prüfung' },
         },
         {
-          // Where runAuthGuards redirects a logged-in-but-unverified user --
-          // 1:1 Legacy's `verification.notice` (Auth/VerifyEmail.vue).
+          // Where runAuthGuards redirects a logged-in-but-unverified user.
           path: 'verify-email-notice',
           name: 'verify-email-notice',
           component: () => import('@/views/auth/VerifyEmailNoticeView.vue'),
@@ -152,7 +150,7 @@ const router = createRouter({
           // /coreelements/{element_type} router. The required permission
           // depends on `type` (only known at navigation time), so it's
           // checked in `beforeEnter` rather than via a static `meta`
-          // value (1:1 the backend's `ensure_permission` reasoning). Same
+          // value (same reasoning as the backend's `ensure_permission`). Same
           // reasoning for the page title: no static `meta.title` here,
           // setPageTitle (router/pageTitle.ts) special-cases this one
           // route and derives it from `:type` via the same registry.
@@ -164,10 +162,9 @@ const router = createRouter({
           beforeEnter: coreelementRouteGuard,
         },
         {
-          // Schritt 7: Content/Administrator/UserAdministrationController --
-          // restore/unlock/setPassword, gated `userAdministrate`
-          // (administrator-Flag only, NOT the disponent role that
-          // `userMaintain` also accepts).
+          // User administration -- restore/unlock/setPassword, gated
+          // `userAdministrate` (administrator-Flag only, NOT the disponent
+          // role that `userMaintain` also accepts).
           path: 'administrator/users',
           name: 'administrator-users-search',
           component: () => import('@/views/administrator/UserAdministrationSearchView.vue'),
@@ -189,7 +186,6 @@ const router = createRouter({
           },
         },
         {
-          // Schritt 9 (Admin-/Audit-Viewer, vorgezogen).
           path: 'administrator/sent-emails',
           name: 'administrator-sent-emails-index',
           component: () => import('@/views/administrator/SentEmailIndexView.vue'),
@@ -243,7 +239,7 @@ const router = createRouter({
           },
         },
         {
-          // No Legacy equivalent -- new admin-only tooling.
+          // Admin-only tooling.
           path: 'administrator/sql-inspector',
           name: 'administrator-sql-inspector',
           component: () => import('@/views/administrator/SqlInspectorView.vue'),
@@ -254,7 +250,7 @@ const router = createRouter({
           },
         },
         {
-          // No Legacy equivalent -- new admin-only tooling.
+          // Admin-only tooling.
           path: 'administrator/scheduler',
           name: 'administrator-scheduler',
           component: () => import('@/views/administrator/SchedulerView.vue'),
@@ -265,12 +261,10 @@ const router = createRouter({
           },
         },
         {
-          // Legacy's Fee/Index.vue lives under content/system/fees, its own
-          // dedicated FeeController -- not part of the Coreelement pool
-          // (see FeeView.vue's docstring) and gated by role 'disponent'
-          // (FeePolicy::maintain()), not the Coreelement types' shared
-          // administrator-Flag. Path/permission corrected 2026-07-31
-          // (User-reported: was wrongly living under administrator/fees).
+          // Fees have their own dedicated service -- not part of the
+          // Coreelement pool (see FeeView.vue's docstring) and gated by role
+          // 'disponent' (feeMaintain), not the Coreelement types' shared
+          // administrator-Flag.
           path: 'system/fees',
           name: 'system-fees',
           component: () => import('@/views/system/FeeView.vue'),
@@ -281,10 +275,9 @@ const router = createRouter({
           },
         },
         {
-          // Legacy's Shorturl/Index.vue lives under its own dedicated
-          // content/shorturl/shorturls route group (Rolle 'shorturls',
-          // ShorturlPolicy::maintain()) -- a standalone top-level nav item
-          // in Legacy, not nested under any dropdown (see AppNavbar.vue).
+          // Short URLs live under their own top-level route (Rolle
+          // 'shorturls') -- a standalone top-level nav item, not nested
+          // under any dropdown (see AppNavbar.vue).
           path: 'shorturls',
           name: 'shorturls',
           component: () => import('@/views/shorturl/ShorturlView.vue'),
@@ -295,9 +288,8 @@ const router = createRouter({
           },
         },
         {
-          // Schritt 7: Content/System/UserController -- Benutzerkonten
-          // verwalten, gated `userMaintain` (Rolle disponent ODER
-          // administrator-Flag).
+          // Benutzerkonten verwalten, gated `userMaintain` (Rolle disponent
+          // ODER administrator-Flag).
           path: 'system/users',
           name: 'system-users-search',
           component: () => import('@/views/system/UserSearchView.vue'),
@@ -340,8 +332,7 @@ const router = createRouter({
           },
         },
         {
-          // Nachtrag zu Baustelle 1: Legacy's
-          // content.system.users.requestsAndBookings link on the Show page.
+          // Linked from the user Show page.
           path: `system/users/:id(${UUID_PATTERN})/requests-and-bookings`,
           name: 'system-users-requests-and-bookings',
           component: () => import('@/views/system/UserRequestsAndBookingsView.vue'),
@@ -363,8 +354,8 @@ const router = createRouter({
           },
         },
         {
-          // Schritt 7: Content/Common/Selfadmin/ProfileController -- no
-          // Rollen-Gate at all, every logged-in user edits only themselves.
+          // Selfadmin profile -- no Rollen-Gate at all, every logged-in user
+          // edits only themselves.
           path: 'selfadmin/profile',
           name: 'selfadmin-profile-show',
           component: () => import('@/views/selfadmin/ProfileShowView.vue'),
@@ -377,25 +368,20 @@ const router = createRouter({
           meta: { requiresAuth: true, title: 'Persönliche Daten bearbeiten' },
         },
         {
-          // Schritt 7, Baustelle 5a: Content/Common/Selfadmin/Support --
-          // path mirrors the backend's /support prefix (unlike the
-          // Legacy route name `content.common.selfadmin.support...`, kept
-          // short since there's no Legacy URL to stay compatible with).
+          // Selfadmin support -- path mirrors the backend's /support prefix.
           path: 'support/requests-and-bookings',
           name: 'support-requests-and-bookings',
           component: () => import('@/views/selfadmin/MyRequestsAndBookingsView.vue'),
           meta: { requiresAuth: true, title: 'Meine Anfragen und Buchungen' },
         },
         {
-          // Baustelle 5b.
           path: 'support/message-to-contactperson',
           name: 'support-message-to-contactperson',
           component: () => import('@/views/selfadmin/MessageToContactpersonView.vue'),
           meta: { requiresAuth: true, title: 'Meine Ansprechpersonen' },
         },
         {
-          // Schritt 9 -- no requiredPermission (1:1 Legacy: no Policy/Gate
-          // exists for Statistics at all, any authenticated user sees it).
+          // No requiredPermission -- any authenticated user sees it.
           path: 'statistics',
           name: 'statistics',
           component: () => import('@/views/StatisticsView.vue'),
@@ -528,9 +514,9 @@ const router = createRouter({
           },
         },
         {
-          // Legacy's Scores/{Search,Form,Show}.vue all set the exact same
-          // page title "Noten-Archiv" (with hyphen) -- distinct from the
-          // navbar link text "Notenarchiv" (no hyphen, AuthLeftMenu.vue).
+          // The Search/Form/Show pages all use the same page title
+          // "Noten-Archiv" (with hyphen) -- distinct from the navbar link
+          // text "Notenarchiv" (no hyphen, see AppNavbar.vue).
           path: 'repertoire/scores',
           name: 'repertoire-scores-search',
           component: () => import('@/views/scores/ScoreSearchView.vue'),

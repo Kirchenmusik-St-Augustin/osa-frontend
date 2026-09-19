@@ -11,9 +11,8 @@ import type {
 import SingleCastList from './SingleCastList.vue'
 import SingleCastSelector from './SingleCastSelector.vue'
 
-// 1:1 port of Legacy's CastItemComponent.vue -- one collapsible card per
-// Instrument/Voice/Choirjob setup item, combining the current cast list
-// with the candidate selector.
+// One collapsible card per Instrument/Voice/Choirjob setup item, combining
+// the current cast list with the candidate selector.
 
 // voice_name/voice_order are only ever set for choirjobs candidates (see
 // SingleCastSelector.vue's candidatesFor()) -- carried through here so a
@@ -110,7 +109,6 @@ function handleRemoveNotBooked(id: string): void {
             :bookable="bookable"
             :fees="fees"
             :popular="popular"
-            :modal-id="`${type}-${item.id}`"
             @add-to="handleAddTo"
           />
         </div>

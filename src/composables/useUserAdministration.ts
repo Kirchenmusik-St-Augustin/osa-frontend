@@ -28,10 +28,9 @@ export interface UserAdministrationActionResult {
   newpw: string | null
 }
 
-// UI-independent API layer for Schritt 7's Administrator-Benutzerverwaltung
+// UI-independent API layer for the Administrator user administration
 // (restore/unlock/setPassword), mirrors useUsers.ts's shape. Unlike
-// useUsers.ts, every read here operates withTrashed() -- 1:1 Legacy's
-// UserAdministrationController.
+// useUsers.ts, every read here includes soft-deleted users.
 export function useUserAdministration() {
   async function search(query: string): Promise<UserAdministrationSearchResult[]> {
     const response = await api.get<UserAdministrationSearchResult[]>(

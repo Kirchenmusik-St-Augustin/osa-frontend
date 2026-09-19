@@ -13,8 +13,7 @@ declare module 'vue-router' {
   }
 }
 
-// 1:1 Legacy's `verified` middleware on the whole `content.*` route group --
-// an unverified user can reach nothing except the notice page and the
+// An unverified user can reach nothing except the notice page and the
 // token-consuming verify-email page itself (clicking the actual link while
 // already logged in elsewhere must still work).
 const EXEMPT_FROM_VERIFIED_GATE = new Set(['verify-email-notice', 'verify-email'])

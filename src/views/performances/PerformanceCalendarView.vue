@@ -8,9 +8,8 @@ import { confirmAction, showToast } from '@/services/notifications'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 import MonthNavigator from '@/components/common/MonthNavigator.vue'
 
-// The de-facto app home (Legacy redirects '/' to the performances calendar,
-// see routes/web.php `Route::redirect('/', 'content/music/performances')`)
-// -- there is no separate "Kalender" nav entry anywhere in Legacy either.
+// The de-facto app home ('/' shows this calendar) -- there is no separate
+// "Kalender" nav entry.
 const authStore = useAuthStore()
 const { listForMonth } = usePerformances()
 const { changeBookingStatus } = useBookings()
@@ -29,8 +28,7 @@ watch(
 // The self-service trigger mutates the CURRENT user's status on the
 // backend, computing the actual transition itself (no client-sent target
 // status, see useBookings.ts's changeBookingStatus() docstring) -- a full
-// list refresh afterward mirrors Legacy's own Inertia GET-visit to this
-// same page, which reloads every card's `user_booking` in one go.
+// list refresh afterward reloads every card's `user_booking` in one go.
 async function handleChangeStatus(performanceId: string): Promise<void> {
   const confirmed = await confirmAction()
   if (!confirmed) return

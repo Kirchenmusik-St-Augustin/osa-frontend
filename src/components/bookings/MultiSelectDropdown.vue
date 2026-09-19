@@ -1,23 +1,17 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import type { BookableUser } from '@/composables/useBookings'
+import { useClickOutside } from '@/composables/useClickOutside'
 
-// Port of Legacy's MultiSelectComponent.vue -- a badge button ("N
-// ausgewählt") that toggles a floating, tabbed dropdown (one tab per
-// group, e.g. "Anfragen"/"direkt buchen") listing selectable candidates.
-// Legacy drives the tabs via Bootstrap's own data-bs-toggle="tab" JS,
-// decoupled from Vue's reactivity -- reimplemented here as a plain Vue
-// ref instead, since piggy-backing on Bootstrap's imperative DOM toggling
-// for state Vue itself needs to read/write would be a fragile double
-// source of truth. Same visible tab-switch behavior, no Bootstrap JS
-// dependency for it. Closing on an outside click (Legacy: vue3-click-away)
-// is reimplemented as a small local document-click listener instead of
-// pulling in that package for one use site.
+// A badge button ("N ausgewählt") that toggles a floating, tabbed panel
+// (one tab per group, e.g. "Anfragen"/"direkt buchen") listing selectable
+// candidates. Both the open state and the active tab are plain Vue refs, and
+// only the active group is rendered at all -- no Bootstrap tab plugin or
+// .tab-pane visibility CSS is involved.
 //
-// Deliberate parity deviation (User-confirmed 2026-07-31): Legacy opens the
-// panel downward, which can cover the "hinzufügen"/"zurückweisen" buttons
-// below it. Opens upward here instead (see .dropdown's `bottom: 100%` in
-// <style> below) so those buttons stay reachable while the panel is open.
+// The panel opens upward (see .multiselect-panel's `bottom: 100%` in <style> below)
+// so the "hinzufügen"/"zurückweisen" buttons below it stay reachable while
+// the panel is open.
 export interface MultiSelectGroup {
   label: string
   values: BookableUser[]
@@ -41,14 +35,11 @@ function toggleSelection(id: string): void {
     : [...model.value, id]
 }
 
-function handleDocumentClick(event: MouseEvent): void {
-  if (!rootElement.value?.contains(event.target as Node)) {
-    isOpen.value = false
-  }
-}
+const activeGroup = computed(() => props.options[activeTab.value])
 
-onMounted(() => document.addEventListener('click', handleDocumentClick))
-onBeforeUnmount(() => document.removeEventListener('click', handleDocumentClick))
+useClickOutside(rootElement, () => {
+  isOpen.value = false
+})
 
 // A group (e.g. "Anfragen") can disappear from `options` once its last
 // candidate is booked/rejected elsewhere -- keep the active tab in range.
@@ -65,14 +56,14 @@ watch(
       <i class="fas fa-caret-down px-1 text-primary"></i>
     </span>
     <!--
-      A real block-level div (not a span) -- Legacy's own .multiselect div
-      has no explicit width, so it fills the containing column and gives
-      the dropdown's `width: 140%` below something meaningful to resolve
-      against. An inline wrapper here collapses to near-zero width, which
-      is what silently shrank the dropdown to a sliver before this fix.
+      A real block-level div (not a span) -- .multiselect has no explicit
+      width, so it fills the containing column and gives the panel's
+      `width: 140%` below something meaningful to resolve against. An inline
+      wrapper here would collapse to near-zero width and silently shrink the
+      panel to a sliver.
     -->
     <div class="multiselect">
-      <div v-if="isOpen" class="dropdown border rounded p-1 text-nowrap bg-white">
+      <div v-if="isOpen" class="multiselect-panel border rounded p-1 text-nowrap bg-white">
         <ul class="nav nav-underline justify-content-end">
           <li v-for="(group, index) in props.options" :key="group.label" class="nav-item">
             <a
@@ -85,28 +76,19 @@ watch(
             </a>
           </li>
         </ul>
-        <div class="tab-content">
+        <div v-if="activeGroup" class="list-group text-start itemgroup">
           <div
-            v-for="(group, index) in props.options"
-            :key="group.label"
-            class="tab-pane"
-            :class="{ active: index === activeTab }"
+            v-for="item in activeGroup.values"
+            :key="item.id"
+            class="list-group-item list-group-item-action c-pointer"
+            @click="toggleSelection(item.id)"
           >
-            <div class="list-group text-start itemgroup">
-              <div
-                v-for="item in group.values"
-                :key="item.id"
-                class="list-group-item list-group-item-action c-pointer"
-                @click="toggleSelection(item.id)"
-              >
-                <div class="text-end">
-                  <span>{{ item.name }}</span>
-                  <i
-                    class="px-2 far"
-                    :class="isSelected(item.id) ? 'fa-square-check' : 'fa-square'"
-                  ></i>
-                </div>
-              </div>
+            <div class="text-end">
+              <span>{{ item.name }}</span>
+              <i
+                class="px-2 far"
+                :class="isSelected(item.id) ? 'fa-square-check' : 'fa-square'"
+              ></i>
             </div>
           </div>
         </div>
@@ -120,7 +102,7 @@ watch(
   position: relative;
 }
 
-.multiselect .dropdown {
+.multiselect .multiselect-panel {
   position: absolute;
   right: 0;
   bottom: 100%;

@@ -5,8 +5,8 @@ import 'flatpickr/dist/flatpickr.css'
 import { German } from 'flatpickr/dist/l10n/de.js'
 import { formatDateTimeWithWeekday, parseWallClock, toWallClockString } from '@/services/dateFormat'
 
-// 1:1 port of Legacy's Form/DatetimePickerComponent.vue (Flatpickr, 15-min
-// steps, German locale, minimum date = tomorrow). Model contract: a naive
+// Date-time picker (Flatpickr, 15-min steps, German locale, minimum date =
+// tomorrow). Model contract: a naive
 // wall-clock string (see dateFormat.ts) -- exactly the wire format the
 // backend's `schedule` fields use, so callers never have to think about
 // timezones themselves. Internally this component uses a Date object purely

@@ -1,12 +1,9 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Scores/ScoreFieldsFieldComponent.vue -- generic
-// single-field renderer driven entirely by the backend-served field
-// config (see useScores.ts's ScoreFieldConfig). Legacy's own FormSelect
-// is generic enough to bind directly to a string value; our own
-// FormSelect.vue was intentionally simplified to numeric {id,label}
-// options for its existing (lookup-style) call sites (see its own
-// docstring) and doesn't fit here, so "select" is rendered with a small
-// local <select> instead of forcing that contract to also cover raw
+// Generic single-field renderer driven entirely by the backend-served field
+// config (see useScores.ts's ScoreFieldConfig). FormSelect.vue is
+// simplified to numeric {id,label} options for its lookup-style call sites
+// (see its own docstring) and doesn't fit here, so "select" is rendered with
+// a small local <select> instead of forcing that contract to also cover raw
 // string values -- a deliberate tradeoff over a forced abstraction.
 import FormInput from '@/components/common/FormInput.vue'
 import type { ScoreFieldConfig } from '@/composables/useScores'
@@ -86,9 +83,9 @@ withDefaults(
 </template>
 
 <style scoped>
-/* 1:1 FormSelect.vue's own disabled styling -- without this, a readonly
+/* Same disabled styling as FormSelect.vue -- without this, a readonly
    select (Show page) still renders its dropdown chevron even though it's
-   disabled, a real pixel difference from Legacy's read-only Show page. */
+   disabled. */
 select:disabled {
   background-image: none !important;
   -webkit-appearance: none !important;

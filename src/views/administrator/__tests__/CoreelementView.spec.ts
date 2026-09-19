@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import CoreelementView from '../CoreelementView.vue'
 import type { Coreelement } from '@/composables/useCoreelements'
+import type { CoreelementType } from '@/constants/coreelementTypes'
 
 const mockItems = ref<Coreelement[]>([])
 const mockFetchList = vi.fn(async () => {})
@@ -27,24 +28,6 @@ vi.mock('@/services/notifications', () => ({
   showToast: (...args: unknown[]) => mockShowToast(...args),
 }))
 
-// vi.mock factories are hoisted above every import in this file -- since
-// CoreelementView.vue itself imports 'bootstrap' at the top, the mocked
-// class must come from vi.hoisted() too, or it's still in its temporal
-// dead zone when the factory actually runs (1:1 the mockPush/
-// mockCurrentRoute pattern in services/__tests__/api.spec.ts). Also note
-// arrow functions can never be used as constructors (`new (() => {})()`
-// throws), so this needs an actual class, not `.mockImplementation(() => ...)`.
-const { MockModal, mockModalShow, mockModalHide } = vi.hoisted(() => {
-  const mockModalShow = vi.fn()
-  const mockModalHide = vi.fn()
-  class MockModal {
-    show = mockModalShow
-    hide = mockModalHide
-  }
-  return { MockModal, mockModalShow, mockModalHide }
-})
-vi.mock('bootstrap', () => ({ Modal: MockModal }))
-
 function makeItem(overrides: Partial<Coreelement> = {}): Coreelement {
   return {
     id: 1,
@@ -63,6 +46,14 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockItems.value = []
 })
+
+// The edit dialog's fields only exist while the dialog is open.
+async function mountWithCreateModalOpen(type: CoreelementType) {
+  const wrapper = mount(CoreelementView, { props: { type } })
+  await flushPromises()
+  await wrapper.find('button.btn-secondary.my-3').trigger('click')
+  return wrapper
+}
 
 describe('CoreelementView', () => {
   it('reloads the list and updates the heading when the type prop changes', async () => {
@@ -113,8 +104,7 @@ describe('CoreelementView', () => {
   })
 
   it('only shows label/description fields for the role type', async () => {
-    const wrapper = mount(CoreelementView, { props: { type: 'role' } })
-    await flushPromises()
+    const wrapper = await mountWithCreateModalOpen('role')
 
     expect(wrapper.find('input#coreelement-label').exists()).toBe(true)
     expect(wrapper.find('textarea#coreelement-description').exists()).toBe(true)
@@ -122,8 +112,7 @@ describe('CoreelementView', () => {
   })
 
   it('only shows address/color fields for the location type', async () => {
-    const wrapper = mount(CoreelementView, { props: { type: 'location' } })
-    await flushPromises()
+    const wrapper = await mountWithCreateModalOpen('location')
 
     expect(wrapper.find('textarea#coreelement-address').exists()).toBe(true)
     expect(wrapper.find('input#coreelement-color').exists()).toBe(true)
@@ -131,8 +120,7 @@ describe('CoreelementView', () => {
   })
 
   it('shows neither extra field set for a plain type like instrument', async () => {
-    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
-    await flushPromises()
+    const wrapper = await mountWithCreateModalOpen('instrument')
 
     expect(wrapper.find('input#coreelement-label').exists()).toBe(false)
     expect(wrapper.find('textarea#coreelement-address').exists()).toBe(false)
@@ -141,8 +129,7 @@ describe('CoreelementView', () => {
   it.each(['instrument', 'voice', 'choirjob'] as const)(
     'shows the active checkbox for %s',
     async (type) => {
-      const wrapper = mount(CoreelementView, { props: { type } })
-      await flushPromises()
+      const wrapper = await mountWithCreateModalOpen(type)
 
       expect(wrapper.find('input#coreelement-active').exists()).toBe(true)
     },
@@ -151,8 +138,7 @@ describe('CoreelementView', () => {
   it.each(['location', 'role', 'propriumelement'] as const)(
     'hides the active checkbox for %s',
     async (type) => {
-      const wrapper = mount(CoreelementView, { props: { type } })
-      await flushPromises()
+      const wrapper = await mountWithCreateModalOpen(type)
 
       expect(wrapper.find('input#coreelement-active').exists()).toBe(false)
     },
@@ -163,21 +149,21 @@ describe('CoreelementView', () => {
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
     await flushPromises()
 
+    expect(wrapper.find('.modal').exists()).toBe(false)
     await wrapper.find('button.btn-secondary.my-3').trigger('click')
-    expect(mockModalShow).toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(true)
     await wrapper.find('input#coreelement-name').setValue('Fagott')
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
     expect(mockSave).toHaveBeenCalledWith(null, { name: 'Fagott', active: true })
     expect(mockShowToast).toHaveBeenCalledWith('Element gespeichert')
-    expect(mockModalHide).toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(false)
   })
 
   it('builds a location payload with only the relevant extra fields', async () => {
     mockSave.mockResolvedValueOnce(undefined)
-    const wrapper = mount(CoreelementView, { props: { type: 'location' } })
-    await flushPromises()
+    const wrapper = await mountWithCreateModalOpen('location')
 
     await wrapper.find('input#coreelement-name').setValue('Chorraum')
     await wrapper.find('textarea#coreelement-address').setValue('Hauptstraße 1')
@@ -232,15 +218,14 @@ describe('CoreelementView', () => {
         data: { detail: [{ loc: ['body', 'name'], msg: 'Der Name ist bereits vergeben.' }] },
       },
     })
-    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
-    await flushPromises()
+    const wrapper = await mountWithCreateModalOpen('instrument')
 
     await wrapper.find('input#coreelement-name').setValue('Fagott')
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Der Name ist bereits vergeben.')
-    expect(mockModalHide).not.toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(true)
   })
 
   it('deletes an item after the user confirms', async () => {
@@ -346,8 +331,7 @@ describe('CoreelementView', () => {
         },
       },
     })
-    const wrapper = mount(CoreelementView, { props: { type: 'role' } })
-    await flushPromises()
+    const wrapper = await mountWithCreateModalOpen('role')
 
     await wrapper.find('input#coreelement-name').setValue('scores')
     await wrapper.find('input#coreelement-label').setValue('Noten')
@@ -356,5 +340,27 @@ describe('CoreelementView', () => {
 
     expect(wrapper.text()).toContain('Der Wert ist bereits vergeben.')
     expect(wrapper.text()).toContain('Dieses Feld ist erforderlich.')
+  })
+
+  it('closes an open edit dialog when navigation switches to another type', async () => {
+    const wrapper = await mountWithCreateModalOpen('instrument')
+    expect(wrapper.find('.modal').exists()).toBe(true)
+
+    await wrapper.setProps({ type: 'voice' })
+
+    expect(wrapper.find('.modal').exists()).toBe(false)
+  })
+
+  it('releases the page scroll lock when unmounted while the modal is open', async () => {
+    // Regression test: navigating away (e.g. browser back) with the dialog
+    // open must not leave the page stuck unscrollable.
+    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+    expect(document.body.classList.contains('modal-open')).toBe(true)
+
+    wrapper.unmount()
+
+    expect(document.body.classList.contains('modal-open')).toBe(false)
   })
 })

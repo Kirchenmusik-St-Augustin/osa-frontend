@@ -16,7 +16,7 @@ export interface Statistics {
   email: StatisticsEmail
 }
 
-// UI-independent API layer for Schritt 9's Statistiken-Seite (Admin-/Audit-Viewer).
+// UI-independent API layer for the Statistiken page (admin audit viewer).
 export function useStatistics() {
   async function get(): Promise<Statistics> {
     const response = await api.get<Statistics>('/statistics')

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/System/Users/Form.vue.
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'
@@ -32,9 +31,8 @@ const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 const options = ref<UserFormOptions | null>(null)
 
-// Loaded-at-mount snapshot, not reactively tracked afterward -- 1:1
-// Legacy's `const initialEmail = form.email` (captured once, right after
-// useForm() is seeded from the server response).
+// Loaded-at-mount snapshot, not reactively tracked afterward (captured once,
+// right after the form is seeded from the server response).
 let initialEmail: string | null = null
 const emailVerifiedAt = ref<string | null>(null)
 const emailTouched = computed(() => initialEmail !== form.email)
@@ -58,12 +56,11 @@ onMounted(async () => {
   emailVerifiedAt.value = user.email_verified_at
 })
 
-// Legacy quirk (Form.vue): the "Benutzerkonto erstellen" subtitle has no
-// v-else on its own `page-subtitle` call, so it renders unconditionally --
-// even on Edit, alongside the name subtitle. Replicated 1:1 here, not
-// "fixed".
 const nameSubtitle = computed(() =>
   form.surname && form.givenname ? `${form.surname.toUpperCase()}, ${form.givenname}` : '',
+)
+const modeSubtitle = computed(() =>
+  props.id ? 'Benutzerkonto bearbeiten' : 'Benutzerkonto erstellen',
 )
 
 async function save(): Promise<void> {
@@ -100,7 +97,7 @@ async function save(): Promise<void> {
 <template>
   <h2 class="h2 text-center mb-4">Benutzerkonto verwalten</h2>
   <p v-if="nameSubtitle" class="h4 text-center mb-1">{{ nameSubtitle }}</p>
-  <p class="h4 text-center mb-4">Benutzerkonto erstellen</p>
+  <p class="h4 text-center mb-4">{{ modeSubtitle }}</p>
 
   <div v-if="options" class="row justify-content-center mt-4">
     <div class="col-md-7">

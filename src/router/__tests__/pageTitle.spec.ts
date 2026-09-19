@@ -18,7 +18,7 @@ function makeRoute(overrides: Partial<RouteLocationNormalized> = {}): RouteLocat
 }
 
 describe('setPageTitle', () => {
-  it('appends " - einteilung.hochamt.at" to a static route title, 1:1 Legacy\'s Inertia title callback', () => {
+  it('appends " - einteilung.hochamt.at" to a static route title', () => {
     setPageTitle(makeRoute({ meta: { title: 'Kalender' } }), makeRoute(), undefined)
 
     expect(document.title).toBe('Kalender - einteilung.hochamt.at')

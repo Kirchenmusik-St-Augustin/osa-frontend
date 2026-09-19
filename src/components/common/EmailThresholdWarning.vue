@@ -1,13 +1,11 @@
 <script setup lang="ts">
-// Two 1:1 ports of the same Legacy data source (usePage().props.emailThresholdStatus,
-// see app.helper.emailsDisabled()), merged into one component since both variants
-// render the same authStore.user.email_kill_switch value -- one shared
-// component, not two near-duplicate mini-components.
+// Both variants render the same authStore.user.email_kill_switch value, so
+// they are one shared component, not two near-duplicate mini-components.
 //
-// - "icon": Layouts/Default/Menu/AuthRightMenu.vue's warning triangle next to the
-//   username on the navbar dropdown toggle -- always visible, no dropdown needed.
-// - "card": Components/Common/EmailThresholdMessageComponent.vue -- replaces a mail
-//   form's textarea+send button while the kill switch is active.
+// - "icon": the warning triangle next to the username on the navbar
+//   dropdown toggle -- always visible, no dropdown needed.
+// - "card": replaces a mail form's textarea+send button while the kill
+//   switch is active.
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 

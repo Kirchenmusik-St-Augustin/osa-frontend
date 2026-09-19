@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Modal } from 'bootstrap'
+import AppModal from '@/components/common/AppModal.vue'
 import DateTimePicker from '@/components/common/DateTimePicker.vue'
 import FormSelect, { type FormSelectOption } from '@/components/common/FormSelect.vue'
 import FormInput from '@/components/common/FormInput.vue'
@@ -142,22 +142,7 @@ onMounted(async () => {
 })
 
 // -- Ordinarium-Komposition selector modal ----------------------------------
-// Note: the plain Modal instance below must NOT be named "ordinariumworkModal"
-// -- <script setup> auto-exposes every top-level binding to the template,
-// and that name is already claimed by the `ref="ordinariumworkModal"` /
-// useTemplateRef() pair, which would otherwise collide (Vue warns "Template
-// ref used on a non-ref value" and the ref silently stops working).
-const ordinariumworkModalEl = useTemplateRef<HTMLDivElement>('ordinariumworkModal')
-let ordinariumworkModalInstance: Modal | null = null
-
-onMounted(() => {
-  if (ordinariumworkModalEl.value) {
-    ordinariumworkModalInstance = new Modal(ordinariumworkModalEl.value, {
-      backdrop: 'static',
-      keyboard: false,
-    })
-  }
-})
+const ordinariumworkModalOpen = ref(false)
 
 // Reset-baseline key for the instruments/voices QuantityEditor instances.
 // QuantityEditor snapshots its own v-model at creation time to power its
@@ -182,24 +167,14 @@ async function selectOrdinariumwork(id: string): Promise<void> {
   const [work, setup] = await Promise.all([getOrdinariumwork(id), getSetup(id)])
   form.ordinariumwork = { id: work.id, label: `${work.artist_name}: ${work.name}` }
   // Choirjobs are deliberately left untouched -- Ordinariumworks have no
-  // choirjob positions at all (1:1 Legacy's setOrdinariumwork()).
+  // choirjob positions at all.
   form.setup.instruments = setup.instruments
   form.setup.voices = setup.voices
-  ordinariumworkModalInstance?.hide()
+  ordinariumworkModalOpen.value = false
 }
 
 // -- Proprium editor modal --------------------------------------------------
-const propriumModalEl = useTemplateRef<HTMLDivElement>('propriumModal')
-let propriumModalInstance: Modal | null = null
-
-onMounted(() => {
-  if (propriumModalEl.value) {
-    propriumModalInstance = new Modal(propriumModalEl.value, {
-      backdrop: 'static',
-      keyboard: false,
-    })
-  }
-})
+const propriumModalOpen = ref(false)
 
 const unusedPropriumelements = computed(() =>
   available.value.propriumelements.filter(
@@ -212,13 +187,13 @@ const selectedPropriumwork = ref<Propriumwork | null>(null)
 function openPropriumModal(): void {
   selectedPropriumelementId.value = unusedPropriumelements.value[0]?.id ?? null
   selectedPropriumwork.value = null
-  propriumModalInstance?.show()
+  propriumModalOpen.value = true
 }
 
 function resetPropriumModal(): void {
   selectedPropriumelementId.value = null
   selectedPropriumwork.value = null
-  propriumModalInstance?.hide()
+  propriumModalOpen.value = false
 }
 
 async function onSelectPropriumwork(id: string): Promise<void> {
@@ -241,8 +216,7 @@ function addPropriumelement(): void {
     description: work.description,
     demanding: work.demanding,
   }
-  // Rebuilt in the propriumelements' canon order, not insertion order --
-  // 1:1 Legacy's addPropriumelement().
+  // Rebuilt in the propriumelements' canon order, not insertion order.
   const updated = [...form.proprium, newItem]
   form.proprium = available.value.propriumelements
     .map((candidate) => updated.find((item) => item.propriumelement_id === candidate.id))
@@ -352,11 +326,7 @@ async function destroy(): Promise<void> {
         <div v-if="form.ordinariumwork" class="border rounded p-2 mb-1">
           {{ form.ordinariumwork.label }}
         </div>
-        <small
-          class="text-black-50 c-pointer"
-          data-bs-toggle="modal"
-          data-bs-target="#ordinariumworkModal"
-        >
+        <small class="text-black-50 c-pointer" @click="ordinariumworkModalOpen = true">
           Ordinarium-Komposition auswählen
         </small>
         <small class="text-danger d-block">{{ fieldErrors['ordinariumwork_id'] }}&nbsp;</small>
@@ -523,45 +493,41 @@ async function destroy(): Promise<void> {
     </div>
   </div>
 
-  <div id="ordinariumworkModal" ref="ordinariumworkModal" class="modal fade" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content pt-3">
-        <div class="modal-body">
-          <div class="fw-bold mb-2">Ordinarium-Komposition suchen</div>
-          <SearchTypeahead :search="searchOrdinariumworks" @select="selectOrdinariumwork" />
-        </div>
+  <AppModal v-model="ordinariumworkModalOpen" size="lg">
+    <div class="modal-content pt-3">
+      <div class="modal-body">
+        <div class="fw-bold mb-2">Ordinarium-Komposition suchen</div>
+        <SearchTypeahead :search="searchOrdinariumworks" @select="selectOrdinariumwork" />
       </div>
     </div>
-  </div>
+  </AppModal>
 
-  <div id="propriumModal" ref="propriumModal" class="modal fade" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-body">
-          <select v-model="selectedPropriumelementId" class="form-select mb-3">
-            <option v-for="element in unusedPropriumelements" :key="element.id" :value="element.id">
-              {{ element.name }}
-            </option>
-          </select>
-          <div v-if="selectedPropriumwork" class="form-control">
-            {{ selectedPropriumwork.artist_name }}: {{ selectedPropriumwork.name }}
-          </div>
-          <SearchTypeahead v-else :search="searchPropriumworks" @select="onSelectPropriumwork" />
+  <AppModal v-model="propriumModalOpen" :dismissible="false" size="lg">
+    <div class="modal-content">
+      <div class="modal-body">
+        <select v-model="selectedPropriumelementId" class="form-select mb-3">
+          <option v-for="element in unusedPropriumelements" :key="element.id" :value="element.id">
+            {{ element.name }}
+          </option>
+        </select>
+        <div v-if="selectedPropriumwork" class="form-control">
+          {{ selectedPropriumwork.artist_name }}: {{ selectedPropriumwork.name }}
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="resetPropriumModal">
-            Abbrechen
-          </button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            :disabled="!selectedPropriumelementId || !selectedPropriumwork"
-            @click="addPropriumelement"
-          >
-            Hinzufügen
-          </button>
-        </div>
+        <SearchTypeahead v-else :search="searchPropriumworks" @select="onSelectPropriumwork" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" @click="resetPropriumModal">
+          Abbrechen
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          :disabled="!selectedPropriumelementId || !selectedPropriumwork"
+          @click="addPropriumelement"
+        >
+          Hinzufügen
+        </button>
       </div>
     </div>
-  </div>
+  </AppModal>
 </template>

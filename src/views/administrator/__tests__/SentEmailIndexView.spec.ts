@@ -43,7 +43,7 @@ describe('SentEmailIndexView', () => {
     expect(wrapper.text()).toContain('Betreff-Text')
   })
 
-  it('shows the exact Legacy empty-state text when there are none', async () => {
+  it('shows the empty-state text when there are none', async () => {
     mockListForMonth.mockResolvedValueOnce([])
     const wrapper = mount(SentEmailIndexView)
     await flushPromises()
@@ -64,7 +64,7 @@ describe('SentEmailIndexView', () => {
     })
   })
 
-  it('renders a full-width striped table (no table-sm, no column wrapper), 1:1 Legacy', async () => {
+  it('renders a full-width striped table (no table-sm, no column wrapper)', async () => {
     mockListForMonth.mockResolvedValueOnce([makeEmail()])
     const wrapper = mount(SentEmailIndexView)
     await flushPromises()

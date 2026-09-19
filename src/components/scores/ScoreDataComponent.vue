@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Scores/ScoreDataComponent.vue.
 import { formatUtcDateTime } from '@/services/dateFormat'
 
 defineProps<{
@@ -18,10 +17,8 @@ defineProps<{
       </small>
     </div>
     <div>
-      <!-- 1:1 Legacy's own copy-paste: this row's label is "Erstelldatum"
-           too, not "Aktualisiert am" -- a real Legacy typo, kept as-is. -->
       <small v-if="score.updated_at">
-        Erstelldatum: {{ formatUtcDateTime(score.updated_at) }}
+        Änderungsdatum: {{ formatUtcDateTime(score.updated_at) }}
       </small>
     </div>
   </div>

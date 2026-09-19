@@ -1,5 +1,6 @@
 import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import AppNavbar from '../AppNavbar.vue'
 
@@ -18,25 +19,6 @@ vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof VueRouter>()),
   useRouter: () => ({ push: mockPush, afterEach: mockAfterEach }),
 }))
-
-// Bootstrap's real Collapse manipulates DOM classes via CSS transitions
-// jsdom doesn't implement -- stubbed minimally instead (same established
-// pattern as vuedraggable/vue-flatpickr-component elsewhere in this repo),
-// so the afterEach hook's Collapse(...).hide() call can be asserted
-// directly without depending on any real transition behavior.
-const { mockCollapse, mockCollapseHide } = vi.hoisted(() => {
-  const mockCollapseHide = vi.fn()
-  // Called with `new` in AppNavbar.vue -- mockReturnValue doesn't support
-  // that (Vitest requires mockImplementation with a class for constructor
-  // mocks), hence the class expression here instead of a plain factory.
-  const mockCollapse = vi.fn().mockImplementation(
-    class {
-      hide = mockCollapseHide
-    },
-  )
-  return { mockCollapseHide, mockCollapse }
-})
-vi.mock('bootstrap', () => ({ Collapse: mockCollapse }))
 
 const mockLogout = vi.fn()
 let mockAuthState: {
@@ -69,7 +51,7 @@ beforeEach(() => {
 })
 
 describe('AppNavbar', () => {
-  it('renders the legacy brand text', () => {
+  it('renders the brand text', () => {
     expect(mount(AppNavbar).text()).toContain('Orchester-Einteilung')
   })
 
@@ -77,7 +59,7 @@ describe('AppNavbar', () => {
     expect(mount(AppNavbar).find('.navbar-toggler').exists()).toBe(true)
   })
 
-  it('uses the legacy text-bg-primary/dark theming', () => {
+  it('uses the text-bg-primary/dark theming', () => {
     const wrapper = mount(AppNavbar)
     const nav = wrapper.find('nav')
     expect(nav.classes()).toContain('text-bg-primary')
@@ -231,7 +213,7 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).toContain('Statistiken')
   })
 
-  it('hides the System dropdown without the feeMaintain permission', () => {
+  it('hides the System dropdown with neither userMaintain nor feeMaintain', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
@@ -242,17 +224,51 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('System')
   })
 
-  it('shows the System dropdown with all three links, in Legacy order, for a user with feeMaintain', () => {
-    // Legacy's System menu is gated on role 'disponent' (AuthLeftMenu.vue)
-    // -- feeMaintain mirrors that role gate 1:1 (see permission_service.py).
-    // Deliberately NOT gated by the administrator flag, unlike the
-    // Coreelement types in the Administrator dropdown above. Order matches
-    // Legacy exactly: Benutzerverzeichnis, Benutzerkonten verwalten, Tarife
-    // verwalten.
+  it('shows only "Tarife verwalten" for a user with feeMaintain but not userMaintain', () => {
+    // A pure 'disponent' role (feeMaintain=true) without the administrator
+    // flag has no userMaintain permission (see permission_service.py) --
+    // the two user-management links must stay hidden even though the
+    // dropdown itself is visible.
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max', administrator: false },
       permissions: ['feeMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('System')
+    expect(wrapper.text()).toContain('Tarife verwalten')
+    expect(wrapper.text()).not.toContain('Benutzerverzeichnis')
+    expect(wrapper.text()).not.toContain('Benutzerkonten verwalten')
+  })
+
+  it('shows the two user-management links for a user with userMaintain but not feeMaintain', () => {
+    // A pure administrator (userMaintain=true via the is_admin branch, no
+    // 'disponent' role) has no feeMaintain permission -- "Tarife verwalten"
+    // must stay hidden while the dropdown itself is visible. The dropdown's
+    // outer v-if must cover the union of its links' permissions: gating it
+    // on feeMaintain alone would hide the whole dropdown -- including these
+    // two links the router lets this user reach directly by URL -- from a
+    // userMaintain-only administrator.
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max', administrator: true },
+      permissions: ['userMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('System')
+    expect(wrapper.text()).toContain('Benutzerverzeichnis')
+    expect(wrapper.text()).toContain('Benutzerkonten verwalten')
+    expect(wrapper.text()).not.toContain('Tarife verwalten')
+  })
+
+  it('shows the System dropdown with all three links, in order, for a user with both permissions', () => {
+    // Order: Benutzerverzeichnis, Benutzerkonten verwalten, Tarife verwalten.
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max', administrator: false },
+      permissions: ['userMaintain', 'feeMaintain'],
     }
     const wrapper = mount(AppNavbar)
 
@@ -291,7 +307,7 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('Notenarchiv')
   })
 
-  it('shows only "Notenarchiv" with just scoreMaintain (Schritt 8)', () => {
+  it('shows only "Notenarchiv" with just scoreMaintain', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
@@ -321,8 +337,7 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).toContain('Proprium-Werke')
     expect(wrapper.text()).toContain('Komponisten und Dirigenten')
     expect(wrapper.text()).toContain('Notenarchiv')
-    // 1:1 Legacy's AuthLeftMenu.vue order: Ordinarium/Proprium/Komponisten
-    // first, Notenarchiv last.
+    // Order: Ordinarium/Proprium/Komponisten first, Notenarchiv last.
     const links = wrapper
       .findAll('.dropdown-item')
       .map((link) => link.text())
@@ -354,8 +369,8 @@ describe('AppNavbar', () => {
   })
 
   it('shows "Kurz-URLs" as a standalone link with shorturlMaintain', () => {
-    // 1:1 Legacy's AuthLeftMenu.vue: a standalone top-level nav item (not
-    // a dropdown), gated on role 'shorturls'.
+    // A standalone top-level nav item (not a dropdown), gated on role
+    // 'shorturls'.
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },
@@ -368,19 +383,33 @@ describe('AppNavbar', () => {
     expect(link).toBeDefined()
   })
 
-  describe('burger menu closes on navigation (Legacy parity)', () => {
-    it('registers a router.afterEach hook that force-closes #mainNavBar via Bootstrap Collapse', () => {
-      const wrapper = mount(AppNavbar, { attachTo: document.body })
+  describe('burger menu', () => {
+    it('starts closed and toggles via the toggler button', async () => {
+      const wrapper = mount(AppNavbar)
+      const toggler = wrapper.find('.navbar-toggler')
+      const menu = wrapper.find('#mainNavBar')
+      expect(menu.classes()).not.toContain('show')
+      expect(toggler.attributes('aria-expanded')).toBe('false')
+
+      await toggler.trigger('click')
+      expect(menu.classes()).toContain('show')
+      expect(toggler.attributes('aria-expanded')).toBe('true')
+
+      await toggler.trigger('click')
+      expect(menu.classes()).not.toContain('show')
+    })
+
+    it('force-closes when the router finishes a navigation', async () => {
+      const wrapper = mount(AppNavbar)
+      await wrapper.find('.navbar-toggler').trigger('click')
+      expect(wrapper.find('#mainNavBar').classes()).toContain('show')
 
       expect(mockAfterEach).toHaveBeenCalledOnce()
       const navigationHook = mockAfterEach.mock.calls[0]?.[0] as () => void
       navigationHook()
+      await nextTick()
 
-      expect(mockCollapse).toHaveBeenCalledWith(document.getElementById('mainNavBar'), {
-        toggle: false,
-      })
-      expect(mockCollapseHide).toHaveBeenCalledOnce()
-      wrapper.unmount()
+      expect(wrapper.find('#mainNavBar').classes()).not.toContain('show')
     })
 
     it('unregisters the afterEach hook on unmount', () => {
@@ -389,6 +418,26 @@ describe('AppNavbar', () => {
       wrapper.unmount()
 
       expect(mockRemoveAfterEachHook).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('dropdown menus', () => {
+    it('opens the user menu from its toggle and closes it after picking an entry', async () => {
+      mockAuthState = {
+        isAuthenticated: true,
+        user: { surname: 'MUSTER', givenname: 'Max' },
+        permissions: [],
+      }
+      mockLogout.mockResolvedValueOnce(undefined)
+      const wrapper = mount(AppNavbar)
+      const menu = wrapper.find('.dropdown-menu')
+      expect(menu.classes()).not.toContain('show')
+
+      await wrapper.find('.dropdown-toggle').trigger('click')
+      expect(menu.classes()).toContain('show')
+
+      await menu.find('button.dropdown-item').trigger('click')
+      expect(menu.classes()).not.toContain('show')
     })
   })
 })

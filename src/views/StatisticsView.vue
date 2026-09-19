@@ -1,13 +1,8 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Common/Statistics.vue -- no route-name
-// count-up animation (User-Entscheidung 2026-08-10, no vue-countup-v3
-// dependency for a purely cosmetic effect), otherwise 1:1 layout/wording.
-// The declined library's `useGrouping: true` option DOES leave a real,
-// non-cosmetic mark though: every badge is thousands-grouped with a
-// literal comma (CountUp.js's own hardcoded separator, not locale-aware
-// -- "1,274", not German "1.274"). Invisible until Schritt 8 (Scores)
-// added the first count that actually crosses 1000; replicated below
-// without the library via a one-line formatter.
+// Statistics badges -- no count-up animation (no dependency for a purely
+// cosmetic effect). Every badge is thousands-grouped with a literal comma
+// via a one-line formatter ("1,274", not German "1.274" -- deliberately
+// not locale-aware).
 import { onMounted, ref } from 'vue'
 import { useStatistics, type Statistics } from '@/composables/useStatistics'
 import EmailThresholdWarning from '@/components/common/EmailThresholdWarning.vue'

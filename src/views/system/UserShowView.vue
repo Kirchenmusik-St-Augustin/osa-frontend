@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/System/Users/Show.vue -- the "Benutzer-Daten"/
-// "Eigenschaften" cards themselves live in UserDataCard.vue (shared with
-// ProfileShowView.vue, see that component's docstring).
+// The "Benutzer-Daten"/"Eigenschaften" cards themselves live in
+// UserDataCard.vue (shared with ProfileShowView.vue, see that component's
+// docstring).
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import UserDataCard from '@/components/common/UserDataCard.vue'

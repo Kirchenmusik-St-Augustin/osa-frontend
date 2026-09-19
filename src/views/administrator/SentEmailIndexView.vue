@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 1:1 port of Legacy's Content/Administrator/SentEmails/Index.vue.
+// Monthly list of sent mails.
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSentEmails, type SentEmailShort } from '@/composables/useSentEmails'

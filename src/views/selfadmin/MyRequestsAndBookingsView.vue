@@ -5,10 +5,9 @@ import { useBookings, type PerformanceShortBase } from '@/composables/useBooking
 import { confirmAction, showToast } from '@/services/notifications'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 
-// 1:1 Legacy's Content/Common/Selfadmin/Support/RequestsAndBookings.vue --
-// `booking-trigger` + `show-menu` (Legacy: with-menu), no `with-status`
-// prop (doesn't exist on our PerformanceCard -- the badge already shows
-// itself whenever `user_booking` is present, see PerformanceCard.vue).
+// `booking-trigger` + `show-menu` on the PerformanceCard, no `with-status`
+// prop (doesn't exist on PerformanceCard -- the badge already shows itself
+// whenever `user_booking` is present, see PerformanceCard.vue).
 const { getMyRequestsAndBookings } = useSupport()
 const { changeBookingStatus } = useBookings()
 
@@ -21,8 +20,7 @@ async function load(): Promise<void> {
 onMounted(load)
 
 // Mirrors PerformanceCalendarView.vue's handler: server computes the actual
-// transition itself, a full reload afterward mirrors Legacy's own
-// Inertia GET-revisit.
+// transition itself, a full reload afterward refreshes every card's status.
 async function handleChangeStatus(performanceId: string): Promise<void> {
   const confirmed = await confirmAction()
   if (!confirmed) return

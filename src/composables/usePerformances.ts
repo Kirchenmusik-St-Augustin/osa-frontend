@@ -46,9 +46,9 @@ export interface PositionRef {
 // Lives here (not useBookings.ts) because PerformanceCalendarItem below
 // needs it too, and useBookings.ts already depends on this module for
 // PerformanceLocation/-PropriumItem/-Rehearsal/-Setup -- the other
-// direction would be circular. Port of userBookingStatus()'s 6-state
-// result: 0=not bookable, 1=bookable/unrequested, 2=requested, 3=standby,
-// 4=booked/regular, 5=rejected ("nicht gebucht").
+// direction would be circular. The 6 states: 0=not bookable,
+// 1=bookable/unrequested, 2=requested, 3=standby, 4=booked/regular,
+// 5=rejected ("nicht gebucht").
 export interface BookingStatus {
   status: number
   position: PositionRef | null
@@ -176,9 +176,9 @@ export interface PerformanceResponse {
   extracost_description: string | null
 }
 
-// UI-independent API layer for the Performance domain, Schritt 5 --
-// mirrors useOrdinariumworks.ts/useArtists.ts's shape. Deliberately has no
-// Booking/Cast/Billing calls (that's Schritt 6, a separate composable).
+// UI-independent API layer for the Performance domain -- mirrors
+// useOrdinariumworks.ts/useArtists.ts's shape. Deliberately has no
+// Booking/Cast/Billing calls (those live in useBookings.ts).
 export function usePerformances() {
   async function listForMonth(year: number, month: number): Promise<PerformanceCalendarItem[]> {
     const response = await api.get<PerformanceCalendarItem[]>('/performances', {

@@ -16,8 +16,7 @@ const PART_GROUPS = [
   'stbass',
   'orgel',
 ]
-// Only "orch" has no "anz" column at all -- 1:1 the real schema (an
-// earlier reading wrongly assumed "orgel" lacked one too).
+// Only "orch" has no "anz" column at all ("orgel" has one).
 const NO_COUNT_GROUPS = ['orch']
 const INSTRUMENTS = [
   'violine1',
@@ -167,7 +166,7 @@ describe('ScoreFieldsComponent', () => {
 
   it('updates the bound field object in place when a field changes', async () => {
     // The model is one shared reactive object mutated at nested paths
-    // (v-model="model.werk" per field, 1:1 Legacy's own pattern) -- this
+    // (v-model="model.werk" per field) -- this
     // never fires ScoreFieldsComponent's OWN top-level update:modelValue
     // event; it mutates the object `fields` already references, which is
     // what actually keeps the parent view in sync.

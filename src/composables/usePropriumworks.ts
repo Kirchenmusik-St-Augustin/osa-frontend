@@ -23,9 +23,9 @@ export interface PropriumworkPayload {
   demanding: boolean
 }
 
-// UI-independent API layer for the Propriumwork domain, Schritt 4/
-// Repertoire -- structurally a subset of useOrdinariumworks.ts (no setup/
-// positions concept at all, mirrors the backend 1:1).
+// UI-independent API layer for the Propriumwork domain -- structurally a
+// subset of useOrdinariumworks.ts (no setup/positions concept at all,
+// mirrors the backend 1:1).
 export function usePropriumworks() {
   async function search(query: string): Promise<PropriumworkSearchResult[]> {
     const response = await api.get<PropriumworkSearchResult[]>('/propriumworks/search', {

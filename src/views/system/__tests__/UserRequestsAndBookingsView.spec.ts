@@ -63,9 +63,8 @@ describe('UserRequestsAndBookingsView', () => {
     expect(wrapper.text()).toContain('Gebucht für Fagott')
   })
 
-  it("renders both page-subtitles (label + user name), 1:1 Legacy's double page-subtitle", async () => {
-    // Legacy's Content/System/Users/RequestsAndBookings.vue renders two
-    // page-subtitle lines: "Anfragen und Buchungen für" and the user's
+  it('renders both page-subtitles (label + user name)', async () => {
+    // Two page-subtitle lines: "Anfragen und Buchungen für" and the user's
     // "SURNAME, Givenname".
     mockGet.mockResolvedValueOnce(makeUser({ surname: 'SCHINDLER', givenname: 'Margot' }))
     mockGetRequestsAndBookings.mockResolvedValueOnce([])

@@ -48,7 +48,7 @@ beforeEach(() => {
 })
 
 describe('LoginView', () => {
-  it('renders the Legacy card structure', () => {
+  it('renders the card structure', () => {
     const wrapper = mountLoginView()
 
     expect(wrapper.text()).toContain('Anmeldung.')
@@ -56,6 +56,12 @@ describe('LoginView', () => {
     expect(wrapper.find('input#password').exists()).toBe(true)
     expect(wrapper.text()).toContain('Erst-Registrierung')
     expect(wrapper.text()).toContain('Passwort-Rücksetzung')
+  })
+
+  it('lets password managers fill the existing password', () => {
+    const wrapper = mountLoginView()
+
+    expect(wrapper.find('input#password').attributes('autocomplete')).toBe('current-password')
   })
 
   it('does not render the Google button area without a configured client ID', () => {
@@ -135,6 +141,29 @@ describe('LoginView', () => {
     // stacked alongside it.
     expect(wrapper.text()).not.toContain('Anmeldung.')
     expect(wrapper.find('button[type="submit"]').text()).toBe('Verbinden')
+  })
+
+  it('lets password managers fill the existing password in the link-account form', async () => {
+    mockLoginWithGoogleCredential.mockRejectedValueOnce({
+      response: { status: 404, data: { detail: 'ACCOUNT_NOT_LINKED' } },
+    })
+    const wrapper = mountLoginView()
+
+    await triggerGoogleCallback(wrapper, 'google-credential-token')
+
+    expect(wrapper.find('input#link-password').attributes('autocomplete')).toBe('current-password')
+  })
+
+  it('requires both fields of the link-account form so an empty submit never reaches the rate-limited endpoint', async () => {
+    mockLoginWithGoogleCredential.mockRejectedValueOnce({
+      response: { status: 404, data: { detail: 'ACCOUNT_NOT_LINKED' } },
+    })
+    const wrapper = mountLoginView()
+
+    await triggerGoogleCallback(wrapper, 'google-credential-token')
+
+    expect(wrapper.find('input#link-email').attributes('required')).toBeDefined()
+    expect(wrapper.find('input#link-password').attributes('required')).toBeDefined()
   })
 
   it('returns to the regular login card when "Zurück zum Login" is clicked', async () => {

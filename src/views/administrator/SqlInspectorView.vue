@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// New admin-only, read-only DB table browser (no Legacy equivalent). Not
-// a free-text SQL console: the only user-chosen input is a table name from
+// Admin-only, read-only DB table browser. Not a free-text SQL console: the only user-chosen input is a table name from
 // a backend-provided list, validated again server-side against a live
 // schema allowlist.
 import { computed, onMounted, ref, watch } from 'vue'

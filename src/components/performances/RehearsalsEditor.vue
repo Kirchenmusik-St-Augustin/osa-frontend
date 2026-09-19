@@ -7,13 +7,9 @@ export interface RehearsalEntry {
   comment: string | null
 }
 
-// 1:1 port of Legacy's Form/RehearsalsEditorComponent.vue, with one
-// deliberate fix: Legacy keys `v-for` by `schedule` and removes rehearsals
-// by value-matching `schedule`+`comment` -- two rehearsals with the same
-// timestamp collide (Vue key clash) or get deleted together (an
-// "offensichtliches Versehen", not a business rule). Using the array index
-// for both `:key` and removal avoids that edge case without changing any
-// user-visible behavior for the normal case.
+// Rehearsals are keyed and removed by array index, not by value-matching
+// `schedule`+`comment`: two rehearsals with the same timestamp would
+// otherwise collide (Vue key clash) or get deleted together.
 const rehearsals = defineModel<RehearsalEntry[]>({ required: true })
 
 function tomorrowAt945(): string {

@@ -11,19 +11,10 @@ import { confirmAction, showToast } from '@/services/notifications'
 import { parseWallClock } from '@/services/dateFormat'
 import { useAuthStore } from '@/stores/auth'
 
-// Port of Legacy's MessageToCast.vue + Common/ListUsergroupComponent.vue
-// (incl. its SelectorComponent/ClipboardComponent) -- the ability dropdown
-// ("alle" or one specific booked position), the "alle (N)" toggle-all
-// switch, and the Nachname/Vorname/E-Mail/Telefon recipient table (mailto/
-// tel links, disabled switch for recipients without an email) are all
-// real, visible Legacy UI and are ported 1:1 here.
-//
-// Deliberate exception (User-confirmed 2026-07-31): Legacy's own "Nachricht
-// verfassen" compose UI is a Bootstrap modal with NO trigger anywhere in
-// its markup and posts to a GET-only route (guaranteed HTTP 405) -- it is
-// genuinely dead, unreachable code that no real Legacy user has ever seen,
-// so there is no observable pixel parity to preserve for it. Kept as a
-// working INLINE textarea+Senden instead (see
+// The ability dropdown ("alle" or one specific booked position), the
+// "alle (N)" toggle-all switch, and the Nachname/Vorname/E-Mail/Telefon
+// recipient table (mailto/tel links, disabled switch for recipients without
+// an email). The message compose UI is an INLINE textarea+Senden (see
 // booking_service.send_message_to_cast).
 const props = defineProps<{ id: string }>()
 const performanceId = computed(() => props.id)
@@ -69,10 +60,8 @@ onMounted(async () => {
 
 watch(selectedAbility, loadRecipients)
 
-// Legacy's "zurück" goes to the calendar month of the performance's own
-// schedule (PerformanceController::messageToCast() links to
-// `route('...performances.index', { year, month })`), never to the
-// performance's own show/detail page.
+// "zurück" goes to the calendar month of the performance's own schedule,
+// never to the performance's own show/detail page.
 const backTarget = computed(() => {
   if (!performance.value) return { name: 'home' as const }
   const scheduleDate = parseWallClock(performance.value.schedule)
@@ -90,10 +79,9 @@ const hasBookings = computed(() => {
 
 const eligibleCount = computed(() => recipients.value.filter((r) => r.has_email).length)
 
-// Schritt 7 Nachzug: 1:1 Legacy's `v-if="!$app.helper.emailsDisabled()"` --
-// only the message-textarea+Senden block is swapped out, the recipient
-// table/dropdown above stays visible regardless (see EmailThresholdWarning's
-// own docstring for the source reference).
+// While the mail kill switch is active only the message-textarea+Senden
+// block is swapped out, the recipient table/dropdown above stays visible
+// regardless (see EmailThresholdWarning.vue).
 const emailKillSwitchActive = computed(() => authStore.user?.email_kill_switch.active ?? false)
 
 function toggleCheckAll(): void {

@@ -86,6 +86,20 @@ describe('ProfileFormView', () => {
     )
   })
 
+  it('tells password managers which field holds the current and which the new password', async () => {
+    const wrapper = mount(ProfileFormView)
+    await flushPromises()
+    await wrapper.find('input#profile-change-password').setValue(true)
+
+    expect(wrapper.find('input#profile-auth-password').attributes('autocomplete')).toBe(
+      'current-password',
+    )
+    expect(wrapper.find('input#profile-password').attributes('autocomplete')).toBe('new-password')
+    expect(wrapper.find('input#profile-password-confirmation').attributes('autocomplete')).toBe(
+      'new-password',
+    )
+  })
+
   it('saves with null password fields when not changing the password', async () => {
     mockUpdate.mockResolvedValueOnce(makeUser())
     const wrapper = mount(ProfileFormView)

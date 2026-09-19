@@ -1,15 +1,14 @@
 <script setup lang="ts">
-// Admin-only overview of the backend's currently registered scheduled jobs
-// (no Legacy equivalent). Trigger/next_run are a live snapshot computed
-// from the backend's cron catalog; last_run is the one persisted piece of
-// state -- the most recently completed run of each job, if any. Plus a
-// manual Koofr-backup trigger, production-only in the UI -- the
-// backend endpoint itself stays callable in every stage (see
-// useScheduler.ts/backend comments), the `schedulerView` permission is
-// the real guard. The
-// downsync button is its mirror image: only outside production, where the
-// backend enforces the same boundary as a real 409 (not just UI
-// convenience -- see the backend router's docstring).
+// Admin-only overview of the backend's currently registered scheduled jobs.
+// Trigger/next_run are a live snapshot computed from the backend's cron
+// catalog; last_run is the one persisted piece of state -- the most
+// recently completed run of each job, if any. Plus a manual Koofr-backup
+// trigger, production-only in the UI -- the backend endpoint itself stays
+// callable in every stage (see useScheduler.ts/backend comments), the
+// `schedulerView` permission is the real guard. The downsync button is its
+// mirror image: only outside production, where the backend enforces the
+// same boundary as a real 409 (not just UI convenience -- see the backend
+// router's docstring).
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScheduler, type JobRun, type ScheduledJob } from '@/composables/useScheduler'

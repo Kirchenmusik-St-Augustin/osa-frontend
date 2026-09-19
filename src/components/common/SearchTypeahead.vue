@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 
-// Replacement for Legacy's third-party `pure-vue3-type-ahead` widget (used
-// on the Artists/Ordinariumworks/Propriumworks Search pages) -- same UX
-// contract (type -> debounced remote search -> click a result to select),
-// implemented directly instead of pulling in an unmaintained-looking niche
-// dependency for a handful of call sites. Legacy's
-// `force-item` behavior (free text alone never fires a selection) is
-// preserved: `select()` only ever runs from a click on an actual result.
+// Typeahead widget (used on the Artists/Ordinariumworks/Propriumworks Search
+// pages): type -> debounced remote search -> click a result to select.
+// Implemented directly instead of pulling in a niche dependency for a
+// handful of call sites. Free text alone never fires a selection:
+// `select()` only ever runs from a click on an actual result.
 export interface SearchResult {
   id: string
   label: string
@@ -41,6 +39,10 @@ function onInput(): void {
     })
   }, 300)
 }
+
+onBeforeUnmount(() => {
+  clearTimeout(debounceTimer)
+})
 
 function select(result: SearchResult): void {
   results.value = []

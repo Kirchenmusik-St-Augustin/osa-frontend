@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, useTemplateRef, watch } from 'vue'
-import { Modal } from 'bootstrap'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AppModal from '@/components/common/AppModal.vue'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import { useCoreelements, type Coreelement } from '@/composables/useCoreelements'
@@ -8,19 +8,17 @@ import { findCoreelementTypeMeta, type CoreelementType } from '@/constants/coree
 import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
-// Only these three CoreelementTypes carry the osa-only `active` flag
-// (outside the structural 1:1 transfer's scope) -- they're the ones
-// referenced via instrument_id/voice_id/choirjob_id foreign keys
+// Only these three CoreelementTypes carry the `active` flag -- they're the
+// ones referenced via instrument_id/voice_id/choirjob_id foreign keys
 // (bookings/booking_logs/performance_positions/ordinariumwork_positions/
 // user_positions), where "no longer offered for a NEW assignment, but
 // never deletable either" actually applies. Location/Role/Propriumelement
 // don't have it.
 const ACTIVE_FLAG_TYPES: readonly CoreelementType[] = ['instrument', 'voice', 'choirjob']
 
-// Generic replacement for Legacy's six near-identical Instrument/Voice/
-// Choirjob/Location/Role/Propriumelement admin pages -- Legacy itself
-// already renders all six through a single `type`-prop-driven
-// Coreelement/Index.vue, this is the same idea ported to Vue3 (Schritt 3).
+// Generic admin page for the six Instrument/Voice/Choirjob/Location/Role/
+// Propriumelement lists, driven by a single `type` prop instead of six
+// near-identical pages.
 const props = defineProps<{ type: CoreelementType }>()
 
 const typeMeta = computed(() => findCoreelementTypeMeta(props.type))
@@ -41,15 +39,9 @@ const editingId = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 
-const modalElement = useTemplateRef<HTMLDivElement>('editModal')
-let modalInstance: Modal | null = null
+const modalOpen = ref(false)
 
-onMounted(async () => {
-  if (modalElement.value) {
-    modalInstance = new Modal(modalElement.value, { backdrop: 'static', keyboard: false })
-  }
-  await fetchList()
-})
+onMounted(fetchList)
 
 // Vue Router reuses this exact component instance when navigating between
 // two `administrator-coreelement` routes (only the `:type` param changes,
@@ -59,7 +51,7 @@ onMounted(async () => {
 watch(
   () => props.type,
   () => {
-    modalInstance?.hide()
+    modalOpen.value = false
     editingId.value = null
     resetForm()
     void fetchList()
@@ -79,7 +71,7 @@ function resetForm(): void {
 function openCreateModal(): void {
   editingId.value = null
   resetForm()
-  modalInstance?.show()
+  modalOpen.value = true
 }
 
 function openEditModal(element: Coreelement): void {
@@ -91,18 +83,17 @@ function openEditModal(element: Coreelement): void {
   editForm.color = element.color ?? ''
   editForm.active = element.active ?? true
   fieldErrors.value = {}
-  modalInstance?.show()
+  modalOpen.value = true
 }
 
 function closeModal(): void {
-  modalInstance?.hide()
+  modalOpen.value = false
   resetForm()
 }
 
 // Only send the fields that are actually relevant for this type -- the
 // backend's CoreelementRequest treats an unexpected non-null field as a
-// validation error ("für diesen Typ nicht zulässig"), mirroring Legacy's
-// per-type SaveRequest classes.
+// validation error ("für diesen Typ nicht zulässig").
 function buildPayload(): {
   name: string
   label?: string
@@ -172,78 +163,69 @@ async function moveItem(id: string, direction: 'up' | 'down'): Promise<void> {
 <template>
   <h2 class="h2 text-center mb-4">{{ title }}</h2>
 
-  <div
-    id="editModal"
-    ref="editModal"
-    class="modal fade"
-    tabindex="-1"
-    data-bs-backdrop="static"
-    data-bs-keyboard="false"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Bearbeiten</h5>
-        </div>
-        <div class="modal-body">
-          <FormInput
-            id="coreelement-name"
-            v-model="editForm.name"
-            title="Name"
-            required
-            :error="fieldErrors['name']"
-          />
-          <FormInput
-            v-if="type === 'role'"
-            id="coreelement-label"
-            v-model="editForm.label"
-            title="Anzeigename"
-            required
-            :error="fieldErrors['label']"
-          />
-          <FormInput
-            v-if="type === 'role'"
-            id="coreelement-description"
-            v-model="editForm.description"
-            title="Beschreibung"
-            required
-            type="textarea"
-            :error="fieldErrors['description']"
-          />
-          <FormInput
-            v-if="type === 'location'"
-            id="coreelement-address"
-            v-model="editForm.address"
-            title="Adresse"
-            required
-            type="textarea"
-            :error="fieldErrors['address']"
-          />
-          <FormInput
-            v-if="type === 'location'"
-            id="coreelement-color"
-            v-model="editForm.color"
-            title="Farbe"
-            required
-            :error="fieldErrors['color']"
-          />
-          <FormCheckbox
-            v-if="hasActiveFlag"
-            id="coreelement-active"
-            v-model="editForm.active"
-            title="Aktiv"
-            as-switch
-          />
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="closeModal">Schließen</button>
-          <button type="button" class="btn btn-primary" :disabled="submitting" @click="submitForm">
-            Speichern
-          </button>
-        </div>
+  <AppModal v-model="modalOpen" :dismissible="false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bearbeiten</h5>
+      </div>
+      <div class="modal-body">
+        <FormInput
+          id="coreelement-name"
+          v-model="editForm.name"
+          title="Name"
+          required
+          :error="fieldErrors['name']"
+        />
+        <FormInput
+          v-if="type === 'role'"
+          id="coreelement-label"
+          v-model="editForm.label"
+          title="Anzeigename"
+          required
+          :error="fieldErrors['label']"
+        />
+        <FormInput
+          v-if="type === 'role'"
+          id="coreelement-description"
+          v-model="editForm.description"
+          title="Beschreibung"
+          required
+          type="textarea"
+          :error="fieldErrors['description']"
+        />
+        <FormInput
+          v-if="type === 'location'"
+          id="coreelement-address"
+          v-model="editForm.address"
+          title="Adresse"
+          required
+          type="textarea"
+          :error="fieldErrors['address']"
+        />
+        <FormInput
+          v-if="type === 'location'"
+          id="coreelement-color"
+          v-model="editForm.color"
+          title="Farbe"
+          required
+          :error="fieldErrors['color']"
+        />
+        <FormCheckbox
+          v-if="hasActiveFlag"
+          id="coreelement-active"
+          v-model="editForm.active"
+          title="Aktiv"
+          as-switch
+        />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" @click="closeModal">Schließen</button>
+        <button type="button" class="btn btn-primary" :disabled="submitting" @click="submitForm">
+          Speichern
+        </button>
       </div>
     </div>
-  </div>
+  </AppModal>
 
   <div class="row justify-content-center my-2">
     <div class="col-md-6">

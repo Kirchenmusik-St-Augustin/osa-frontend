@@ -4,25 +4,21 @@ import draggable from 'vuedraggable'
 import type { CastMember, NotBookedEntry } from '@/composables/useBookings'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'
 
-// 1:1 port of Legacy's SingleCastListComponent.vue -- the currently cast
-// candidates for ONE position, with Auf/Ab reordering (Promote/Demote),
-// now ALSO reorderable by drag (user request, phone-first: keep ↑↓ as a
-// keyboard/accessibility fallback, add press-and-hold drag on top -- no
-// Legacy equivalent, so no pixel-parity constraint applies to this
-// interaction). Purely client-side array manipulation: unlike
-// Coreelement's move (one API call per click), the whole cast+not_booked
-// payload is only sent once, on CastView's "speichern" (Schritt 6 plan
-// B.2/B.3). `not_booked` itself is performance-wide, not per-position
-// data (see app.schemas.booking.CastFormData) -- but Legacy still renders
-// the same list redundantly under EVERY position's own box (verified live
-// against osa.dev.schimpl.cc/content/music/performances/{id}/cast), not
-// once at the bottom of the page, so that's what this component does too.
+// The currently cast candidates for ONE position, with Auf/Ab reordering
+// (Promote/Demote), also reorderable by drag (phone-first: press-and-hold
+// drag on top of the ↑↓ buttons, which stay as a keyboard/accessibility
+// fallback). Purely client-side array manipulation: unlike Coreelement's
+// move (one API call per click), the whole cast+not_booked payload is only
+// sent once, on CastView's "speichern". `not_booked` itself is
+// performance-wide, not per-position data (see app.schemas.booking.
+// CastFormData) -- but the same list is rendered redundantly under EVERY
+// position's own box, not once at the bottom of the page, so that's what
+// this component does.
 //
-// Choirjobs-only "autom. Sortierung" (no Legacy equivalent, real-user
-// request): when active, the cast list is grouped/sorted by each member's
-// assigned singing Voice ("Stimme", not the sibling "Stimmen" position
-// type) instead of being manually reorderable. Backend resolves each
-// user's lowest-`Voice.order` assignment server-side
+// Choirjobs-only "autom. Sortierung": when active, the cast list is
+// grouped/sorted by each member's assigned singing Voice ("Stimme", not the
+// sibling "Stimmen" position type) instead of being manually reorderable.
+// Backend resolves each user's lowest-`Voice.order` assignment server-side
 // (booking_service._primary_voice_by_user) -- this component only ever
 // sorts/groups by the already-resolved voice_name/voice_order fields.
 const props = defineProps<{

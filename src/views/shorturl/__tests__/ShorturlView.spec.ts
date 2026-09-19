@@ -28,20 +28,6 @@ vi.mock('@/services/notifications', () => ({
   showToast: (...args: unknown[]) => mockShowToast(...args),
 }))
 
-// vi.mock factories run above every import, so the mocked Modal class must
-// come from vi.hoisted() too (1:1 FeeView.spec.ts's own note on this) -- a
-// plain arrow function can't be used as a constructor.
-const { MockModal, mockModalShow, mockModalHide } = vi.hoisted(() => {
-  const mockModalShow = vi.fn()
-  const mockModalHide = vi.fn()
-  class MockModal {
-    show = mockModalShow
-    hide = mockModalHide
-  }
-  return { MockModal, mockModalShow, mockModalHide }
-})
-vi.mock('bootstrap', () => ({ Modal: MockModal }))
-
 function makeShorturl(overrides: Partial<Shorturl> = {}): Shorturl {
   return {
     id: 1,
@@ -111,8 +97,9 @@ describe('ShorturlView', () => {
     const wrapper = mount(ShorturlView)
     await flushPromises()
 
+    expect(wrapper.find('.modal').exists()).toBe(false)
     await wrapper.find('button.btn-secondary.my-3').trigger('click')
-    expect(mockModalShow).toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(true)
 
     await wrapper.find('input#shorturl-path').setValue('konzert')
     await wrapper.find('input#shorturl-target').setValue('example.org')
@@ -121,7 +108,7 @@ describe('ShorturlView', () => {
 
     expect(mockSave).toHaveBeenCalledWith(null, { path: 'konzert', target: 'example.org' })
     expect(mockShowToast).toHaveBeenCalledWith('Element gespeichert')
-    expect(mockModalHide).toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(false)
   })
 
   it('pre-fills the form and updates the existing shorturl when editing', async () => {
@@ -151,6 +138,7 @@ describe('ShorturlView', () => {
     })
     const wrapper = mount(ShorturlView)
     await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
 
     await wrapper.find('input#shorturl-path').setValue('konzert')
     await wrapper.find('input#shorturl-target').setValue('example.org')
@@ -158,7 +146,7 @@ describe('ShorturlView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Der Pfad ist bereits vergeben.')
-    expect(mockModalHide).not.toHaveBeenCalled()
+    expect(wrapper.find('.modal').exists()).toBe(true)
   })
 
   it('deletes a shorturl after the user confirms', async () => {
@@ -194,5 +182,18 @@ describe('ShorturlView', () => {
     await flushPromises()
 
     expect(wrapper.find('table').exists()).toBe(false)
+  })
+
+  it('releases the page scroll lock when unmounted while the modal is open', async () => {
+    // Regression test: navigating away (e.g. browser back) with the dialog
+    // open must not leave the page stuck unscrollable.
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+    expect(document.body.classList.contains('modal-open')).toBe(true)
+
+    wrapper.unmount()
+
+    expect(document.body.classList.contains('modal-open')).toBe(false)
   })
 })

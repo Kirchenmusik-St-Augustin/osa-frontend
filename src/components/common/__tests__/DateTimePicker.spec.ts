@@ -72,4 +72,36 @@ describe('DateTimePicker', () => {
 
     expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe('2026-09-08T14:30:00')
   })
+
+  it('re-syncs the picker when modelValue is changed externally', async () => {
+    const future = new Date()
+    future.setDate(future.getDate() + 30)
+    future.setHours(9, 0, 0, 0)
+    const wrapper = mount(DateTimePicker, { props: { modelValue: toWallClockString(future) } })
+
+    const later = new Date(future)
+    later.setHours(15, 0, 0, 0)
+    await wrapper.setProps({ modelValue: toWallClockString(later) })
+
+    const flatpickr = wrapper.findComponent({ name: 'FlatPickr' })
+    expect((flatpickr.props('modelValue') as Date).getHours()).toBe(15)
+  })
+
+  it('leaves the picker value untouched when the parent merely echoes back the picked time', async () => {
+    const future = new Date()
+    future.setDate(future.getDate() + 30)
+    future.setHours(9, 0, 0, 0)
+    const wrapper = mount(DateTimePicker, { props: { modelValue: toWallClockString(future) } })
+
+    // The picker reports a string in Flatpickr's own format; the parent then
+    // feeds the emitted wall-clock string back in as the new modelValue.
+    const later = new Date(future)
+    later.setHours(15, 0, 0, 0)
+    const pickedString = toWallClockString(later).replace('T', ' ')
+    await wrapper.find('.flatpickr-stub').setValue(pickedString)
+    await wrapper.setProps({ modelValue: toWallClockString(later) })
+
+    const flatpickr = wrapper.findComponent({ name: 'FlatPickr' })
+    expect(flatpickr.props('modelValue')).toBe(pickedString)
+  })
 })
