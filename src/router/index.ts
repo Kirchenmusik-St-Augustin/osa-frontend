@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from '@/layouts/AppLayout.vue'
+import { registerChunkReload } from './chunkReload'
 import { coreelementRouteGuard } from './coreelementGuard'
 import { runAuthGuards } from './guards'
 import { setPageTitle } from './pageTitle'
@@ -571,5 +572,6 @@ const router = createRouter({
 
 router.beforeEach(runAuthGuards)
 router.afterEach(setPageTitle)
+registerChunkReload(router)
 
 export default router
