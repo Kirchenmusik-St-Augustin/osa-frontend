@@ -59,9 +59,9 @@ export interface OrdinariumworkPayload {
   setup: OrdinariumworkSetupInput
 }
 
-// UI-independent API layer for the Ordinariumwork domain, Schritt 4/
-// Repertoire -- mirrors useCoreelements.ts/useArtists.ts's shape. API
-// calls must be extracted into testable TypeScript composables.
+// UI-independent API layer for the Ordinariumwork domain -- mirrors
+// useCoreelements.ts/useArtists.ts's shape. API calls must be extracted
+// into testable TypeScript composables.
 export function useOrdinariumworks() {
   async function search(query: string): Promise<OrdinariumworkSearchResult[]> {
     const response = await api.get<OrdinariumworkSearchResult[]>('/ordinariumworks/search', {

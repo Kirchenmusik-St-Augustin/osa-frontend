@@ -235,7 +235,7 @@ export function nextActionFor(status: number): 'request' | 'cancel' | null {
   return null
 }
 
-// UI-independent API layer for the Booking/Casting domain (Schritt 6) --
+// UI-independent API layer for the Booking/Casting domain --
 // mirrors usePerformances.ts's shape, kept as its OWN composable per that
 // file's own "separate composable" note.
 export function useBookings() {

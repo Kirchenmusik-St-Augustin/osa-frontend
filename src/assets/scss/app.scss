@@ -3,7 +3,6 @@ $fa-font-path: '@fortawesome/fontawesome-free/webfonts';
 @import '@fortawesome/fontawesome-free/scss/fontawesome';
 @import '@fortawesome/fontawesome-free/scss/regular';
 @import '@fortawesome/fontawesome-free/scss/solid';
-@import '@fortawesome/fontawesome-free/scss/brands';
 
 // Fonts. Must be imported before bootstrap: $font-family-base/-monospace are
 // consumed while bootstrap/scss/bootstrap compiles, not read afterwards.
@@ -11,9 +10,40 @@ $font-family-base: 'Quicksand', sans-serif;
 $font-family-monospace: 'Nova Mono', monospace;
 @import url('https://fonts.googleapis.com/css?family=Nova+Mono|Quicksand|Lora&display=swap');
 
-// Bootstrap 5, with the primary-color override
+// Bootstrap 5, with the primary-color override. Imported partial by partial,
+// in the order of bootstrap/scss/bootstrap.scss, so the components the app
+// does not use (accordion, alert, breadcrumb, button-group, carousel,
+// offcanvas, placeholders, popover, progress, spinners, tooltip) are not
+// compiled into the stylesheet. Add a partial back here before using its classes.
 $primary: #2a547f;
-@import 'bootstrap/scss/bootstrap';
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+@import 'bootstrap/scss/root';
+@import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/type';
+@import 'bootstrap/scss/images';
+@import 'bootstrap/scss/containers';
+@import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/tables';
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/transitions';
+@import 'bootstrap/scss/dropdown';
+@import 'bootstrap/scss/nav';
+@import 'bootstrap/scss/navbar';
+@import 'bootstrap/scss/card';
+@import 'bootstrap/scss/pagination';
+@import 'bootstrap/scss/badge';
+@import 'bootstrap/scss/list-group';
+@import 'bootstrap/scss/close';
+@import 'bootstrap/scss/toasts';
+@import 'bootstrap/scss/modal';
+@import 'bootstrap/scss/helpers';
+@import 'bootstrap/scss/utilities/api';
 
 // Custom overrides
 body {
@@ -23,15 +53,12 @@ body {
 
 // Page scroll lock while a modal is open (toggled by useBodyScrollLock.ts).
 // --scrollbar-compensation is the width of the scrollbar that `overflow:
-// hidden` removes; the sticky navbar is pulled back out by the same amount so
-// it keeps spanning the full viewport.
+// hidden` removes; padding the body by exactly that much keeps everything,
+// including the navbar inside its centered container, where it was. Nothing
+// here spans the full viewport, so no element needs its own compensation.
 body.modal-open {
   overflow: hidden;
   padding-right: var(--scrollbar-compensation, 0);
-
-  .sticky-top {
-    margin-right: calc(-1 * var(--scrollbar-compensation, 0px));
-  }
 }
 
 .c-pointer {

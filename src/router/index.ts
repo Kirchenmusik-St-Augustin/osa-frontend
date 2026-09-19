@@ -186,7 +186,6 @@ const router = createRouter({
           },
         },
         {
-          // Schritt 9 (Admin-/Audit-Viewer, vorgezogen).
           path: 'administrator/sent-emails',
           name: 'administrator-sent-emails-index',
           component: () => import('@/views/administrator/SentEmailIndexView.vue'),
@@ -376,7 +375,6 @@ const router = createRouter({
           meta: { requiresAuth: true, title: 'Meine Anfragen und Buchungen' },
         },
         {
-          // Baustelle 5b.
           path: 'support/message-to-contactperson',
           name: 'support-message-to-contactperson',
           component: () => import('@/views/selfadmin/MessageToContactpersonView.vue'),

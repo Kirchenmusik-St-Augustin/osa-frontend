@@ -245,11 +245,11 @@ describe('AppNavbar', () => {
   it('shows the two user-management links for a user with userMaintain but not feeMaintain', () => {
     // A pure administrator (userMaintain=true via the is_admin branch, no
     // 'disponent' role) has no feeMaintain permission -- "Tarife verwalten"
-    // must stay hidden while the dropdown itself is visible. This is the
-    // regression case for the fixed bug: the outer v-if used to gate on
-    // feeMaintain alone, hiding the whole dropdown -- including these two
-    // links the router lets this user reach directly by URL -- from a
-    // userMaintain-only administrator entirely.
+    // must stay hidden while the dropdown itself is visible. The dropdown's
+    // outer v-if must cover the union of its links' permissions: gating it
+    // on feeMaintain alone would hide the whole dropdown -- including these
+    // two links the router lets this user reach directly by URL -- from a
+    // userMaintain-only administrator.
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max', administrator: true },
@@ -307,7 +307,7 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('Notenarchiv')
   })
 
-  it('shows only "Notenarchiv" with just scoreMaintain (Schritt 8)', () => {
+  it('shows only "Notenarchiv" with just scoreMaintain', () => {
     mockAuthState = {
       isAuthenticated: true,
       user: { surname: 'MUSTER', givenname: 'Max' },

@@ -1,38 +1,14 @@
-import Swal from 'sweetalert2'
+import { useNotificationStore } from '@/stores/notifications'
 
-// SweetAlert2 confirm/toast helpers -- used app-wide for destructive-action
-// confirmation and success/error feedback, not just by the Coreelement admin
-// pages, so this lives in services/ rather than being scoped to one view.
-export async function confirmAction(
+// Imperative entry points for user feedback, used app-wide for
+// destructive-action confirmation and success/error toasts. The state lives
+// in stores/notifications.ts; App.vue mounts the components that render it.
+export function confirmAction(
   message = 'Soll diese Aktion wirklich ausgeführt werden',
 ): Promise<boolean> {
-  const result = await Swal.fire({
-    text: message,
-    showDenyButton: true,
-    confirmButtonText: '&nbsp;&nbsp;Ja&nbsp;&nbsp;&nbsp;',
-    denyButtonText: 'Nein',
-    allowEnterKey: false,
-    denyButtonColor: 'darkgray',
-    confirmButtonColor: 'salmon',
-    customClass: {
-      denyButton: 'order-1',
-      confirmButton: 'order-2',
-    },
-  })
-  return result.isConfirmed
+  return useNotificationStore().requestConfirmation(message)
 }
 
 export function showToast(message: string, isError = false): void {
-  void Swal.fire({
-    icon: isError ? 'error' : 'success',
-    title: message,
-    toast: true,
-    position: 'bottom-start',
-    color: 'white',
-    background: isError ? 'red' : 'green',
-    iconColor: 'white',
-    showConfirmButton: false,
-    timer: 4000,
-    timerProgressBar: true,
-  })
+  useNotificationStore().showToast(message, isError)
 }

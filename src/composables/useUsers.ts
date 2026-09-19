@@ -64,7 +64,7 @@ export interface UserPayload {
   administrator: boolean
 }
 
-// UI-independent API layer for Schritt 7's Benutzerverwaltung (System),
+// UI-independent API layer for the Benutzerverwaltung (System),
 // mirrors useArtists.ts's shape.
 export function useUsers() {
   async function search(query: string): Promise<UserSearchResult[]> {

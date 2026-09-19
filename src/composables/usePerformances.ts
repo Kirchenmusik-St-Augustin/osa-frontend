@@ -176,9 +176,9 @@ export interface PerformanceResponse {
   extracost_description: string | null
 }
 
-// UI-independent API layer for the Performance domain, Schritt 5 --
-// mirrors useOrdinariumworks.ts/useArtists.ts's shape. Deliberately has no
-// Booking/Cast/Billing calls (that's Schritt 6, a separate composable).
+// UI-independent API layer for the Performance domain -- mirrors
+// useOrdinariumworks.ts/useArtists.ts's shape. Deliberately has no
+// Booking/Cast/Billing calls (those live in useBookings.ts).
 export function usePerformances() {
   async function listForMonth(year: number, month: number): Promise<PerformanceCalendarItem[]> {
     const response = await api.get<PerformanceCalendarItem[]>('/performances', {

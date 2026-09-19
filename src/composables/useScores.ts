@@ -8,7 +8,7 @@ export interface ScoreFieldConfig {
   values: string[] | null
 }
 
-export type ScoreFieldsPayload = Record<string, string | number>
+export type ScoreFieldsPayload = Record<string, string | number | null>
 
 export interface Score {
   id: string

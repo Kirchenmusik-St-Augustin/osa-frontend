@@ -48,7 +48,6 @@ onUnmounted(removeAfterEachHook)
     </button>
     <div id="mainNavBar" class="collapse navbar-collapse" :class="{ show: menuOpen }">
       <ul class="navbar-nav mb-2 mb-lg-0">
-        <!-- Further left-hand navigation entries are added as real views land in later slices. -->
         <li
           v-if="
             authStore.hasPermission('artistMaintain') ||

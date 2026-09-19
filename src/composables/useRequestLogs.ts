@@ -38,7 +38,7 @@ export interface RequestLogShow {
   created_at: string
 }
 
-// UI-independent API layer for Schritt 9's RequestLog/Logbuch (Admin-/Audit-Viewer).
+// UI-independent API layer for the RequestLog/Logbuch (admin audit viewer).
 export function useRequestLogs() {
   async function listDaysWithUsersForMonth(
     year: number,

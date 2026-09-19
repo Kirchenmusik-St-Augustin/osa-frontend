@@ -72,7 +72,7 @@ describe('FormInput', () => {
   })
 
   it.each(['email', 'tel', 'password'] as const)(
-    'passes type="%s" through to the input element (Schritt 7 User/Profile forms)',
+    'passes type="%s" through to the input element',
     (type) => {
       const wrapper = mount(FormInput, {
         props: { id: 'contact', title: 'Kontakt', modelValue: '', type },
@@ -82,7 +82,7 @@ describe('FormInput', () => {
     },
   )
 
-  it('renders no label at all when title is omitted (Schritt 8 Scores grid)', () => {
+  it('renders no label at all when title is omitted', () => {
     const wrapper = mount(FormInput, {
       props: { id: 'part1verl', modelValue: '' },
     })

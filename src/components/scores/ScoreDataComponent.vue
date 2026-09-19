@@ -18,7 +18,7 @@ defineProps<{
     </div>
     <div>
       <small v-if="score.updated_at">
-        Erstelldatum: {{ formatUtcDateTime(score.updated_at) }}
+        Änderungsdatum: {{ formatUtcDateTime(score.updated_at) }}
       </small>
     </div>
   </div>

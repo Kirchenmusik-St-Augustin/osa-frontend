@@ -148,7 +148,7 @@ describe('MessageToContactpersonView', () => {
     await sendButton?.trigger('click')
     await flushPromises()
 
-    expect(mockShowToast).toHaveBeenCalledWith('Nachricht konnte nicht versanct werden.', true)
+    expect(mockShowToast).toHaveBeenCalledWith('Nachricht konnte nicht versandt werden.', true)
   })
 
   it('replaces the message-textarea+senden block with the kill-switch card while active, keeping the dropdown and description cards visible', async () => {

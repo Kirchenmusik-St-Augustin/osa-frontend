@@ -1,8 +1,8 @@
 import api from '@/services/api'
 import type { PerformanceShortBase } from '@/composables/useBookings'
 
-// UI-independent API layer for Schritt 7's Selfadmin-Support (5a "Meine
-// Anfragen und Buchungen", 5b "Meine Ansprechpersonen") -- mirrors
+// UI-independent API layer for the self-service support pages ("Meine
+// Anfragen und Buchungen", "Meine Ansprechpersonen") -- mirrors
 // useProfile.ts's shape. PerformanceShortBase is the exact wire shape of the
 // backend's PerformanceShortOutput (see app/schemas/booking.py).
 

@@ -18,7 +18,7 @@ describe('ScoreDataComponent', () => {
     expect(wrapper.text()).toMatch(/Erstelldatum:.*2026/)
   })
 
-  it('uses the "Erstelldatum" label for the updated_at row too', () => {
+  it('labels the updated_at row as "Änderungsdatum"', () => {
     const wrapper = mount(ScoreDataComponent, {
       props: {
         score: {
@@ -29,8 +29,7 @@ describe('ScoreDataComponent', () => {
       },
     })
 
-    const matches = wrapper.text().match(/Erstelldatum:/g)
-    expect(matches).toHaveLength(2)
+    expect(wrapper.text()).toMatch(/Änderungsdatum:.*2026/)
   })
 
   it('renders nothing when there is no score', () => {

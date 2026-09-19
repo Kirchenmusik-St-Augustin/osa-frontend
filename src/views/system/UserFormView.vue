@@ -56,10 +56,11 @@ onMounted(async () => {
   emailVerifiedAt.value = user.email_verified_at
 })
 
-// The "Benutzerkonto erstellen" subtitle renders unconditionally -- even on
-// Edit, alongside the name subtitle.
 const nameSubtitle = computed(() =>
   form.surname && form.givenname ? `${form.surname.toUpperCase()}, ${form.givenname}` : '',
+)
+const modeSubtitle = computed(() =>
+  props.id ? 'Benutzerkonto bearbeiten' : 'Benutzerkonto erstellen',
 )
 
 async function save(): Promise<void> {
@@ -96,7 +97,7 @@ async function save(): Promise<void> {
 <template>
   <h2 class="h2 text-center mb-4">Benutzerkonto verwalten</h2>
   <p v-if="nameSubtitle" class="h4 text-center mb-1">{{ nameSubtitle }}</p>
-  <p class="h4 text-center mb-4">Benutzerkonto erstellen</p>
+  <p class="h4 text-center mb-4">{{ modeSubtitle }}</p>
 
   <div v-if="options" class="row justify-content-center mt-4">
     <div class="col-md-7">

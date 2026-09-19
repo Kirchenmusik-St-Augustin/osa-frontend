@@ -5,7 +5,7 @@
 import ScoreFieldsFieldComponent from './ScoreFieldsFieldComponent.vue'
 import type { ScoreFieldConfig } from '@/composables/useScores'
 
-const model = defineModel<Record<string, string | number>>({ required: true })
+const model = defineModel<Record<string, string | number | null>>({ required: true })
 
 const props = withDefaults(
   defineProps<{

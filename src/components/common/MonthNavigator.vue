@@ -2,12 +2,11 @@
 import { computed } from 'vue'
 import { formatMonthYear } from '@/services/dateFormat'
 
-// Extracted (Schritt 9) from PerformanceCalendarView.vue's inline
-// Prev/Home/Next month navigator -- 2nd real use reached with
-// SentEmailIndexView/RequestLogIndexView (AHA principle, same bar as
-// UserDataCard.vue before it). `routeName` is the ONLY route these arrows
-// navigate to (each caller owns its own year/month-driven data reload via
-// a `watch()` on its own `useMonthQuery()` result).
+// Prev/Home/Next month navigator shared by the calendar and the month-based
+// admin lists (SentEmailIndexView/RequestLogIndexView). `routeName` is the
+// ONLY route these arrows navigate to (each caller owns its own
+// year/month-driven data reload via a `watch()` on its own
+// `useMonthQuery()` result).
 const props = defineProps<{ year: number; month: number; routeName: string }>()
 
 const now = new Date()

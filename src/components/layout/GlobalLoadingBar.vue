@@ -17,8 +17,8 @@ const loadingStore = useLoadingStore()
 <style scoped>
 /* Above the sticky-top navbar (Bootstrap's $zindex-sticky: 1020) and any
    fixed element (1030), below Bootstrap's own offcanvas-backdrop/modal
-   levels (1040+) -- see bootstrap/scss/_variables.scss. SweetAlert2
-   toasts/dialogs sit at 1060, so they always stay above this bar. */
+   levels (1040+) -- see bootstrap/scss/_variables.scss. Modals and the
+   toast container (1090) sit above it, so they always stay above this bar. */
 .global-loading-bar {
   position: fixed;
   top: 0;

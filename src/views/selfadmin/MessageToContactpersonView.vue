@@ -37,7 +37,7 @@ async function send(): Promise<void> {
     await sendMessageToContactperson(selectedRecipientId.value, message.value)
     showToast('Nachricht versandt.')
   } catch {
-    showToast('Nachricht konnte nicht versanct werden.', true)
+    showToast('Nachricht konnte nicht versandt werden.', true)
   } finally {
     message.value = ''
     sending.value = false

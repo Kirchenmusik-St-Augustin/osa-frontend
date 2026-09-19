@@ -19,7 +19,7 @@ export interface SentEmailShow {
   body: string | null
 }
 
-// UI-independent API layer for Schritt 9's SentEmail-Log (Admin-/Audit-Viewer).
+// UI-independent API layer for the SentEmail log (admin audit viewer).
 export function useSentEmails() {
   async function listForMonth(year: number, month: number): Promise<SentEmailShort[]> {
     const response = await api.get<SentEmailShort[]>('/administrator/sent-emails', {

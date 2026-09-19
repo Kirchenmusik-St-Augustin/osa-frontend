@@ -12,7 +12,7 @@ export interface ProfileUpdatePayload {
   auth_password: string
 }
 
-// UI-independent API layer for Schritt 7's Selfadmin-Profil. Reuses the
+// UI-independent API layer for the self-service profile. Reuses the
 // User type from useUsers.ts -- GET /profile returns the exact same shape
 // (backend reuses user_service.get_user() 1:1, see
 // app/api/router_includes/profile.py).
@@ -27,8 +27,8 @@ export function useProfile() {
     return response.data
   }
 
-  // Existing endpoint from Schritt 1/2 (Google-Login linking), IDOR-fixed
-  // there already -- was never actually called from the frontend until now.
+  // Unlinks a Google login binding; the backend restricts this to the
+  // caller's own bindings.
   async function disconnectOauth2(bindingId: string): Promise<void> {
     await api.delete(`/auth/oauth2/${bindingId}`)
   }
