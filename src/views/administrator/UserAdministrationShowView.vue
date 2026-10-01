@@ -1,15 +1,18 @@
 <script setup lang="ts">
-// Administration detail of one user (restore/unlock/set password).
-import { onMounted, ref } from 'vue'
+// Administration detail of one user (restore/unlock/set password/purge).
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   useUserAdministration,
   type UserAdministrationDetail,
 } from '@/composables/useUserAdministration'
+import { extractApiErrors } from '@/services/apiErrors'
 import { formatUtcDateTime } from '@/services/dateFormat'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id: string }>()
-const { get, restore, unlock, setPassword } = useUserAdministration()
+const router = useRouter()
+const { get, restore, unlock, setPassword, purge } = useUserAdministration()
 
 const user = ref<UserAdministrationDetail | null>(null)
 // Shown only once, right after setPassword -- never re-fetched from the
@@ -17,10 +20,36 @@ const user = ref<UserAdministrationDetail | null>(null)
 // returns it).
 const newPassword = ref<string | null>(null)
 
+// Login is email-based, so an account without an email cannot sign in.
+const hasNoEmail = computed(() => !user.value?.email)
+const phoneLabel = computed(() => user.value?.phone ?? '–')
+const lastActivityLabel = computed(() =>
+  user.value?.auth_lastsignal ? formatUtcDateTime(user.value.auth_lastsignal) : 'noch nie',
+)
+
 onMounted(async () => {
   const result = await get(props.id)
   user.value = result.user
 })
+
+async function purgePermanently(): Promise<void> {
+  const confirmed = await confirmAction(
+    'Benutzerkonto dauerhaft löschen? Das kann nicht rückgängig gemacht werden.',
+  )
+  if (!confirmed) return
+
+  try {
+    await purge(props.id)
+    showToast('Benutzerkonto dauerhaft gelöscht')
+    await router.push({ name: 'administrator-users-search' })
+  } catch (error) {
+    const { fieldErrors } = extractApiErrors(error)
+    showToast(
+      fieldErrors['general'] ?? 'Das Benutzerkonto konnte nicht dauerhaft gelöscht werden.',
+      true,
+    )
+  }
+}
 
 type ActionName = 'restore' | 'unlock' | 'setPassword'
 const ACTION_LABELS: Record<ActionName, string> = {
@@ -55,10 +84,19 @@ async function doAction(action: ActionName): Promise<void> {
 
   <div v-if="user">
     <p class="h4 text-center mb-1">{{ user.surname }}, {{ user.givenname }}</p>
-    <p class="h4 text-center mb-4">{{ user.email }}</p>
+    <p v-if="hasNoEmail" class="h5 text-center text-danger mb-4">Keine E-Mail-Adresse hinterlegt</p>
+    <p v-else class="h4 text-center mb-4">{{ user.email }}</p>
 
     <div class="row justify-content-center my-4">
       <div class="col-md-6 text-center">
+        <div class="mb-2">
+          <span class="me-2">Telefon:</span>
+          <span>{{ phoneLabel }}</span>
+        </div>
+        <div class="mb-2">
+          <span class="me-2">Letzte Aktivität:</span>
+          <span>{{ lastActivityLabel }}</span>
+        </div>
         <div class="mb-2">
           <span class="me-2">Benutzerkonto gelöscht:</span>
           <span :class="user.deleted_at ? 'text-danger' : 'text-success'">
@@ -69,6 +107,17 @@ async function doAction(action: ActionName): Promise<void> {
           <button type="button" class="btn btn-danger mt-3" @click="doAction('restore')">
             wiederherstellen
           </button>
+          <button
+            v-if="user.purgeable"
+            type="button"
+            class="btn btn-outline-danger mt-3 ms-2"
+            @click="purgePermanently"
+          >
+            dauerhaft löschen
+          </button>
+          <p v-else class="small text-muted mt-3 mb-0">
+            Dauerhaftes Löschen nicht möglich: Es existieren noch Buchungen oder sonstige Verweise.
+          </p>
         </div>
         <div v-else>
           <div class="mb-2">
@@ -94,9 +143,14 @@ async function doAction(action: ActionName): Promise<void> {
         >
           entsperren
         </button>
-        <button v-else type="button" class="btn btn-danger" @click="doAction('setPassword')">
-          setze ein generiertes Passwort
-        </button>
+        <template v-else>
+          <p v-if="hasNoEmail" class="text-danger small mb-2">
+            Ohne E-Mail-Adresse ist kein Login möglich.
+          </p>
+          <button type="button" class="btn btn-danger" @click="doAction('setPassword')">
+            setze ein generiertes Passwort
+          </button>
+        </template>
       </div>
       <div class="text-center mt-4">
         <RouterLink :to="{ name: 'administrator-users-search' }">

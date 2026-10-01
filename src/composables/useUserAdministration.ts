@@ -17,10 +17,12 @@ export interface UserAdministrationDetail {
   surname: string
   givenname: string
   email: string | null
+  phone: string | null
   email_verified_at: string | null
   auth_locked: boolean
   deleted_at: string | null
   auth_lastsignal: string | null
+  purgeable: boolean
 }
 
 export interface UserAdministrationActionResult {
@@ -29,7 +31,7 @@ export interface UserAdministrationActionResult {
 }
 
 // UI-independent API layer for the Administrator user administration
-// (restore/unlock/setPassword), mirrors useUsers.ts's shape. Unlike
+// (restore/unlock/setPassword/purge), mirrors useUsers.ts's shape. Unlike
 // useUsers.ts, every read here includes soft-deleted users.
 export function useUserAdministration() {
   async function search(query: string): Promise<UserAdministrationSearchResult[]> {
@@ -71,5 +73,9 @@ export function useUserAdministration() {
     return response.data
   }
 
-  return { search, listDeleted, get, restore, unlock, setPassword }
+  async function purge(id: string): Promise<void> {
+    await api.delete(`/administrator/users/${id}`)
+  }
+
+  return { search, listDeleted, get, restore, unlock, setPassword, purge }
 }
