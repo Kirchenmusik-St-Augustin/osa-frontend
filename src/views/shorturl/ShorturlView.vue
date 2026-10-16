@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import AppModal from '@/components/common/AppModal.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import { useShorturls, type Shorturl } from '@/composables/useShorturls'
 import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 import { formatUtcDateTime } from '@/services/dateFormat'
+import { safeHref } from '@/services/safeUrl'
 
 // Deliberately its own small modal-edit page, following CoreelementView.vue's/
 // FeeView.vue's pattern of shared building blocks (FormInput,
@@ -22,6 +23,12 @@ const submitting = ref(false)
 const modalOpen = ref(false)
 
 onMounted(fetchList)
+
+// Only web URLs become links; any other stored target is shown as plain
+// text (see services/safeUrl.ts).
+const rows = computed(() =>
+  items.value.map((item) => ({ ...item, targetHref: safeHref(item.target) })),
+)
 
 function resetForm(): void {
   editForm.path = ''
@@ -137,7 +144,7 @@ async function deleteItem(shorturl: Shorturl): Promise<void> {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in items" :key="item.id">
+        <tr v-for="item in rows" :key="item.id">
           <td class="text-start text-nowrap" width="1">
             <i
               class="fas fa-fw fa-edit mx-1 c-pointer"
@@ -151,15 +158,28 @@ async function deleteItem(shorturl: Shorturl): Promise<void> {
             ></i>
           </td>
           <td class="text-start text-nowrap">
-            <a class="text-decoration-none" :href="urlprefix + item.path" target="_blank">
+            <a
+              class="text-decoration-none"
+              :href="urlprefix + item.path"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <span class="text-muted">{{ urlprefix }}</span>
               <span class="fw-bold">{{ item.path }}</span>
             </a>
             <div>
               <span class="me-2 h3 fw-bold">&rdca;</span>
-              <a class="text-decoration-none" :href="item.target" target="_blank">{{
+              <a
+                v-if="item.targetHref"
+                class="text-decoration-none"
+                :href="item.targetHref"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ item.target }}</a
+              >
+              <span v-else class="text-danger" title="Kein Web-Link: wird nicht verlinkt">{{
                 item.target
-              }}</a>
+              }}</span>
             </div>
           </td>
           <td class="text-end text-nowrap">{{ item.counter }}</td>

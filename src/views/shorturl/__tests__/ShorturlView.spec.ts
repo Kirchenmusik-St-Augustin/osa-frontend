@@ -76,6 +76,25 @@ describe('ShorturlView', () => {
     expect(targetLink.text()).toBe('http://example.org/foo')
   })
 
+  it('links a web target with noopener, and never links a script or data target', async () => {
+    mockItems.value = [
+      makeShorturl({ id: 1, path: 'ok', target: 'https://example.org/a' }),
+      makeShorturl({ id: 2, path: 'evil', target: 'javascript:alert(document.domain)' }),
+      makeShorturl({ id: 3, path: 'data', target: 'data:text/html,<script>alert(1)</script>' }),
+    ]
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+
+    const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
+    expect(hrefs).toContain('https://example.org/a')
+    expect(hrefs.some((href) => href?.startsWith('javascript:'))).toBe(false)
+    expect(hrefs.some((href) => href?.startsWith('data:'))).toBe(false)
+    for (const link of wrapper.findAll('a[target="_blank"]')) {
+      expect(link.attributes('rel')).toBe('noopener noreferrer')
+    }
+    expect(rows(wrapper)[1]?.text()).toContain('javascript:alert(document.domain)')
+  })
+
   it('shows counter and latestcall_at, blank when never called', async () => {
     mockItems.value = [
       makeShorturl({ id: 1, counter: 7, latestcall_at: '2026-08-01T10:00:00+00:00' }),
