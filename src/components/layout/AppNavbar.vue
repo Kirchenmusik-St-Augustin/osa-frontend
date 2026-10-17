@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { COREELEMENT_TYPES } from '@/constants/coreelementTypes'
@@ -8,6 +8,11 @@ import EmailThresholdWarning from '@/components/common/EmailThresholdWarning.vue
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+// The divider only separates two entries that are both visible.
+const showRepertoireDivider = computed(
+  () => authStore.hasPermission('artistMaintain') && authStore.hasPermission('scoreMaintain'),
+)
 
 async function logout(): Promise<void> {
   await authStore.logout()
@@ -82,6 +87,7 @@ onUnmounted(removeAfterEachHook)
             >
               <span>Komponisten und Dirigenten</span>
             </RouterLink>
+            <hr v-if="showRepertoireDivider" class="dropdown-divider" />
             <RouterLink
               v-if="authStore.hasPermission('scoreMaintain')"
               class="dropdown-item"

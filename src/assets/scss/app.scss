@@ -4,11 +4,12 @@ $fa-font-path: '@fortawesome/fontawesome-free/webfonts';
 @import '@fortawesome/fontawesome-free/scss/regular';
 @import '@fortawesome/fontawesome-free/scss/solid';
 
-// Fonts. Must be imported before bootstrap: $font-family-base/-monospace are
-// consumed while bootstrap/scss/bootstrap compiles, not read afterwards.
+// Fonts. The families themselves are served by the application (main.ts
+// imports the @fontsource files), nothing is fetched from a third party. Must
+// be set before bootstrap: $font-family-base/-monospace are consumed while
+// bootstrap/scss/bootstrap compiles, not read afterwards.
 $font-family-base: 'Quicksand', sans-serif;
 $font-family-monospace: 'Nova Mono', monospace;
-@import url('https://fonts.googleapis.com/css?family=Nova+Mono|Quicksand|Lora&display=swap');
 
 // Bootstrap 5, with the primary-color override. Imported partial by partial,
 // in the order of bootstrap/scss/bootstrap.scss, so the components the app

@@ -83,6 +83,46 @@ describe('QuantityEditor', () => {
     ])
   })
 
+  it('keeps assigned entries that are missing from available (archived) when adding another', async () => {
+    const archived = { id: 99, name: 'Serpent', quantity: 2 }
+    const wrapper = mount(QuantityEditor, {
+      props: { modelValue: [archived], available },
+    })
+
+    await wrapper.find('button.btn-primary').trigger('click')
+
+    const emitted = wrapper.emitted('update:modelValue')
+    expect(emitted?.[emitted.length - 1]).toEqual([
+      [{ id: 1, name: 'Fagott', quantity: 1 }, archived],
+    ])
+  })
+
+  it('keeps the chosen dropdown entry when another row changes its quantity', async () => {
+    const wrapper = mount(QuantityEditor, {
+      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+    })
+
+    await wrapper.find('select').setValue('3')
+    await wrapper.find('.fa-plus-circle').trigger('click')
+    const emitted = wrapper.emitted('update:modelValue')
+    await wrapper.setProps({ modelValue: emitted?.[emitted.length - 1]?.[0] })
+
+    expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('3')
+  })
+
+  it('falls back to the first unused entry once the chosen one has been added', async () => {
+    const wrapper = mount(QuantityEditor, {
+      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+    })
+
+    await wrapper.find('select').setValue('3')
+    await wrapper.find('button.btn-primary').trigger('click')
+    const emitted = wrapper.emitted('update:modelValue')
+    await wrapper.setProps({ modelValue: emitted?.[emitted.length - 1]?.[0] })
+
+    expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('2')
+  })
+
   it('increments quantity via the plus icon', async () => {
     const wrapper = mount(QuantityEditor, {
       props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
@@ -145,7 +185,7 @@ describe('QuantityEditor', () => {
     await wrapper.find('.fa-plus-circle').trigger('click')
     await wrapper.setProps({ modelValue: [{ id: 1, name: 'Fagott', quantity: 2 }] })
 
-    await wrapper.find('small.text-black-50').trigger('click')
+    await wrapper.find('button.btn-link').trigger('click')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted?.[emitted.length - 1]).toEqual([[{ id: 1, name: 'Fagott', quantity: 1 }]])

@@ -357,6 +357,35 @@ describe('AppNavbar', () => {
     ])
   })
 
+  it('separates "Notenarchiv" from "Komponisten und Dirigenten" with a divider', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: ['artistMaintain', 'scoreMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    const artists = wrapper
+      .findAll('.dropdown-item')
+      .find((link) => link.text() === 'Komponisten und Dirigenten')
+    const divider = artists?.element.nextElementSibling
+    expect(divider?.classList.contains('dropdown-divider')).toBe(true)
+    expect(divider?.nextElementSibling?.textContent?.trim()).toBe('Notenarchiv')
+  })
+
+  it('shows no divider in the repertoire menu when only one of the two entries is visible', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: ['scoreMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    const scores = wrapper.findAll('.dropdown-item').find((link) => link.text() === 'Notenarchiv')
+    expect(scores?.exists()).toBe(true)
+    expect(scores?.element.parentElement?.querySelector('.dropdown-divider')).toBeNull()
+  })
+
   it('hides "Kurz-URLs" without shorturlMaintain', () => {
     mockAuthState = {
       isAuthenticated: true,

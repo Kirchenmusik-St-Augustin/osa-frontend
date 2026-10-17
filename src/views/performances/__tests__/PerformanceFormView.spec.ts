@@ -286,7 +286,7 @@ describe('PerformanceFormView -- create mode', () => {
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('6')
     expect(instrumentsEditor.text()).toContain('auf derz. Werte zurücksetzen')
 
-    await instrumentsEditor.find('small.text-black-50').trigger('click')
+    await instrumentsEditor.find('button.btn-link').trigger('click')
 
     // Must land on 5 (Nelsonmesse's own setup), not 2 (Krönungsmesse's
     // stale baseline) and not 6 (the just-added increment).
@@ -436,7 +436,7 @@ describe('PerformanceFormView -- edit mode', () => {
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('9')
     expect(instrumentsEditor.text()).toContain('auf derz. Werte zurücksetzen')
 
-    await instrumentsEditor.find('small.text-black-50').trigger('click')
+    await instrumentsEditor.find('button.btn-link').trigger('click')
 
     // Must land back on the persisted value (3), not the just-selected
     // Nelsonmesse's setup (9).
