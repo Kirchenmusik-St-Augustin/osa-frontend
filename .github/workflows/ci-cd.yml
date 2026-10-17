@@ -29,6 +29,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run format:check
+      - run: npm audit --omit=dev --audit-level=high
 
   quality:
     name: Typecheck & Test

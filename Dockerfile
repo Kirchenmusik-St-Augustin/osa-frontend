@@ -1,7 +1,7 @@
 FROM docker.io/library/node:24-slim AS builder
 WORKDIR /build
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 COPY . .
 ARG VITE_APP_ENVIRONMENT=production
 ENV VITE_APP_ENVIRONMENT=$VITE_APP_ENVIRONMENT
