@@ -53,4 +53,28 @@ describe('VerifyEmailView', () => {
 
     expect(wrapper.text()).toContain('Der Bestätigungslink ist ungültig oder abgelaufen.')
   })
+
+  it('shows the used-link message with a hint and a button to the login', async () => {
+    mockRoute.query = { token: 'used-token' }
+    mockVerifyEmail.mockRejectedValueOnce({
+      response: { data: { detail: 'Der Bestätigungslink wurde bereits verwendet.' } },
+    })
+    const wrapper = mount(VerifyEmailView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Der Bestätigungslink wurde bereits verwendet.')
+    expect(wrapper.text()).toContain('ist eine direkte Anmeldung möglich')
+
+    await wrapper.find('button').trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
+  })
+
+  it('offers the login button in the error state only', async () => {
+    mockRoute.query = { token: 'verify-token-abc' }
+    mockVerifyEmail.mockResolvedValueOnce(undefined)
+    const wrapper = mount(VerifyEmailView)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Zur Anmeldung')
+  })
 })

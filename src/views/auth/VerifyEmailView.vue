@@ -38,6 +38,10 @@ onMounted(async () => {
 async function goToHome(): Promise<void> {
   await router.push({ name: 'home' })
 }
+
+async function goToLogin(): Promise<void> {
+  await router.push({ name: 'login' })
+}
 </script>
 
 <template>
@@ -56,6 +60,14 @@ async function goToHome(): Promise<void> {
           </div>
           <div v-else class="mb-4">
             <strong class="text-danger">{{ errorMessage }}</strong>
+            <div class="mt-3">
+              Wurde die E-Mail-Adresse bereits bestätigt, ist eine direkte Anmeldung möglich.
+            </div>
+            <div class="mt-3">
+              <button type="button" class="btn btn-primary" @click="goToLogin">
+                Zur Anmeldung
+              </button>
+            </div>
           </div>
         </div>
       </div>
