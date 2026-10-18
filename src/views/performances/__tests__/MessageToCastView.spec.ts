@@ -232,7 +232,8 @@ describe('MessageToCastView', () => {
     await flushPromises()
 
     const copyLinkText = 'Mailing-Liste in Zwischenablage kopieren'
-    const findCopyLinks = () => wrapper.findAll('div').filter((div) => div.text() === copyLinkText)
+    const findCopyLinks = () =>
+      wrapper.findAll('button').filter((button) => button.text() === copyLinkText)
     expect(findCopyLinks()).toHaveLength(2)
     for (const link of findCopyLinks()) {
       expect(link.classes()).toContain('invisible')
@@ -249,6 +250,97 @@ describe('MessageToCastView', () => {
 
     expect(writeText).toHaveBeenCalledWith('huber@example.com')
     expect(mockShowToast).toHaveBeenCalledWith('Mailing-Liste in Zwischenablage kopiert.')
+  })
+
+  it('does not claim the list was copied when the browser refuses the clipboard write', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('NotAllowedError'))
+    Object.assign(navigator, { clipboard: { writeText } })
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+    await rowCheckbox(wrapper, 0).setValue(true)
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Mailing-Liste in Zwischenablage kopieren')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Die Mailing-Liste konnte nicht kopiert werden.',
+      true,
+    )
+    expect(mockShowToast).not.toHaveBeenCalledWith('Mailing-Liste in Zwischenablage kopiert.')
+  })
+
+  it('shows the server reason when sending is rejected', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    mockSendMessageToCast.mockRejectedValueOnce({
+      response: {
+        data: { detail: [{ loc: ['body', 'general'], msg: 'Der Email-Versand ist deaktiviert.' }] },
+      },
+    })
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+    await rowCheckbox(wrapper, 0).setValue(true)
+    await wrapper.find('textarea').setValue('Test')
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Senden')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Der Email-Versand ist deaktiviert.', true)
+  })
+
+  it('shows the recipients of the LAST dropdown choice when an earlier answer arrives late', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    let answerFirst: (value: MessageRecipient[]) => void = () => {}
+    mockGetMessageRecipients
+      .mockReturnValueOnce(
+        new Promise<MessageRecipient[]>((resolve) => {
+          answerFirst = resolve
+        }),
+      )
+      .mockResolvedValueOnce([recipients[1]!])
+    await wrapper.find('select#message-to-cast-ability').setValue('instruments@10')
+    await wrapper.find('select#message-to-cast-ability').setValue('all')
+    await flushPromises()
+    answerFirst([recipients[0]!])
+    await flushPromises()
+
+    expect(wrapper.findAll('tbody tr')).toHaveLength(1)
+    expect(wrapper.text()).toContain('MAYER')
+    expect(wrapper.text()).not.toContain('HUBER')
+  })
+
+  it('tells the disponent when the page cannot be loaded and does not ask for recipients', async () => {
+    mockGetMessageToCastPage.mockRejectedValueOnce({
+      response: { data: { detail: 'Keine Berechtigung.' } },
+    })
+    mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Keine Berechtigung.', true)
+    expect(mockGetMessageRecipients).not.toHaveBeenCalled()
+  })
+
+  it('tells the disponent when the recipients cannot be loaded', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockRejectedValueOnce({
+      response: { data: { detail: 'Server nicht erreichbar.' } },
+    })
+    mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Server nicht erreichbar.', true)
   })
 
   it('replaces the message-textarea+Senden block with the kill-switch card while active, keeping the recipient table visible', async () => {

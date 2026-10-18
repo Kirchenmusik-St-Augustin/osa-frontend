@@ -18,6 +18,7 @@ import {
   type PerformancePayload,
   type PositionEntry,
 } from '@/composables/usePerformances'
+import { parseQueryInt } from '@/services/routeQuery'
 import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 import { formatDateTime, parseWallClock, toWallClockString } from '@/services/dateFormat'
@@ -84,12 +85,6 @@ const subtitle = computed(() => {
   return `${formatDateTime(form.schedule)}, ${location.name}`
 })
 
-function toInt(value: unknown, fallback: number): number {
-  const raw = Array.isArray(value) ? value[0] : value
-  const parsed = Number(raw)
-  return Number.isInteger(parsed) ? parsed : fallback
-}
-
 function nextSundayElevenAm(year: number, month: number): string {
   const now = new Date()
   const isCurrentOrPast =
@@ -102,7 +97,16 @@ function nextSundayElevenAm(year: number, month: number): string {
 }
 
 onMounted(async () => {
-  available.value = await getAvailableData()
+  try {
+    available.value = await getAvailableData()
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Die Auswahldaten konnten nicht geladen werden.',
+      true,
+    )
+    await router.push({ name: 'home' })
+    return
+  }
 
   if (props.id) {
     try {
@@ -130,8 +134,8 @@ onMounted(async () => {
       return
     }
   } else {
-    const queryYear = toInt(route.query['year'], new Date().getFullYear())
-    const queryMonth = toInt(route.query['month'], new Date().getMonth() + 1)
+    const queryYear = parseQueryInt(route.query['year'], new Date().getFullYear(), 1900, 2999)
+    const queryMonth = parseQueryInt(route.query['month'], new Date().getMonth() + 1, 1, 12)
     backYear.value = queryYear
     backMonth.value = queryMonth
     form.schedule = nextSundayElevenAm(queryYear, queryMonth)
@@ -164,13 +168,20 @@ const setupBaselineKey = computed(() =>
 )
 
 async function selectOrdinariumwork(id: string): Promise<void> {
-  const [work, setup] = await Promise.all([getOrdinariumwork(id), getSetup(id)])
-  form.ordinariumwork = { id: work.id, label: `${work.artist_name}: ${work.name}` }
-  // Choirjobs are deliberately left untouched -- Ordinariumworks have no
-  // choirjob positions at all.
-  form.setup.instruments = setup.instruments
-  form.setup.voices = setup.voices
-  ordinariumworkModalOpen.value = false
+  try {
+    const [work, setup] = await Promise.all([getOrdinariumwork(id), getSetup(id)])
+    form.ordinariumwork = { id: work.id, label: `${work.artist_name}: ${work.name}` }
+    // Choirjobs are deliberately left untouched -- Ordinariumworks have no
+    // choirjob positions at all.
+    form.setup.instruments = setup.instruments
+    form.setup.voices = setup.voices
+    ordinariumworkModalOpen.value = false
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Die Komposition konnte nicht geladen werden.',
+      true,
+    )
+  }
 }
 
 // -- Proprium editor modal --------------------------------------------------
@@ -197,7 +208,14 @@ function resetPropriumModal(): void {
 }
 
 async function onSelectPropriumwork(id: string): Promise<void> {
-  selectedPropriumwork.value = await getPropriumwork(id)
+  try {
+    selectedPropriumwork.value = await getPropriumwork(id)
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Die Komposition konnte nicht geladen werden.',
+      true,
+    )
+  }
 }
 
 function addPropriumelement(): void {
@@ -236,6 +254,21 @@ function toNullableNumber(value: number | string | null): number | null {
   return Number(value)
 }
 
+// A cleared fee field is '' after `v-model.number`, and Number('') is 0: the
+// performance would silently be saved with a fee of EUR 0 and every open
+// position of its billing would be valued at nothing.
+const FEE_FIELDS = ['instrument_defaultfee', 'voice_defaultfee', 'choirjob_defaultfee'] as const
+const FEE_REQUIRED_MESSAGE = 'Bitte einen Betrag angeben.'
+
+function missingFeeErrors(): Record<string, string> {
+  return Object.fromEntries(
+    FEE_FIELDS.filter((field) => form[field] === '' || form[field] === null).map((field) => [
+      field,
+      FEE_REQUIRED_MESSAGE,
+    ]),
+  )
+}
+
 function buildPayload(): PerformancePayload {
   return {
     schedule: form.schedule,
@@ -265,6 +298,13 @@ function buildPayload(): PerformancePayload {
 }
 
 async function save(): Promise<void> {
+  const missingFees = missingFeeErrors()
+  if (Object.keys(missingFees).length > 0) {
+    fieldErrors.value = missingFees
+    showBilling.value = true
+    return
+  }
+
   const confirmed = await confirmAction('Wirklich speichern?')
   if (!confirmed) return
 
@@ -326,9 +366,13 @@ async function destroy(): Promise<void> {
         <div v-if="form.ordinariumwork" class="border rounded p-2 mb-1">
           {{ form.ordinariumwork.label }}
         </div>
-        <small class="text-black-50 c-pointer" @click="ordinariumworkModalOpen = true">
-          Ordinarium-Komposition auswählen
-        </small>
+        <button
+          type="button"
+          class="btn btn-link btn-sm p-0 text-black-50 text-decoration-none"
+          @click="ordinariumworkModalOpen = true"
+        >
+          <small>Ordinarium-Komposition auswählen</small>
+        </button>
         <small class="text-danger d-block">{{ fieldErrors['ordinariumwork_id'] }}&nbsp;</small>
 
         <FormSelect
@@ -349,7 +393,15 @@ async function destroy(): Promise<void> {
 
         <strong class="my-2 d-block">
           <span>Proprium</span>
-          <i class="c-pointer ms-1 fas fa-plus-circle" @click="openPropriumModal"></i>
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 ms-1 align-baseline"
+            title="Proprium hinzufügen"
+            aria-label="Proprium hinzufügen"
+            @click="openPropriumModal"
+          >
+            <i class="fas fa-plus-circle" aria-hidden="true"></i>
+          </button>
         </strong>
         <PropriumSetup
           :proprium="form.proprium"
@@ -361,12 +413,20 @@ async function destroy(): Promise<void> {
         <RehearsalsEditor v-model="form.rehearsals" />
         <small class="text-danger">{{ fieldErrors['rehearsals'] }}&nbsp;</small>
 
-        <div class="my-2 c-pointer" @click="showSetup = !showSetup">
+        <button
+          type="button"
+          class="btn btn-link p-0 my-2 text-reset text-decoration-none text-start c-pointer"
+          :aria-expanded="showSetup"
+          @click="showSetup = !showSetup"
+        >
           <span class="me-2"
-            ><i :class="showSetup ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"></i
+            ><i
+              :class="showSetup ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"
+              aria-hidden="true"
+            ></i
           ></span>
           <strong>Positionskonfiguration</strong>
-        </div>
+        </button>
         <div v-if="showSetup" class="border rounded p-3 bg-info-subtle">
           <strong class="mt-5 d-block mb-3">Instrumente</strong>
           <QuantityEditor
@@ -387,12 +447,20 @@ async function destroy(): Promise<void> {
           <small class="text-danger">{{ fieldErrors['setup'] }}&nbsp;</small>
         </div>
 
-        <div class="my-2 c-pointer" @click="showBilling = !showBilling">
+        <button
+          type="button"
+          class="btn btn-link p-0 my-2 text-reset text-decoration-none text-start c-pointer"
+          :aria-expanded="showBilling"
+          @click="showBilling = !showBilling"
+        >
           <span class="me-2"
-            ><i :class="showBilling ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"></i
+            ><i
+              :class="showBilling ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"
+              aria-hidden="true"
+            ></i
           ></span>
           <strong>Verrechnungsdetails</strong>
-        </div>
+        </button>
         <div v-if="showBilling" class="mt-2 border rounded p-3 bg-info-subtle">
           <div class="mb-2 fw-semibold">Verrechnung offener Stellen</div>
           <div>
@@ -409,9 +477,13 @@ async function destroy(): Promise<void> {
                   v-model.number="form.instrument_defaultfee"
                   type="number"
                   min="0"
+                  max="100000"
+                  required
                   class="form-control"
+                  :aria-invalid="fieldErrors['instrument_defaultfee'] ? 'true' : undefined"
                 />
               </div>
+              <small class="text-danger">{{ fieldErrors['instrument_defaultfee'] }}&nbsp;</small>
             </div>
             <div class="col-md-4">
               <div>Stimmen:</div>
@@ -421,9 +493,13 @@ async function destroy(): Promise<void> {
                   v-model.number="form.voice_defaultfee"
                   type="number"
                   min="0"
+                  max="100000"
+                  required
                   class="form-control"
+                  :aria-invalid="fieldErrors['voice_defaultfee'] ? 'true' : undefined"
                 />
               </div>
+              <small class="text-danger">{{ fieldErrors['voice_defaultfee'] }}&nbsp;</small>
             </div>
             <div class="col-md-4">
               <div>Choraufgaben:</div>
@@ -433,9 +509,13 @@ async function destroy(): Promise<void> {
                   v-model.number="form.choirjob_defaultfee"
                   type="number"
                   min="0"
+                  max="100000"
+                  required
                   class="form-control"
+                  :aria-invalid="fieldErrors['choirjob_defaultfee'] ? 'true' : undefined"
                 />
               </div>
+              <small class="text-danger">{{ fieldErrors['choirjob_defaultfee'] }}&nbsp;</small>
             </div>
           </div>
           <div class="mt-4 mb-2 fw-semibold">Zusatzkosten</div>

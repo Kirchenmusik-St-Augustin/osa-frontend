@@ -6,6 +6,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useSupport, type RoleWithContacts } from '@/composables/useSupport'
 import { useAuthStore } from '@/stores/auth'
+import { unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 import FormInput from '@/components/common/FormInput.vue'
 import EmailThresholdWarning from '@/components/common/EmailThresholdWarning.vue'
@@ -19,7 +20,14 @@ const message = ref('')
 const sending = ref(false)
 
 onMounted(async () => {
-  roles.value = await getContactpersons()
+  try {
+    roles.value = await getContactpersons()
+  } catch (error) {
+    showToast(
+      unattachedErrorMessage(error) ?? 'Die Ansprechpersonen konnten nicht geladen werden.',
+      true,
+    )
+  }
 })
 
 const emailKillSwitchActive = computed(() => authStore.user?.email_kill_switch.active ?? false)
@@ -36,10 +44,12 @@ async function send(): Promise<void> {
   try {
     await sendMessageToContactperson(selectedRecipientId.value, message.value)
     showToast('Nachricht versandt.')
-  } catch {
-    showToast('Nachricht konnte nicht versandt werden.', true)
-  } finally {
+    // Only a sent message is cleared: after a failure (throttled, offline)
+    // the text the member just wrote must still be there to send again.
     message.value = ''
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Nachricht konnte nicht versandt werden.', true)
+  } finally {
     sending.value = false
   }
 }

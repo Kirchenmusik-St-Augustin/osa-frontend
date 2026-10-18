@@ -34,8 +34,10 @@ async function submit(): Promise<void> {
   }
 }
 
+// The store clears the local session even when the logout request fails, so
+// a failing request must not keep the user on this notice.
 async function logout(): Promise<void> {
-  await authStore.logout()
+  await authStore.logout().catch(() => undefined)
   await router.push({ name: 'login' })
 }
 </script>
@@ -55,7 +57,7 @@ async function logout(): Promise<void> {
             Überprüfungs-E-Mail notwendig, welche an die angegebene E-Mail-Adresse versandt wurde.
           </div>
           <div class="mb-4">
-            Sollte die E-Mail nicht angekommen sein, kann sie durch Klick auf den Butten erneut
+            Sollte die E-Mail nicht angekommen sein, kann sie durch Klick auf den Button erneut
             versandt werden.
           </div>
           <div v-if="verificationLinkSent" class="mb-4">
@@ -69,7 +71,13 @@ async function logout(): Promise<void> {
           </form>
         </div>
         <div class="card-footer">
-          <a class="link-secondary text-decoration-none c-pointer" @click="logout">Log out</a>
+          <button
+            type="button"
+            class="btn btn-link link-secondary text-decoration-none p-0"
+            @click="logout"
+          >
+            Abmelden
+          </button>
         </div>
       </div>
     </div>

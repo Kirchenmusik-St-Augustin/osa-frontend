@@ -102,6 +102,21 @@ describe('AppNavbar', () => {
     expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
   })
 
+  it('still redirects to login when the logout request fails', async () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [],
+    }
+    mockLogout.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(AppNavbar)
+
+    await wrapper.find('button.dropdown-item').trigger('click')
+    await vi.waitFor(() => expect(mockPush).toHaveBeenCalled())
+
+    expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
+  })
+
   it('shows the three self-service links in the user dropdown when logged in', () => {
     mockAuthState = {
       isAuthenticated: true,

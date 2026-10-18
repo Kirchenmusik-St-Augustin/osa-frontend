@@ -14,8 +14,10 @@ const showRepertoireDivider = computed(
   () => authStore.hasPermission('artistMaintain') && authStore.hasPermission('scoreMaintain'),
 )
 
+// The store clears the local session even when the logout request fails, so
+// a failing request must not keep the user from reaching the login page.
 async function logout(): Promise<void> {
-  await authStore.logout()
+  await authStore.logout().catch(() => undefined)
   await router.push({ name: 'login' })
 }
 

@@ -149,7 +149,32 @@ describe('MessageToContactpersonView', () => {
     await sendButton?.trigger('click')
     await flushPromises()
 
-    expect(mockShowToast).toHaveBeenCalledWith('Nachricht konnte nicht versandt werden.', true)
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
+  it('keeps the typed message after a failed send so it can be sent again', async () => {
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    mockSendMessageToContactperson.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+
+    await wrapper.find('select').setValue(testId(5))
+    await wrapper.find('textarea').setValue('Bitte um Rückruf.')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'senden')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('textarea').element.value).toBe('Bitte um Rückruf.')
+  })
+
+  it('tells the member when the contact persons cannot be loaded', async () => {
+    mockGetContactpersons.mockRejectedValueOnce({ response: { data: { detail: 'Gesperrt.' } } })
+    mount(MessageToContactpersonView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Gesperrt.', true)
   })
 
   it('replaces the message-textarea+senden block with the kill-switch card while active, keeping the dropdown and description cards visible', async () => {

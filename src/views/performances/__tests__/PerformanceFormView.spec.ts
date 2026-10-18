@@ -1,6 +1,6 @@
 import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import PerformanceFormView from '../PerformanceFormView.vue'
 import SearchTypeahead from '@/components/common/SearchTypeahead.vue'
 import QuantityEditor from '@/components/common/QuantityEditor.vue'
@@ -110,15 +110,15 @@ function findDeleteButton(wrapper: ReturnType<typeof mount>) {
 
 function findSetupToggle(wrapper: ReturnType<typeof mount>) {
   return wrapper
-    .findAll('div.c-pointer')
-    .find((div) => div.text().includes('Positionskonfiguration'))
+    .findAll('button')
+    .find((button) => button.text().includes('Positionskonfiguration'))
 }
 
 // The Ordinarium selector lives in a dialog that only exists while it is open,
 // and picking a work closes it again -- so every pick is: open, choose.
 async function openOrdinariumworkModal(wrapper: ReturnType<typeof mount>): Promise<void> {
   const trigger = wrapper
-    .findAll('small')
+    .findAll('button')
     .find((element) => element.text() === 'Ordinarium-Komposition auswählen')
   await trigger!.trigger('click')
 }
@@ -143,6 +143,69 @@ describe('PerformanceFormView -- create mode', () => {
 
     expect(mockGetFormData).not.toHaveBeenCalled()
     expect(findSaveButton(wrapper)?.attributes('disabled')).toBeDefined()
+  })
+
+  it('refuses to save a cleared fee field instead of storing EUR 0', async () => {
+    mockGetOrdinariumwork.mockResolvedValueOnce({
+      id: '5',
+      name: 'Krönungsmesse',
+      description: null,
+      artist_id: '2',
+      artist_name: 'MOZART, Wolfgang',
+      duration: 25,
+      demanding: false,
+    })
+    mockGetSetup.mockResolvedValueOnce({ instruments: [], voices: [] })
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+    await pickOrdinariumwork(wrapper, '5')
+    await wrapper.find('select#performance-location').setValue('1')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Verrechnungsdetails'))
+      ?.trigger('click')
+
+    await wrapper.find('input[type="number"]').setValue('')
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Bitte einen Betrag angeben.')
+  })
+
+  it('falls back to the current month for an empty year/month query', async () => {
+    mockQuery = { year: '', month: '' }
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    const now = new Date()
+    const backLink = wrapper.findAllComponents(RouterLinkStub).at(-1)
+    expect(backLink?.props('to')).toEqual({
+      name: 'home',
+      query: { year: now.getFullYear(), month: now.getMonth() + 1 },
+    })
+  })
+
+  it('goes back to the calendar with a message when the form data cannot be loaded', async () => {
+    mockGetAvailableData.mockReset()
+    mockGetAvailableData.mockRejectedValueOnce(new Error('network'))
+    mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'home' })
+  })
+
+  it('tells the user when the chosen Ordinarium work cannot be loaded and keeps the dialog open', async () => {
+    mockGetOrdinariumwork.mockRejectedValueOnce(new Error('network'))
+    mockGetSetup.mockResolvedValueOnce({ instruments: [], voices: [] })
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    await pickOrdinariumwork(wrapper, '5')
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.find('.modal').exists()).toBe(true)
   })
 
   it('never shows a delete button when creating', async () => {
@@ -502,6 +565,21 @@ describe('PerformanceFormView -- Proprium editor', () => {
 
     await wrapper.find('.fa-trash').trigger('click')
     expect(wrapper.text()).not.toContain('Gregorianik I')
+  })
+})
+
+describe('PerformanceFormView -- Proprium work lookup failure', () => {
+  it('tells the user when the chosen Proprium work cannot be loaded', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData())
+    mockGetPropriumwork.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('.fa-plus-circle').trigger('click')
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '7')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 })
 

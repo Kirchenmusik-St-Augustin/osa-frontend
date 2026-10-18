@@ -20,6 +20,18 @@ function isValidationErrorItem(value: unknown): value is ValidationErrorItem {
   return Array.isArray(candidate['loc']) && typeof candidate['msg'] === 'string'
 }
 
+// The message of a failed request that has no input to be shown under: a
+// server error, a lost connection, or the server's catch-all `general`
+// validation error. `null` when the errors already sit under their fields,
+// so a form can show them there and raise a toast only when the user would
+// otherwise see nothing.
+export function unattachedErrorMessage(error: unknown): string | null {
+  const { fieldErrors, generalError } = extractApiErrors(error)
+  const { general, ...attached } = fieldErrors
+  if (Object.keys(attached).length > 0) return null
+  return general ?? generalError
+}
+
 // Maps FastAPI's two error-response shapes (see main.py's exception
 // handlers) to something every Auth view can render the same way: a
 // per-field message (shown under the matching input) or a single general

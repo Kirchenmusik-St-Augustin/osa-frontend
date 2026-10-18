@@ -7,6 +7,8 @@ import {
   type MessageRecipient,
   type PerformanceMessageToCast,
 } from '@/composables/useBookings'
+import { useLatestResult } from '@/composables/useLatestResult'
+import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 import { parseWallClock } from '@/services/dateFormat'
 import { useAuthStore } from '@/stores/auth'
@@ -29,6 +31,7 @@ const checkAllStatus = ref(false)
 const selectedAbility = ref('all')
 const message = ref('')
 const sending = ref(false)
+const applyLatest = useLatestResult()
 
 type PositionType = 'instruments' | 'voices' | 'choirjobs'
 const POSITION_TYPES: readonly PositionType[] = ['instruments', 'voices', 'choirjobs']
@@ -38,23 +41,44 @@ const POSITION_LABELS: Record<PositionType, string> = {
   choirjobs: 'Choraufgaben',
 }
 
+function recipientsFor(ability: string): Promise<MessageRecipient[]> {
+  if (ability === 'none') return Promise.resolve([])
+  if (ability === 'all') return getMessageRecipients(performanceId.value, null, null)
+  const [type, idText] = ability.split('@') as [PositionType, string]
+  return getMessageRecipients(performanceId.value, type, idText)
+}
+
+// Switching the dropdown faster than the server answers must not leave the
+// table of an earlier choice under the label of the current one: the
+// message goes to the people shown in the table.
 async function loadRecipients(): Promise<void> {
   selectedRecipientIds.value = []
   checkAllStatus.value = false
-  if (selectedAbility.value === 'none') {
-    recipients.value = []
-    return
+  try {
+    await applyLatest(
+      () => recipientsFor(selectedAbility.value),
+      (loaded) => {
+        recipients.value = loaded
+      },
+    )
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Die Empfänger konnten nicht geladen werden.',
+      true,
+    )
   }
-  if (selectedAbility.value === 'all') {
-    recipients.value = await getMessageRecipients(performanceId.value, null, null)
-    return
-  }
-  const [type, idText] = selectedAbility.value.split('@') as [PositionType, string]
-  recipients.value = await getMessageRecipients(performanceId.value, type, idText)
 }
 
 onMounted(async () => {
-  performance.value = await getMessageToCastPage(performanceId.value)
+  try {
+    performance.value = await getMessageToCastPage(performanceId.value)
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Die Seite konnte nicht geladen werden.',
+      true,
+    )
+    return
+  }
   await loadRecipients()
 })
 
@@ -96,12 +120,19 @@ function toggleRecipient(id: string): void {
     : [...selectedRecipientIds.value, id]
 }
 
-function copyRecipients(): void {
+async function copyRecipients(): Promise<void> {
   const emails = recipients.value
     .filter((recipient) => selectedRecipientIds.value.includes(recipient.id) && recipient.email)
     .map((recipient) => recipient.email)
     .join(', ')
-  void navigator.clipboard.writeText(emails)
+  try {
+    await navigator.clipboard.writeText(emails)
+  } catch {
+    // Refused by the browser (no permission, insecure context): saying
+    // "copied" here would send the user off to paste nothing.
+    showToast('Die Mailing-Liste konnte nicht kopiert werden.', true)
+    return
+  }
   showToast('Mailing-Liste in Zwischenablage kopiert.')
 }
 
@@ -115,8 +146,12 @@ async function send(): Promise<void> {
     showToast('Nachricht versandt.')
     message.value = ''
     selectedRecipientIds.value = []
-  } catch {
-    showToast('Nachricht konnte nicht versandt werden.', true)
+  } catch (error) {
+    const { fieldErrors, generalError } = extractApiErrors(error)
+    showToast(
+      fieldErrors['general'] ?? generalError ?? 'Nachricht konnte nicht versandt werden.',
+      true,
+    )
   } finally {
     sending.value = false
   }
@@ -148,13 +183,14 @@ async function send(): Promise<void> {
       </div>
 
       <div v-if="hasBookings">
-        <div
-          class="text-center mb-3 c-pointer"
+        <button
+          type="button"
+          class="btn btn-link d-block mx-auto mb-3 text-reset text-decoration-none c-pointer"
           :class="{ invisible: !selectedRecipientIds.length }"
           @click="copyRecipients"
         >
           Mailing-Liste in Zwischenablage kopieren
-        </div>
+        </button>
 
         <div class="row justify-content-center">
           <div class="col-md-8">
@@ -245,13 +281,14 @@ async function send(): Promise<void> {
           </div>
         </div>
 
-        <div
-          class="text-center my-3 c-pointer"
+        <button
+          type="button"
+          class="btn btn-link d-block mx-auto my-3 text-reset text-decoration-none c-pointer"
           :class="{ invisible: !selectedRecipientIds.length }"
           @click="copyRecipients"
         >
           Mailing-Liste in Zwischenablage kopieren
-        </div>
+        </button>
 
         <template v-if="!emailKillSwitchActive">
           <textarea

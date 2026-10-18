@@ -156,6 +156,85 @@ describe('CastView', () => {
     expect(wrapper.text()).toContain('HUBER, Franz')
   })
 
+  it('tells the disponent when the cast page cannot be loaded', async () => {
+    mockGetCastPage.mockRejectedValueOnce({ response: { data: { detail: 'Keine Berechtigung.' } } })
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Keine Berechtigung.', true)
+    expect(wrapper.text()).not.toContain('Fagott')
+  })
+
+  it('shows the server reason when saving is rejected and keeps the page', async () => {
+    mockGetCastPage.mockResolvedValueOnce(makePage())
+    mockSaveCast.mockRejectedValueOnce({
+      response: {
+        data: { detail: [{ loc: ['body', 'general'], msg: 'Der Benutzer ist nicht buchbar.' }] },
+      },
+    })
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+    await wrapper.find('.c-pointer').trigger('click')
+    await wrapper.find('.fa-times').trigger('click')
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'speichern')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Der Benutzer ist nicht buchbar.', true)
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('sends one save while the request is in flight', async () => {
+    mockGetCastPage.mockResolvedValueOnce(makePage())
+    let finishSave: (value: unknown) => void = () => {}
+    mockSaveCast.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishSave = resolve
+      }),
+    )
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+    await wrapper.find('.c-pointer').trigger('click')
+    await wrapper.find('.fa-times').trigger('click')
+    const save = () => wrapper.findAll('button').find((button) => button.text() === 'speichern')
+
+    await save()?.trigger('click')
+    await flushPromises()
+
+    expect(save()?.attributes('disabled')).toBeDefined()
+    await save()?.trigger('click')
+    await flushPromises()
+    expect(mockSaveCast).toHaveBeenCalledOnce()
+    finishSave({})
+    await flushPromises()
+  })
+
+  it('ignores a second save call while the first request is still running', async () => {
+    mockGetCastPage.mockResolvedValueOnce(makePage())
+    let finishSave: (value: unknown) => void = () => {}
+    mockSaveCast.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishSave = resolve
+      }),
+    )
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+    await wrapper.find('.c-pointer').trigger('click')
+    await wrapper.find('.fa-times').trigger('click')
+    const { save } = wrapper.vm as unknown as { save: () => Promise<void> }
+
+    const first = save()
+    await flushPromises()
+    await save()
+
+    expect(mockSaveCast).toHaveBeenCalledOnce()
+    finishSave({})
+    await first
+  })
+
   it('centers the Instrumente/Stimmen/Choraufgaben subtitles', async () => {
     mockGetCastPage.mockResolvedValueOnce(makePage())
     const wrapper = mount(CastView, { props: { id: '1' } })

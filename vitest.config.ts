@@ -19,16 +19,17 @@ export default mergeConfig(
           'src/stores/**',
           'src/composables/**',
           'src/services/**',
-          'src/utils/**',
           'src/runtimeConfig.ts',
         ],
         // Granular quality gates instead of a global threshold
         thresholds: {
-          // Global baseline for all unmapped files
-          statements: 70,
-          branches: 65,
-          functions: 70,
-          lines: 70,
+          // Global baseline for all unmapped files. Set a few points under the
+          // measured values (96 / 93 / 92 / 97) so a real drop fails the
+          // pipeline instead of passing unnoticed.
+          statements: 90,
+          branches: 85,
+          functions: 88,
+          lines: 90,
 
           // Core logic (stores/composables): strict coverage required
           'src/stores/**': {
@@ -40,18 +41,18 @@ export default mergeConfig(
 
           // UI Components: focus on functional behavior (props/emits)
           'src/components/**': {
-            statements: 75,
-            branches: 70,
-            functions: 75,
-            lines: 75,
+            statements: 88,
+            branches: 82,
+            functions: 85,
+            lines: 88,
           },
 
           // Views (orchestration): lower threshold to prevent brittle DOM tests
           'src/views/**': {
-            statements: 60,
-            branches: 50,
-            functions: 60,
-            lines: 60,
+            statements: 85,
+            branches: 80,
+            functions: 80,
+            lines: 85,
           },
         },
       },
