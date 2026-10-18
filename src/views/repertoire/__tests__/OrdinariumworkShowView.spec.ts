@@ -72,7 +72,7 @@ describe('OrdinariumworkShowView', () => {
   it('renders the instruments/voices setup tables only when non-empty', async () => {
     mockGet.mockResolvedValueOnce(makeWork())
     mockGetSetup.mockResolvedValueOnce(
-      makeSetup({ instruments: [{ id: '1', name: 'Fagott', quantity: 2 }] }),
+      makeSetup({ instruments: [{ id: '1', name: 'Fagott', quantity: 2, active: true }] }),
     )
     const wrapper = mount(OrdinariumworkShowView, { props: { id: '1' } })
     await flushPromises()

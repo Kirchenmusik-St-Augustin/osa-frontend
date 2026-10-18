@@ -13,6 +13,7 @@ const presentedToasts = computed(() =>
   toasts.value.map((toast) => ({
     id: toast.id,
     message: toast.message,
+    isError: toast.isError,
     role: toast.isError ? 'alert' : 'status',
     colorClass: toast.isError ? 'text-bg-danger' : 'text-bg-success',
     iconClass: toast.isError ? 'fa-exclamation-circle' : 'fa-check-circle',
@@ -53,7 +54,7 @@ const fade = {
             @click="notificationStore.dismissToast(toast.id)"
           ></button>
         </div>
-        <div class="toast-progress" :style="progressStyle"></div>
+        <div v-if="!toast.isError" class="toast-progress" :style="progressStyle"></div>
       </div>
     </TransitionGroup>
   </div>

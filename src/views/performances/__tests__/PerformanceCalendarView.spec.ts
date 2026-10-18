@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import PerformanceCalendarView from '../PerformanceCalendarView.vue'
 import type { PerformanceCalendarItem } from '@/composables/usePerformances'
+import { testId } from '@/__tests__/testId'
 
 let mockQuery: Record<string, string> = {}
 vi.mock('vue-router', async (importOriginal) => ({
@@ -37,10 +38,10 @@ vi.mock('@/stores/auth', () => ({
 
 function makeItem(overrides: Partial<PerformanceCalendarItem> = {}): PerformanceCalendarItem {
   return {
-    id: 1,
+    id: testId(1),
     schedule: '2026-08-02T11:00:00',
-    location: { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
-    ordinariumwork_id: 5,
+    location: { id: testId(1), name: 'Augustinerkirche', color: '336699', address: null },
+    ordinariumwork_id: testId(5),
     ordinariumwork_name: 'Krönungsmesse',
     ordinariumwork_artist_name: 'MOZART, Wolfgang',
     ordinariumwork_demanding: false,
@@ -121,7 +122,7 @@ describe('PerformanceCalendarView', () => {
     await wrapper.find('.fa-hand-point-up').trigger('click')
     await flushPromises()
 
-    expect(mockChangeBookingStatus).toHaveBeenCalledWith(1)
+    expect(mockChangeBookingStatus).toHaveBeenCalledWith(testId(1))
     expect(mockListForMonth).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toContain('angefragt')
   })

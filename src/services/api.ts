@@ -77,12 +77,9 @@ function queueForRefresh(originalRequest: RetryableRequestConfig): Promise<unkno
 async function refreshAndRetry(originalRequest: RetryableRequestConfig): Promise<unknown> {
   isRefreshing = true
   const authStore = useAuthStore()
+  let newToken: string
   try {
-    const newToken = await authStore.refreshToken()
-    isRefreshing = false
-    onRefreshComplete(newToken)
-    originalRequest.headers.Authorization = `Bearer ${newToken}`
-    return await api(originalRequest)
+    newToken = await authStore.refreshToken()
   } catch (refreshError) {
     isRefreshing = false
     onRefreshComplete(null)
@@ -90,6 +87,13 @@ async function refreshAndRetry(originalRequest: RetryableRequestConfig): Promise
     redirectToLoginIfNeeded()
     throw refreshError
   }
+  isRefreshing = false
+  onRefreshComplete(newToken)
+  originalRequest.headers.Authorization = `Bearer ${newToken}`
+  // Outside the try block on purpose: the session is valid now, so a 403,
+  // 422 or 500 on the replayed request is that request's own failure and
+  // must reach the caller without logging the user out.
+  return api(originalRequest)
 }
 
 api.interceptors.request.use((config) => {

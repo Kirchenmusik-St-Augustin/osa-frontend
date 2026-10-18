@@ -35,7 +35,7 @@ const entries: DirectoryEntry[] = [
 ]
 
 function rowCheckbox(wrapper: ReturnType<typeof mount>, index: number) {
-  return wrapper.findAll('tbody tr')[index]!.find('input[type="checkbox"]')
+  return wrapper.findAll('tbody tr')[index]!.find<HTMLInputElement>('input[type="checkbox"]')
 }
 
 beforeEach(() => {

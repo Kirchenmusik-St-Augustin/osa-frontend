@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useArtists } from '../useArtists'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -48,9 +49,9 @@ describe('useArtists', () => {
     mockedApi.get.mockResolvedValueOnce({ data: sampleArtist })
     const { get } = useArtists()
 
-    const artist = await get(1)
+    const artist = await get(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/artists/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/artists/${testId(1)}`)
     expect(artist).toEqual(sampleArtist)
   })
 
@@ -86,17 +87,17 @@ describe('useArtists', () => {
       composer: true,
       conductor: false,
     }
-    await update(1, payload)
+    await update(testId(1), payload)
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/artists/1', payload)
+    expect(mockedApi.put).toHaveBeenCalledWith(`/artists/${testId(1)}`, payload)
   })
 
   it('remove DELETEs the artist by id', async () => {
     mockedApi.delete.mockResolvedValueOnce({ data: null })
     const { remove } = useArtists()
 
-    await remove(1)
+    await remove(testId(1))
 
-    expect(mockedApi.delete).toHaveBeenCalledWith('/artists/1')
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/artists/${testId(1)}`)
   })
 })

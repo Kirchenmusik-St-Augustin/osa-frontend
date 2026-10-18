@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import UserShowView from '../UserShowView.vue'
 import type { User } from '@/composables/useUsers'
+import { linkTarget } from '@/__tests__/linkTarget'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
 vi.mock('vue-router', async (importOriginal) => ({
@@ -152,7 +153,7 @@ describe('UserShowView', () => {
 
     const links = wrapper.findAllComponents(RouterLinkStub)
     const requestsLink = links.find(
-      (link) => link.props('to')?.name === 'system-users-requests-and-bookings',
+      (link) => linkTarget(link)?.name === 'system-users-requests-and-bookings',
     )
     expect(requestsLink).toBeDefined()
     expect(requestsLink?.props('to')).toEqual({

@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PropriumSetup from '../PropriumSetup.vue'
 import type { PerformancePropriumItem } from '@/composables/usePerformances'
+import { testId } from '@/__tests__/testId'
 
 const item: PerformancePropriumItem = {
-  propriumelement_id: 1,
+  propriumelement_id: testId(1),
   propriumelement_name: 'Introitus',
-  propriumwork_id: 2,
+  propriumwork_id: testId(2),
   propriumwork_name: 'Gregorianik I',
   artist_name: 'HAYDN, Joseph',
   description: 'Feierlich',

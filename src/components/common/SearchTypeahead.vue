@@ -24,9 +24,15 @@ const results = ref<SearchResult[]>([])
 // result set so it never points at a hit that just scrolled away.
 const highlightedIndex = ref(0)
 let debounceTimer: ReturnType<typeof setTimeout> | undefined
+// Incremented on every keystroke (and on unmount): a response only counts if
+// no newer input happened since its request started, so a slow answer to an
+// old query can never overwrite the results of the current one.
+let latestSearchId = 0
 
 function onInput(): void {
   clearTimeout(debounceTimer)
+  latestSearchId += 1
+  const searchId = latestSearchId
   const currentQuery = query.value
   if (!currentQuery.trim()) {
     results.value = []
@@ -34,6 +40,7 @@ function onInput(): void {
   }
   debounceTimer = setTimeout(() => {
     void props.search(currentQuery).then((found) => {
+      if (searchId !== latestSearchId) return
       results.value = found
       highlightedIndex.value = 0
     })
@@ -42,9 +49,11 @@ function onInput(): void {
 
 onBeforeUnmount(() => {
   clearTimeout(debounceTimer)
+  latestSearchId += 1
 })
 
 function select(result: SearchResult): void {
+  latestSearchId += 1
   results.value = []
   query.value = ''
   emit('select', result.id)

@@ -2,17 +2,18 @@ import { describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import SingleCastSelector from '../SingleCastSelector.vue'
 import type { BookableGroup, Fee } from '@/composables/useBookings'
+import { testId } from '@/__tests__/testId'
 
 const bookable: BookableGroup = {
-  requesting: [{ id: 1, name: 'Requester' }],
+  requesting: [{ id: testId(1), name: 'Requester' }],
   other: [
-    { id: 2, name: 'Other' },
-    { id: 3, name: 'AlreadyBooked' },
+    { id: testId(2), name: 'Other' },
+    { id: testId(3), name: 'AlreadyBooked' },
   ],
 }
 const fees: Fee[] = [
-  { id: 1, name: 'Chor', amount: 0 },
-  { id: 3, name: 'Instrumentalist', amount: 80 },
+  { id: testId(1), name: 'Chor', amount: 0 },
+  { id: testId(3), name: 'Instrumentalist', amount: 80 },
 ]
 
 // The candidate list lives inside the collapsed MultiSelectDropdown --
@@ -26,7 +27,7 @@ describe('SingleCastSelector', () => {
   it('excludes already-booked and not-booked users from the candidate lists', async () => {
     const wrapper = mount(SingleCastSelector, {
       props: {
-        allBooked: [{ id: 3, name: 'AlreadyBooked' }],
+        allBooked: [{ id: testId(3), name: 'AlreadyBooked' }],
         notBooked: [],
         bookable,
         fees,
@@ -45,7 +46,7 @@ describe('SingleCastSelector', () => {
       props: { allBooked: [], notBooked: [], bookable, fees },
     })
     const select = wrapper.find('select').element as HTMLSelectElement
-    expect(select.value).toBe('3')
+    expect(select.value).toBe(testId(3))
   })
 
   it('disables both action buttons until at least one candidate is selected', async () => {
@@ -83,7 +84,7 @@ describe('SingleCastSelector', () => {
     expect(emitted).toHaveLength(1)
     expect(emitted?.[0]?.[0]).toMatchObject({
       stack: 'cast',
-      candidates: [{ id: 1, name: 'Requester', fee: 80 }],
+      candidates: [{ id: testId(1), name: 'Requester', fee: 80 }],
     })
   })
 
@@ -128,7 +129,7 @@ describe('SingleCastSelector', () => {
         bookable,
         fees,
         popular: {
-          frequent: [{ id: 1, name: 'Muster, Max', total: 5 }],
+          frequent: [{ id: testId(1), name: 'Muster, Max', total: 5 }],
           recent: [],
         },
       },
@@ -149,7 +150,7 @@ describe('SingleCastSelector', () => {
         notBooked: [],
         bookable: {
           requesting: [],
-          other: [{ id: 2, name: 'Other', voice_name: 'Sopran', voice_order: 1 }],
+          other: [{ id: testId(2), name: 'Other', voice_name: 'Sopran', voice_order: 1 }],
         },
         fees,
       },
@@ -163,7 +164,7 @@ describe('SingleCastSelector', () => {
 
     const emitted = wrapper.emitted('add-to')
     expect(emitted?.[0]?.[0]).toMatchObject({
-      candidates: [{ id: 2, name: 'Other', voice_name: 'Sopran', voice_order: 1 }],
+      candidates: [{ id: testId(2), name: 'Other', voice_name: 'Sopran', voice_order: 1 }],
     })
   })
 
@@ -171,9 +172,9 @@ describe('SingleCastSelector', () => {
     const wrapper = mount(SingleCastSelector, {
       props: {
         allBooked: [
-          { id: 1, name: 'Requester' },
-          { id: 2, name: 'Other' },
-          { id: 3, name: 'AlreadyBooked' },
+          { id: testId(1), name: 'Requester' },
+          { id: testId(2), name: 'Other' },
+          { id: testId(3), name: 'AlreadyBooked' },
         ],
         notBooked: [],
         bookable,

@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-// How long a toast stays on screen. ToastHost.vue times its progress bar with
-// the same value, so the bar empties exactly when the toast is dismissed.
+// How long a success toast stays on screen. ToastHost.vue times its progress
+// bar with the same value, so the bar empties exactly when the toast is
+// dismissed. Error toasts carry the explanation the user has to act on and
+// stay until they are closed (an unreadable, self-vanishing error message
+// fails WCAG 2.2.1 "Timing Adjustable").
 export const TOAST_DURATION_MS = 4000
 
 export interface Toast {
@@ -32,6 +35,7 @@ export const useNotificationStore = defineStore('notifications', () => {
   function showToast(message: string, isError = false): void {
     const id = nextToastId++
     toasts.value.push({ id, message, isError })
+    if (isError) return
     dismissTimers.set(
       id,
       setTimeout(() => dismissToast(id), TOAST_DURATION_MS),

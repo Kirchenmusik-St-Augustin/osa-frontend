@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOrdinariumworks } from '../useOrdinariumworks'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -12,7 +13,7 @@ const sampleWork = {
   id: 1,
   name: 'Krönungsmesse',
   description: null,
-  artist_id: 2,
+  artist_id: testId(2),
   artist_name: 'MOZART, Wolfgang',
   duration: 25,
   demanding: false,
@@ -41,9 +42,9 @@ describe('useOrdinariumworks', () => {
     mockedApi.get.mockResolvedValueOnce({ data: sampleWork })
     const { get } = useOrdinariumworks()
 
-    const work = await get(1)
+    const work = await get(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/ordinariumworks/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/ordinariumworks/${testId(1)}`)
     expect(work).toEqual(sampleWork)
   })
 
@@ -52,9 +53,9 @@ describe('useOrdinariumworks', () => {
     mockedApi.get.mockResolvedValueOnce({ data: setup })
     const { getSetup } = useOrdinariumworks()
 
-    const result = await getSetup(1)
+    const result = await getSetup(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/ordinariumworks/1/setup')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/ordinariumworks/${testId(1)}/setup`)
     expect(result).toEqual(setup)
   })
 
@@ -76,7 +77,7 @@ describe('useOrdinariumworks', () => {
     const payload = {
       name: 'Krönungsmesse',
       description: null,
-      artist_id: 2,
+      artist_id: testId(2),
       duration: 25,
       demanding: false,
       setup: { instruments: [], voices: [] },
@@ -93,22 +94,22 @@ describe('useOrdinariumworks', () => {
     const payload = {
       name: 'Krönungsmesse',
       description: null,
-      artist_id: 2,
+      artist_id: testId(2),
       duration: 25,
       demanding: false,
       setup: { instruments: [], voices: [] },
     }
-    await update(1, payload)
+    await update(testId(1), payload)
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/ordinariumworks/1', payload)
+    expect(mockedApi.put).toHaveBeenCalledWith(`/ordinariumworks/${testId(1)}`, payload)
   })
 
   it('remove DELETEs the work by id', async () => {
     mockedApi.delete.mockResolvedValueOnce({ data: null })
     const { remove } = useOrdinariumworks()
 
-    await remove(1)
+    await remove(testId(1))
 
-    expect(mockedApi.delete).toHaveBeenCalledWith('/ordinariumworks/1')
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/ordinariumworks/${testId(1)}`)
   })
 })

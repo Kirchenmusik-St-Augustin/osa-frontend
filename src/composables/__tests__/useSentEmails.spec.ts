@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSentEmails } from '../useSentEmails'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn() },
@@ -41,9 +42,9 @@ describe('useSentEmails', () => {
     mockedApi.get.mockResolvedValueOnce({ data: email })
     const { get } = useSentEmails()
 
-    const result = await get(1)
+    const result = await get(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/sent-emails/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/administrator/sent-emails/${testId(1)}`)
     expect(result).toEqual(email)
   })
 })

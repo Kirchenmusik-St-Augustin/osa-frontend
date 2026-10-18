@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import MyRequestsAndBookingsView from '../MyRequestsAndBookingsView.vue'
 import type { PerformanceShortBase } from '@/composables/useBookings'
+import { testId } from '@/__tests__/testId'
 
 const mockGetMyRequestsAndBookings = vi.fn()
 vi.mock('@/composables/useSupport', () => ({
@@ -30,12 +31,12 @@ vi.mock('@/stores/auth', () => ({
 
 function makeItem(overrides: Partial<PerformanceShortBase> = {}): PerformanceShortBase {
   return {
-    id: 1,
+    id: testId(1),
     ordinariumwork_name: 'Krönungsmesse',
     ordinariumwork_artist_name: 'MOZART, Wolfgang',
     artist_name: null,
     schedule: '2099-01-01T12:00:00',
-    location: { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
+    location: { id: testId(1), name: 'Augustinerkirche', color: '336699', address: null },
     user_booking: { status: 1, position: null, at: null },
     proprium: [],
     demanding_proprium: false,
@@ -81,7 +82,7 @@ describe('MyRequestsAndBookingsView', () => {
     await wrapper.find('.fa-hand-point-up').trigger('click')
     await flushPromises()
 
-    expect(mockChangeBookingStatus).toHaveBeenCalledWith(1)
+    expect(mockChangeBookingStatus).toHaveBeenCalledWith(testId(1))
     expect(mockGetMyRequestsAndBookings).toHaveBeenCalledTimes(2)
   })
 

@@ -8,7 +8,8 @@
 // unaffected. `autocomplete` is passed through to the real form control
 // explicitly -- the single root <div> swallows attribute fallthrough -- so
 // password fields can tell password managers whether to fill an existing or
-// propose a new password.
+// propose a new password. `ariaLabel` names a control that has no visible
+// <label> (e.g. cells of a table-like grid) for assistive technology.
 const model = defineModel<string | number | null>({ required: true })
 
 withDefaults(
@@ -24,6 +25,7 @@ withDefaults(
     readonly?: boolean
     small?: boolean
     autocomplete?: string
+    ariaLabel?: string
   }>(),
   {
     title: undefined,
@@ -36,6 +38,7 @@ withDefaults(
     readonly: false,
     small: false,
     autocomplete: undefined,
+    ariaLabel: undefined,
   },
 )
 </script>
@@ -57,6 +60,7 @@ withDefaults(
       :disabled="readonly"
       :maxlength="max"
       :autocomplete="autocomplete"
+      :aria-label="ariaLabel"
     ></textarea>
     <input
       v-else-if="type === 'number'"
@@ -70,6 +74,7 @@ withDefaults(
       :readonly="readonly"
       :disabled="readonly"
       :autocomplete="autocomplete"
+      :aria-label="ariaLabel"
       :class="small ? ['form-control-sm'] : []"
     />
     <input
@@ -83,6 +88,7 @@ withDefaults(
       :disabled="readonly"
       :maxlength="max"
       :autocomplete="autocomplete"
+      :aria-label="ariaLabel"
       :class="small ? ['form-control-sm'] : []"
     />
     <small class="text-danger">{{ error }}&nbsp;</small>

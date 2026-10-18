@@ -115,6 +115,31 @@ describe('api (axios interceptors)', () => {
     expect(protectedCalls).toBe(2)
   })
 
+  it.each([403, 404, 422, 500])(
+    'keeps the new session when the retried request fails with %i after a successful refresh',
+    async (status) => {
+      const authStore = useAuthStore()
+      authStore.$patch({ accessToken: 'expired-token' })
+      let protectedCalls = 0
+
+      api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+        if (config.url === '/auth/refresh') {
+          return makeResponse(config, { access_token: 'new-token' })
+        }
+        protectedCalls++
+        if (protectedCalls === 1) throw makeError(config, 401, { detail: 'expired' })
+        throw makeError(config, status, { detail: 'not for you' })
+      })
+
+      await expect(api.get('/protected')).rejects.toMatchObject({
+        response: { status },
+      })
+
+      expect(authStore.accessToken).toBe('new-token')
+      expect(mockPush).not.toHaveBeenCalled()
+    },
+  )
+
   it('clears auth and redirects to login when the refresh call itself fails', async () => {
     const authStore = useAuthStore()
     authStore.$patch({ accessToken: 'expired-token' })

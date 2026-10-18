@@ -43,6 +43,6 @@ describe('CollapsibleSection', () => {
     })
 
     const contentWrapper = wrapper.findAll('div')[1]
-    expect(contentWrapper.classes()).not.toContain('border')
+    expect(contentWrapper!.classes()).not.toContain('border')
   })
 })

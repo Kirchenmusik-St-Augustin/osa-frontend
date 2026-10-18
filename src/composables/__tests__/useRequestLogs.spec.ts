@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useRequestLogs } from '../useRequestLogs'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn() },
@@ -31,9 +32,9 @@ describe('useRequestLogs', () => {
     mockedApi.get.mockResolvedValueOnce({ data: detail })
     const { getForUser } = useRequestLogs()
 
-    const result = await getForUser(1, 2026, 8, 12)
+    const result = await getForUser(testId(1), 2026, 8, 12)
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/request-logs/users/1', {
+    expect(mockedApi.get).toHaveBeenCalledWith(`/administrator/request-logs/users/${testId(1)}`, {
       params: { year: 2026, month: 8, day: 12 },
     })
     expect(result).toEqual(detail)
@@ -58,9 +59,9 @@ describe('useRequestLogs', () => {
     mockedApi.get.mockResolvedValueOnce({ data: entry })
     const { get } = useRequestLogs()
 
-    const result = await get(1)
+    const result = await get(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/request-logs/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/administrator/request-logs/${testId(1)}`)
     expect(result).toEqual(entry)
   })
 })

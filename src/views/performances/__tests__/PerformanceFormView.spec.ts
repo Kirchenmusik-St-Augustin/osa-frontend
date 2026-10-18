@@ -163,8 +163,8 @@ describe('PerformanceFormView -- create mode', () => {
       demanding: false,
     }
     const setup: OrdinariumworkSetup = {
-      instruments: [{ id: '10', name: 'Fagott', quantity: 2 }],
-      voices: [{ id: '20', name: 'Sopran', quantity: 4 }],
+      instruments: [{ id: '10', name: 'Fagott', quantity: 2, active: true }],
+      voices: [{ id: '20', name: 'Sopran', quantity: 4, active: true }],
     }
     mockGetOrdinariumwork.mockResolvedValueOnce(work)
     mockGetSetup.mockResolvedValueOnce(setup)

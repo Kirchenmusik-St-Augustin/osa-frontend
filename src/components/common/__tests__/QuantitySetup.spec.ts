@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import QuantitySetup from '../QuantitySetup.vue'
+import { testId } from '@/__tests__/testId'
 
 const setup = [
-  { id: 1, name: 'Fagott', quantity: 2 },
-  { id: 2, name: 'Oboe', quantity: 1 },
+  { id: testId(1), name: 'Fagott', quantity: 2 },
+  { id: testId(2), name: 'Oboe', quantity: 1 },
 ]
 
 describe('QuantitySetup', () => {
@@ -30,7 +31,7 @@ describe('QuantitySetup', () => {
 
     await wrapper.findAll('.fa-trash')[1]?.trigger('click')
 
-    expect(wrapper.emitted('remove')?.[0]).toEqual([2])
+    expect(wrapper.emitted('remove')?.[0]).toEqual([testId(2)])
   })
 
   it('emits modify with increase=true/false for plus/minus icons', async () => {
@@ -39,15 +40,15 @@ describe('QuantitySetup', () => {
     await wrapper.findAll('.fa-plus-circle')[0]?.trigger('click')
     await wrapper.findAll('.fa-minus-circle')[0]?.trigger('click')
 
-    expect(wrapper.emitted('modify')?.[0]).toEqual([1, true])
-    expect(wrapper.emitted('modify')?.[1]).toEqual([1, false])
+    expect(wrapper.emitted('modify')?.[0]).toEqual([testId(1), true])
+    expect(wrapper.emitted('modify')?.[1]).toEqual([testId(1), false])
   })
 
   it('marks an archived row, but not an active or unflagged one', () => {
     const mixedSetup = [
-      { id: 1, name: 'Fagott', quantity: 2, active: true },
-      { id: 2, name: 'Serpent', quantity: 1, active: false },
-      { id: 3, name: 'Oboe', quantity: 1 },
+      { id: testId(1), name: 'Fagott', quantity: 2, active: true },
+      { id: testId(2), name: 'Serpent', quantity: 1, active: false },
+      { id: testId(3), name: 'Oboe', quantity: 1 },
     ]
     const wrapper = mount(QuantitySetup, { props: { setup: mixedSetup } })
 

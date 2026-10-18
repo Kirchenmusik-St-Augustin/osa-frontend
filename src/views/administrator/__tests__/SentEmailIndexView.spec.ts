@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import SentEmailIndexView from '../SentEmailIndexView.vue'
 import type { SentEmailShort } from '@/composables/useSentEmails'
+import { testId } from '@/__tests__/testId'
 
 let mockQuery: Record<string, string> = {}
 const mockPush = vi.fn()
@@ -19,7 +20,7 @@ vi.mock('@/composables/useSentEmails', () => ({
 
 function makeEmail(overrides: Partial<SentEmailShort> = {}): SentEmailShort {
   return {
-    id: 1,
+    id: testId(1),
     datetime: '2026-08-02T11:00:00+00:00',
     to: 'empfaenger@example.test',
     subject: 'Betreff-Text',
@@ -52,7 +53,7 @@ describe('SentEmailIndexView', () => {
   })
 
   it('navigates to Show when a row is clicked', async () => {
-    mockListForMonth.mockResolvedValueOnce([makeEmail({ id: 42 })])
+    mockListForMonth.mockResolvedValueOnce([makeEmail({ id: testId(42) })])
     const wrapper = mount(SentEmailIndexView)
     await flushPromises()
 
@@ -60,7 +61,7 @@ describe('SentEmailIndexView', () => {
 
     expect(mockPush).toHaveBeenCalledWith({
       name: 'administrator-sent-emails-show',
-      params: { id: 42 },
+      params: { id: testId(42) },
     })
   })
 

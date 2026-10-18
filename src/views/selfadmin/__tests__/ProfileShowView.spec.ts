@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import ProfileShowView from '../ProfileShowView.vue'
 import type { User } from '@/composables/useUsers'
+import { testId } from '@/__tests__/testId'
 
 const mockGet = vi.fn()
 const mockDisconnectOauth2 = vi.fn()
@@ -28,7 +29,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: 1,
+    id: testId(1),
     surname: 'SCHINDLER',
     givenname: 'Margot',
     email: 'margot@example.com',
@@ -76,7 +77,7 @@ describe('ProfileShowView', () => {
   it('lists connected accounts with their capitalized provider name', async () => {
     mockGet.mockResolvedValueOnce(
       makeUser({
-        oauth2_bindings: [{ id: 9, provider: 'google', remote_name: 'Margot S.' }],
+        oauth2_bindings: [{ id: testId(9), provider: 'google', remote_name: 'Margot S.' }],
       }),
     )
     const wrapper = mount(ProfileShowView)
@@ -89,7 +90,7 @@ describe('ProfileShowView', () => {
   it('removes a binding after confirmation, updating the list locally', async () => {
     mockGet.mockResolvedValueOnce(
       makeUser({
-        oauth2_bindings: [{ id: 9, provider: 'google', remote_name: 'Margot S.' }],
+        oauth2_bindings: [{ id: testId(9), provider: 'google', remote_name: 'Margot S.' }],
       }),
     )
     mockDisconnectOauth2.mockResolvedValueOnce(undefined)
@@ -99,7 +100,7 @@ describe('ProfileShowView', () => {
     await wrapper.find('.fa-trash-alt').trigger('click')
     await flushPromises()
 
-    expect(mockDisconnectOauth2).toHaveBeenCalledWith(9)
+    expect(mockDisconnectOauth2).toHaveBeenCalledWith(testId(9))
     expect(mockShowToast).toHaveBeenCalledWith('Bindung entfernt')
     expect(wrapper.text()).not.toContain('Verbundene Konten')
   })
@@ -107,7 +108,7 @@ describe('ProfileShowView', () => {
   it('does not remove a binding when the confirmation is declined', async () => {
     mockGet.mockResolvedValueOnce(
       makeUser({
-        oauth2_bindings: [{ id: 9, provider: 'google', remote_name: 'Margot S.' }],
+        oauth2_bindings: [{ id: testId(9), provider: 'google', remote_name: 'Margot S.' }],
       }),
     )
     mockConfirmAction.mockResolvedValueOnce(false)

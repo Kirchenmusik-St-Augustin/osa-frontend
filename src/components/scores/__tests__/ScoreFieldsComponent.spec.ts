@@ -59,8 +59,8 @@ function makeFieldsConfigAndData(): {
     required: false,
     values: null,
   })
-  const select = (values: string[]): ScoreFieldConfig => ({
-    label: null,
+  const select = (label: string | null, values: string[]): ScoreFieldConfig => ({
+    label,
     kind: 'select',
     length: null,
     required: false,
@@ -74,28 +74,28 @@ function makeFieldsConfigAndData(): {
     values: null,
   })
 
-  fieldsConfig.werk = text('Werk', 75)
-  fieldsConfig.teil = text('Werkteil', 55)
-  fieldsConfig.sparte = select(['', 'Messe', 'Symphonie'])
-  fieldsConfig.givenname = text('Vorname', 30)
-  fieldsConfig.surname = text('Nachname', 30)
-  fieldsConfig.geboren = number('Geboren')
-  fieldsConfig.gestorben = number('Gestorben')
-  fieldsConfig.verz = text('Werkeverzeichnis/Mappe', 32)
-  fieldsConfig.jahr = number('Jahr')
-  fieldsConfig.kasten = text('Kasten', 2)
-  fieldsConfig.boxnr = text('Boxnummer', 16)
-  fieldsConfig.auch = text('sieh auch Box/Mappe', 32)
-  fieldsConfig.inhalt = select(['Partitur', 'Orchestermaterial'])
-  fieldsConfig.zusatznoten = text('Zusatznoten', 256)
-  fieldsConfig.bemerkung = text('Bemerkung', 256)
+  fieldsConfig['werk'] = text('Werk', 75)
+  fieldsConfig['teil'] = text('Werkteil', 55)
+  fieldsConfig['sparte'] = select('Sparte', ['', 'Messe', 'Symphonie'])
+  fieldsConfig['givenname'] = text('Vorname', 30)
+  fieldsConfig['surname'] = text('Nachname', 30)
+  fieldsConfig['geboren'] = number('Geboren')
+  fieldsConfig['gestorben'] = number('Gestorben')
+  fieldsConfig['verz'] = text('Werkeverzeichnis/Mappe', 32)
+  fieldsConfig['jahr'] = number('Jahr')
+  fieldsConfig['kasten'] = text('Kasten', 2)
+  fieldsConfig['boxnr'] = text('Boxnummer', 16)
+  fieldsConfig['auch'] = text('sieh auch Box/Mappe', 32)
+  fieldsConfig['inhalt'] = select('Inhalt', ['Partitur', 'Orchestermaterial'])
+  fieldsConfig['zusatznoten'] = text('Zusatznoten', 256)
+  fieldsConfig['bemerkung'] = text('Bemerkung', 256)
   for (const key of Object.keys(fieldsConfig)) {
     fields[key] = fieldsConfig[key]!.kind === 'number' ? 0 : ''
   }
 
   for (const group of [...PART_GROUPS, ...NO_COUNT_GROUPS]) {
     fieldsConfig[`${group}verl`] = text(null, 64)
-    fieldsConfig[`${group}art`] = select(['', 'Original', 'Kopie', 'Original/Kopie'])
+    fieldsConfig[`${group}art`] = select(null, ['', 'Original', 'Kopie', 'Original/Kopie'])
     fieldsConfig[`${group}zust`] = text(null, 8)
     fields[`${group}verl`] = ''
     fields[`${group}art`] = ''
@@ -164,12 +164,7 @@ describe('ScoreFieldsComponent', () => {
     expect(wrapper.text()).toContain('Orchester')
   })
 
-  it('updates the bound field object in place when a field changes', async () => {
-    // The model is one shared reactive object mutated at nested paths
-    // (v-model="model.werk" per field) -- this
-    // never fires ScoreFieldsComponent's OWN top-level update:modelValue
-    // event; it mutates the object `fields` already references, which is
-    // what actually keeps the parent view in sync.
+  it('emits a copy of the model with the changed field and leaves the given object alone', async () => {
     const { fieldsConfig, fields } = makeFieldsConfigAndData()
     const wrapper = mount(ScoreFieldsComponent, {
       props: { modelValue: fields, fieldsConfig },
@@ -177,7 +172,30 @@ describe('ScoreFieldsComponent', () => {
 
     await wrapper.find('#score-field-werk').setValue('Requiem')
 
-    expect(fields.werk).toBe('Requiem')
+    const emitted = wrapper.emitted('update:modelValue')?.[0]?.[0] as Record<string, unknown>
+    expect(emitted['werk']).toBe('Requiem')
+    expect(emitted['teil']).toBe(fields['teil'])
+    expect(emitted).not.toBe(fields)
+    expect(fields['werk']).toBe('')
+  })
+
+  it('gives every control a visible label or an aria-label', () => {
+    const { fieldsConfig, fields } = makeFieldsConfigAndData()
+    const wrapper = mount(ScoreFieldsComponent, {
+      props: { modelValue: fields, fieldsConfig },
+      attachTo: document.body,
+    })
+
+    const unnamed = wrapper
+      .findAll('input, select, textarea')
+      .filter(
+        (control) =>
+          !control.attributes('aria-label') &&
+          !wrapper.find(`label[for="${control.attributes('id')}"]`).exists(),
+      )
+      .map((control) => control.attributes('id'))
+    expect(unnamed).toEqual([])
+    wrapper.unmount()
   })
 
   it('forwards field errors to the matching input', () => {

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useUsers } from '../useUsers'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -58,9 +59,9 @@ describe('useUsers', () => {
     mockedApi.get.mockResolvedValueOnce({ data: sampleUser })
     const { get } = useUsers()
 
-    const user = await get(1)
+    const user = await get(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/users/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/users/${testId(1)}`)
     expect(user).toEqual(sampleUser)
   })
 
@@ -76,8 +77,9 @@ describe('useUsers', () => {
       auth_locked: false,
       instruments: [],
       voices: [],
-      choirjobs: [3],
+      choirjobs: [testId(3)],
       roles: [],
+      administrator: false,
     }
     const user = await create(payload)
 
@@ -99,19 +101,20 @@ describe('useUsers', () => {
       voices: [],
       choirjobs: [],
       roles: [],
+      administrator: false,
     }
-    await update(1, payload)
+    await update(testId(1), payload)
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/users/1', payload)
+    expect(mockedApi.put).toHaveBeenCalledWith(`/users/${testId(1)}`, payload)
   })
 
   it('remove DELETEs the user by id', async () => {
     mockedApi.delete.mockResolvedValueOnce({ data: null })
     const { remove } = useUsers()
 
-    await remove(1)
+    await remove(testId(1))
 
-    expect(mockedApi.delete).toHaveBeenCalledWith('/users/1')
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/users/${testId(1)}`)
   })
 
   it('getRequestsAndBookings requests the id-scoped endpoint', async () => {
@@ -132,9 +135,9 @@ describe('useUsers', () => {
     mockedApi.get.mockResolvedValueOnce({ data: entries })
     const { getRequestsAndBookings } = useUsers()
 
-    const result = await getRequestsAndBookings(1)
+    const result = await getRequestsAndBookings(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/users/1/requests-and-bookings')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/users/${testId(1)}/requests-and-bookings`)
     expect(result).toEqual(entries)
   })
 })

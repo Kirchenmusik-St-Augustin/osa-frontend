@@ -39,7 +39,7 @@ function makePage(overrides: Partial<PerformanceCastPage> = {}): PerformanceCast
     location: { id: '1', name: 'Augustinerkirche', color: '336699', address: null },
     demanding_proprium: false,
     setup: {
-      instruments: [{ id: '10', name: 'Fagott', quantity: 1 }],
+      instruments: [{ id: '10', name: 'Fagott', quantity: 1, active: true }],
       voices: [],
       choirjobs: [],
     },
@@ -235,8 +235,8 @@ describe('CastView', () => {
       makePage({
         setup: {
           instruments: [
-            { id: '10', name: 'Fagott', quantity: 1 },
-            { id: '11', name: 'Oboe', quantity: 1 },
+            { id: '10', name: 'Fagott', quantity: 1, active: true },
+            { id: '11', name: 'Oboe', quantity: 1, active: true },
           ],
           voices: [],
           choirjobs: [],

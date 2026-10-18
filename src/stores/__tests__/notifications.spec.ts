@@ -40,6 +40,17 @@ describe('notifications store -- toasts', () => {
     expect(store.toasts).toHaveLength(0)
   })
 
+  it('keeps an error toast on screen until it is dismissed', () => {
+    const store = useNotificationStore()
+    store.showToast('kaputt', true)
+
+    vi.advanceTimersByTime(TOAST_DURATION_MS * 10)
+    expect(store.toasts).toHaveLength(1)
+
+    store.dismissToast(store.toasts[0]!.id)
+    expect(store.toasts).toHaveLength(0)
+  })
+
   it('times every toast independently', () => {
     const store = useNotificationStore()
     store.showToast('erste')

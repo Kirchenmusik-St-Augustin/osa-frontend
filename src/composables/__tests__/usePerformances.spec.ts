@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { usePerformances, type PerformancePayload } from '../usePerformances'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -14,8 +15,8 @@ beforeEach(() => {
 
 const samplePayload: PerformancePayload = {
   schedule: '2026-08-02T11:00:00',
-  location_id: 1,
-  ordinariumwork_id: 2,
+  location_id: testId(1),
+  ordinariumwork_id: testId(2),
   artist_id: null,
   description: null,
   choirjob_defaultfee: 35,
@@ -63,18 +64,18 @@ describe('usePerformances', () => {
     mockedApi.get.mockResolvedValueOnce({ data: { id: 1 } })
     const { getDetail } = usePerformances()
 
-    await getDetail(1)
+    await getDetail(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/performances/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/performances/${testId(1)}`)
   })
 
   it('getFormData requests the form sub-resource', async () => {
     mockedApi.get.mockResolvedValueOnce({ data: { id: 1 } })
     const { getFormData } = usePerformances()
 
-    await getFormData(1)
+    await getFormData(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/performances/1/form')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/performances/${testId(1)}/form`)
   })
 
   it('create POSTs the payload', async () => {
@@ -90,17 +91,17 @@ describe('usePerformances', () => {
     mockedApi.put.mockResolvedValueOnce({ data: { id: 1 } })
     const { update } = usePerformances()
 
-    await update(1, samplePayload)
+    await update(testId(1), samplePayload)
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/performances/1', samplePayload)
+    expect(mockedApi.put).toHaveBeenCalledWith(`/performances/${testId(1)}`, samplePayload)
   })
 
   it('remove DELETEs the performance by id', async () => {
     mockedApi.delete.mockResolvedValueOnce({ data: null })
     const { remove } = usePerformances()
 
-    await remove(1)
+    await remove(testId(1))
 
-    expect(mockedApi.delete).toHaveBeenCalledWith('/performances/1')
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/performances/${testId(1)}`)
   })
 })

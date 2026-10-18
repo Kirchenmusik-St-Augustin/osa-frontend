@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useUserAdministration } from '../useUserAdministration'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn() },
@@ -52,9 +53,9 @@ describe('useUserAdministration', () => {
     mockedApi.get.mockResolvedValueOnce({ data: sampleResult })
     const { get } = useUserAdministration()
 
-    const result = await get(1)
+    const result = await get(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/users/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/administrator/users/${testId(1)}`)
     expect(result).toEqual(sampleResult)
   })
 
@@ -62,27 +63,27 @@ describe('useUserAdministration', () => {
     mockedApi.post.mockResolvedValueOnce({ data: sampleResult })
     const { restore } = useUserAdministration()
 
-    await restore(1)
+    await restore(testId(1))
 
-    expect(mockedApi.post).toHaveBeenCalledWith('/administrator/users/1/restore')
+    expect(mockedApi.post).toHaveBeenCalledWith(`/administrator/users/${testId(1)}/restore`)
   })
 
   it('unlock POSTs to the unlock endpoint', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: sampleResult })
     const { unlock } = useUserAdministration()
 
-    await unlock(1)
+    await unlock(testId(1))
 
-    expect(mockedApi.post).toHaveBeenCalledWith('/administrator/users/1/unlock')
+    expect(mockedApi.post).toHaveBeenCalledWith(`/administrator/users/${testId(1)}/unlock`)
   })
 
   it('setPassword POSTs to the set-password endpoint', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { ...sampleResult, newpw: 'aB3xY9kLmQ' } })
     const { setPassword } = useUserAdministration()
 
-    const result = await setPassword(1)
+    const result = await setPassword(testId(1))
 
-    expect(mockedApi.post).toHaveBeenCalledWith('/administrator/users/1/set-password')
+    expect(mockedApi.post).toHaveBeenCalledWith(`/administrator/users/${testId(1)}/set-password`)
     expect(result.newpw).toBe('aB3xY9kLmQ')
   })
 })

@@ -1,17 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import QuantityEditor from '../QuantityEditor.vue'
+import type { QuantitySetupEntry } from '../QuantitySetup.vue'
+import { testId } from '@/__tests__/testId'
 
 const available = [
-  { id: 1, name: 'Fagott' },
-  { id: 2, name: 'Oboe' },
-  { id: 3, name: 'Klarinette' },
+  { id: testId(1), name: 'Fagott' },
+  { id: testId(2), name: 'Oboe' },
+  { id: testId(3), name: 'Klarinette' },
 ]
 
 describe('QuantityEditor', () => {
   it('lists only unused items in the dropdown, pre-selecting the first one', () => {
     const wrapper = mount(QuantityEditor, {
-      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 2 }], available },
+      props: { modelValue: [{ id: testId(1), name: 'Fagott', quantity: 2 }], available },
     })
 
     const optionTexts = wrapper.findAll('option').map((option) => option.text())
@@ -22,9 +24,9 @@ describe('QuantityEditor', () => {
     const wrapper = mount(QuantityEditor, {
       props: {
         modelValue: [
-          { id: 1, name: 'Fagott', quantity: 1 },
-          { id: 2, name: 'Oboe', quantity: 1 },
-          { id: 3, name: 'Klarinette', quantity: 1 },
+          { id: testId(1), name: 'Fagott', quantity: 1 },
+          { id: testId(2), name: 'Oboe', quantity: 1 },
+          { id: testId(3), name: 'Klarinette', quantity: 1 },
         ],
         available,
       },
@@ -38,8 +40,8 @@ describe('QuantityEditor', () => {
     const wrapper = mount(QuantityEditor, {
       props: {
         modelValue: [
-          { id: 1, name: 'Fagott', quantity: 1 },
-          { id: 2, name: 'Oboe', quantity: 1 },
+          { id: testId(1), name: 'Fagott', quantity: 1 },
+          { id: testId(2), name: 'Oboe', quantity: 1 },
         ],
         available,
       },
@@ -48,7 +50,9 @@ describe('QuantityEditor', () => {
 
     await wrapper.find('button.btn-primary').trigger('click')
     const emitted = wrapper.emitted('update:modelValue')
-    await wrapper.setProps({ modelValue: emitted?.[emitted.length - 1]?.[0] })
+    await wrapper.setProps({
+      modelValue: emitted?.[emitted.length - 1]?.[0] as QuantitySetupEntry[],
+    })
 
     expect(wrapper.find('select').exists()).toBe(false)
     expect(wrapper.find('button.btn-primary').exists()).toBe(false)
@@ -59,32 +63,34 @@ describe('QuantityEditor', () => {
       props: { modelValue: [], available },
     })
 
-    await wrapper.find('select').setValue('1')
+    await wrapper.find('select').setValue(testId(1))
     await wrapper.find('button.btn-primary').trigger('click')
 
     const emitted = wrapper.emitted('update:modelValue')
-    expect(emitted?.[emitted.length - 1]).toEqual([[{ id: 1, name: 'Fagott', quantity: 1 }]])
+    expect(emitted?.[emitted.length - 1]).toEqual([
+      [{ id: testId(1), name: 'Fagott', quantity: 1 }],
+    ])
   })
 
   it('inserts the added item at its canonical position, not at the end', async () => {
     const wrapper = mount(QuantityEditor, {
-      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+      props: { modelValue: [{ id: testId(1), name: 'Fagott', quantity: 1 }], available },
     })
 
-    await wrapper.find('select').setValue('2')
+    await wrapper.find('select').setValue(testId(2))
     await wrapper.find('button.btn-primary').trigger('click')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted?.[emitted.length - 1]).toEqual([
       [
-        { id: 1, name: 'Fagott', quantity: 1 },
-        { id: 2, name: 'Oboe', quantity: 1 },
+        { id: testId(1), name: 'Fagott', quantity: 1 },
+        { id: testId(2), name: 'Oboe', quantity: 1 },
       ],
     ])
   })
 
   it('keeps assigned entries that are missing from available (archived) when adding another', async () => {
-    const archived = { id: 99, name: 'Serpent', quantity: 2 }
+    const archived = { id: testId(99), name: 'Serpent', quantity: 2 }
     const wrapper = mount(QuantityEditor, {
       props: { modelValue: [archived], available },
     })
@@ -93,50 +99,54 @@ describe('QuantityEditor', () => {
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted?.[emitted.length - 1]).toEqual([
-      [{ id: 1, name: 'Fagott', quantity: 1 }, archived],
+      [{ id: testId(1), name: 'Fagott', quantity: 1 }, archived],
     ])
   })
 
   it('keeps the chosen dropdown entry when another row changes its quantity', async () => {
     const wrapper = mount(QuantityEditor, {
-      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+      props: { modelValue: [{ id: testId(1), name: 'Fagott', quantity: 1 }], available },
     })
 
-    await wrapper.find('select').setValue('3')
+    await wrapper.find('select').setValue(testId(3))
     await wrapper.find('.fa-plus-circle').trigger('click')
     const emitted = wrapper.emitted('update:modelValue')
-    await wrapper.setProps({ modelValue: emitted?.[emitted.length - 1]?.[0] })
+    await wrapper.setProps({
+      modelValue: emitted?.[emitted.length - 1]?.[0] as QuantitySetupEntry[],
+    })
 
-    expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('3')
+    expect((wrapper.find('select').element as HTMLSelectElement).value).toBe(testId(3))
   })
 
   it('falls back to the first unused entry once the chosen one has been added', async () => {
     const wrapper = mount(QuantityEditor, {
-      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+      props: { modelValue: [{ id: testId(1), name: 'Fagott', quantity: 1 }], available },
     })
 
-    await wrapper.find('select').setValue('3')
+    await wrapper.find('select').setValue(testId(3))
     await wrapper.find('button.btn-primary').trigger('click')
     const emitted = wrapper.emitted('update:modelValue')
-    await wrapper.setProps({ modelValue: emitted?.[emitted.length - 1]?.[0] })
+    await wrapper.setProps({
+      modelValue: emitted?.[emitted.length - 1]?.[0] as QuantitySetupEntry[],
+    })
 
-    expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('2')
+    expect((wrapper.find('select').element as HTMLSelectElement).value).toBe(testId(2))
   })
 
   it('increments quantity via the plus icon', async () => {
     const wrapper = mount(QuantityEditor, {
-      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+      props: { modelValue: [{ id: testId(1), name: 'Fagott', quantity: 1 }], available },
     })
 
     await wrapper.find('.fa-plus-circle').trigger('click')
 
     const emitted = wrapper.emitted('update:modelValue')
-    expect(emitted?.[0]).toEqual([[{ id: 1, name: 'Fagott', quantity: 2 }]])
+    expect(emitted?.[0]).toEqual([[{ id: testId(1), name: 'Fagott', quantity: 2 }]])
   })
 
   it('removes the row once quantity drops below 1 via the minus icon', async () => {
     const wrapper = mount(QuantityEditor, {
-      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+      props: { modelValue: [{ id: testId(1), name: 'Fagott', quantity: 1 }], available },
     })
 
     await wrapper.find('.fa-minus-circle').trigger('click')
@@ -149,8 +159,8 @@ describe('QuantityEditor', () => {
     const wrapper = mount(QuantityEditor, {
       props: {
         modelValue: [
-          { id: 1, name: 'Fagott', quantity: 1 },
-          { id: 2, name: 'Oboe', quantity: 3 },
+          { id: testId(1), name: 'Fagott', quantity: 1 },
+          { id: testId(2), name: 'Oboe', quantity: 3 },
         ],
         available,
       },
@@ -159,19 +169,19 @@ describe('QuantityEditor', () => {
     await wrapper.find('.fa-trash').trigger('click')
 
     const emitted = wrapper.emitted('update:modelValue')
-    expect(emitted?.[0]).toEqual([[{ id: 2, name: 'Oboe', quantity: 3 }]])
+    expect(emitted?.[0]).toEqual([[{ id: testId(2), name: 'Oboe', quantity: 3 }]])
   })
 
   it('only shows the reset link once the setup diverges from its initial value', async () => {
     const wrapper = mount(QuantityEditor, {
-      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+      props: { modelValue: [{ id: testId(1), name: 'Fagott', quantity: 1 }], available },
     })
 
     expect(wrapper.text()).not.toContain('auf derz. Werte zurücksetzen')
 
     await wrapper.find('.fa-plus-circle').trigger('click')
     await wrapper.setProps({
-      modelValue: [{ id: 1, name: 'Fagott', quantity: 2 }],
+      modelValue: [{ id: testId(1), name: 'Fagott', quantity: 2 }],
     })
 
     expect(wrapper.text()).toContain('auf derz. Werte zurücksetzen')
@@ -179,15 +189,17 @@ describe('QuantityEditor', () => {
 
   it('reset restores the original setup', async () => {
     const wrapper = mount(QuantityEditor, {
-      props: { modelValue: [{ id: 1, name: 'Fagott', quantity: 1 }], available },
+      props: { modelValue: [{ id: testId(1), name: 'Fagott', quantity: 1 }], available },
     })
 
     await wrapper.find('.fa-plus-circle').trigger('click')
-    await wrapper.setProps({ modelValue: [{ id: 1, name: 'Fagott', quantity: 2 }] })
+    await wrapper.setProps({ modelValue: [{ id: testId(1), name: 'Fagott', quantity: 2 }] })
 
     await wrapper.find('button.btn-link').trigger('click')
 
     const emitted = wrapper.emitted('update:modelValue')
-    expect(emitted?.[emitted.length - 1]).toEqual([[{ id: 1, name: 'Fagott', quantity: 1 }]])
+    expect(emitted?.[emitted.length - 1]).toEqual([
+      [{ id: testId(1), name: 'Fagott', quantity: 1 }],
+    ])
   })
 })

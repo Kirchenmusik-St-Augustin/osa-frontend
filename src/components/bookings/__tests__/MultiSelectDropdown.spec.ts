@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import MultiSelectDropdown, { type MultiSelectGroup } from '../MultiSelectDropdown.vue'
+import { testId } from '@/__tests__/testId'
 
 const options: MultiSelectGroup[] = [
   {
     label: 'Anfragen',
-    values: [{ id: 1, name: 'Requester' }],
+    values: [{ id: testId(1), name: 'Requester' }],
   },
   {
     label: 'direkt buchen',
     values: [
-      { id: 2, name: 'Other' },
-      { id: 3, name: 'Second' },
+      { id: testId(2), name: 'Other' },
+      { id: testId(3), name: 'Second' },
     ],
   },
 ]
@@ -59,17 +60,17 @@ describe('MultiSelectDropdown', () => {
     await wrapper.find('.c-pointer').trigger('click')
     await wrapper.find('.list-group-item').trigger('click')
 
-    expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([1])
+    expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([testId(1)])
   })
 
   it('removes an already-selected item from the model on click, keeping the others', async () => {
     const wrapper = mount(MultiSelectDropdown, {
-      props: { options, modelValue: [1, 2] },
+      props: { options, modelValue: [testId(1), testId(2)] },
     })
     await wrapper.find('.c-pointer').trigger('click')
     await wrapper.find('.list-group-item').trigger('click')
 
-    expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([2])
+    expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([testId(2)])
   })
 
   it('falls back to the first tab when a group disappears from the options', async () => {
@@ -90,7 +91,7 @@ describe('MultiSelectDropdown', () => {
 
   it('shows a checked icon only for already-selected items', async () => {
     const wrapper = mount(MultiSelectDropdown, {
-      props: { options, modelValue: [1] },
+      props: { options, modelValue: [testId(1)] },
     })
     await wrapper.find('.c-pointer').trigger('click')
 

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useUserdirectory } from '../useUserdirectory'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn() },
@@ -39,10 +40,10 @@ describe('useUserdirectory', () => {
     mockedApi.get.mockResolvedValueOnce({ data: [] })
     const { listUsers } = useUserdirectory()
 
-    await listUsers('choirjobs', 3)
+    await listUsers('choirjobs', testId(3))
 
     expect(mockedApi.get).toHaveBeenCalledWith('/userdirectory', {
-      params: { type: 'choirjobs', id: 3 },
+      params: { type: 'choirjobs', id: testId(3) },
     })
   })
 })

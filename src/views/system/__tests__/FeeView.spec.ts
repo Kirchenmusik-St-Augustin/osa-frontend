@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import FeeView from '../FeeView.vue'
 import type { Fee } from '@/composables/useFees'
+import { testId } from '@/__tests__/testId'
 
 const mockItems = ref<Fee[]>([])
 const mockFetchList = vi.fn(async () => {})
@@ -26,7 +27,7 @@ vi.mock('@/services/notifications', () => ({
 }))
 
 function makeFee(overrides: Partial<Fee> = {}): Fee {
-  return { id: 1, name: 'Chor', amount: 0, ...overrides }
+  return { id: testId(1), name: 'Chor', amount: 0, ...overrides }
 }
 
 beforeEach(() => {
@@ -42,8 +43,8 @@ describe('FeeView', () => {
   it('fetches and renders every fee as its own row, name and amount in separate cells', async () => {
     // The table cell is just the raw number, no "(amount,-)" wrapper.
     mockItems.value = [
-      makeFee({ id: 1, name: 'Chor', amount: 0 }),
-      makeFee({ id: 2, name: 'Instrumentalist', amount: 60 }),
+      makeFee({ id: testId(1), name: 'Chor', amount: 0 }),
+      makeFee({ id: testId(2), name: 'Instrumentalist', amount: 60 }),
     ]
     const wrapper = mount(FeeView)
     await flushPromises()
@@ -61,8 +62,8 @@ describe('FeeView', () => {
     // simply/robustly than trying to leave the arrival order untouched (see
     // FeeView.vue's docstring).
     mockItems.value = [
-      makeFee({ id: 1, name: 'Solist', amount: 130 }),
-      makeFee({ id: 2, name: 'Chor', amount: 0 }),
+      makeFee({ id: testId(1), name: 'Solist', amount: 130 }),
+      makeFee({ id: testId(2), name: 'Chor', amount: 0 }),
     ]
     const wrapper = mount(FeeView)
     await flushPromises()
@@ -72,9 +73,9 @@ describe('FeeView', () => {
 
   it('sorts ascending/descending by Name on repeated clicks, and resets to ascending when switching to Betrag', async () => {
     mockItems.value = [
-      makeFee({ id: 1, name: 'Solist', amount: 130 }),
-      makeFee({ id: 2, name: 'Chor', amount: 0 }),
-      makeFee({ id: 3, name: 'Instrumentalist', amount: 60 }),
+      makeFee({ id: testId(1), name: 'Solist', amount: 130 }),
+      makeFee({ id: testId(2), name: 'Chor', amount: 0 }),
+      makeFee({ id: testId(3), name: 'Instrumentalist', amount: 60 }),
     ]
     const wrapper = mount(FeeView)
     await flushPromises()
@@ -126,7 +127,7 @@ describe('FeeView', () => {
   })
 
   it('pre-fills the form and updates the existing fee when editing', async () => {
-    mockItems.value = [makeFee({ id: 7, name: 'Chor', amount: 0 })]
+    mockItems.value = [makeFee({ id: testId(7), name: 'Chor', amount: 0 })]
     mockSave.mockResolvedValueOnce(undefined)
     const wrapper = mount(FeeView)
     await flushPromises()
@@ -139,7 +140,7 @@ describe('FeeView', () => {
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(mockSave).toHaveBeenCalledWith(7, { name: 'Chor', amount: 15 })
+    expect(mockSave).toHaveBeenCalledWith(testId(7), { name: 'Chor', amount: 15 })
   })
 
   it('shows field-level validation errors under the matching input', async () => {
@@ -161,7 +162,7 @@ describe('FeeView', () => {
   })
 
   it('deletes a fee after the user confirms, using the generic "Element" confirm/toast copy', async () => {
-    mockItems.value = [makeFee({ id: 3 })]
+    mockItems.value = [makeFee({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(true)
     mockRemove.mockResolvedValueOnce(undefined)
     const wrapper = mount(FeeView)
@@ -174,12 +175,12 @@ describe('FeeView', () => {
     // gelöscht" copy is used here, not "Honorar" -- same generic wording the
     // Coreelement pages already use.
     expect(mockConfirmAction).toHaveBeenCalledWith('Soll das Element wirklich gelöscht werden?')
-    expect(mockRemove).toHaveBeenCalledWith(3)
+    expect(mockRemove).toHaveBeenCalledWith(testId(3))
     expect(mockShowToast).toHaveBeenCalledWith('Element gelöscht')
   })
 
   it('does not delete when the user cancels the confirmation', async () => {
-    mockItems.value = [makeFee({ id: 3 })]
+    mockItems.value = [makeFee({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(false)
     const wrapper = mount(FeeView)
     await flushPromises()

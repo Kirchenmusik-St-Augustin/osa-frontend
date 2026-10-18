@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useShorturls } from '../useShorturls'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -63,9 +64,9 @@ describe('useShorturls', () => {
     })
     const { save } = useShorturls()
 
-    await save(1, { path: 'bar', target: 'example.org' })
+    await save(testId(1), { path: 'bar', target: 'example.org' })
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/shorturls/1', {
+    expect(mockedApi.put).toHaveBeenCalledWith(`/shorturls/${testId(1)}`, {
       path: 'bar',
       target: 'example.org',
     })
@@ -79,9 +80,9 @@ describe('useShorturls', () => {
     })
     const { remove } = useShorturls()
 
-    await remove(1)
+    await remove(testId(1))
 
-    expect(mockedApi.delete).toHaveBeenCalledWith('/shorturls/1')
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/shorturls/${testId(1)}`)
     expect(mockedApi.get).toHaveBeenCalledWith('/shorturls')
   })
 })

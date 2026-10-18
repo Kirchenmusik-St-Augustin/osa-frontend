@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import MessageToContactpersonView from '../MessageToContactpersonView.vue'
 import type { RoleWithContacts } from '@/composables/useSupport'
+import { testId } from '@/__tests__/testId'
 
 const mockGetContactpersons = vi.fn()
 const mockSendMessageToContactperson = vi.fn()
@@ -29,17 +30,17 @@ vi.mock('@/stores/auth', () => ({
 function makeRoles(): RoleWithContacts[] {
   return [
     {
-      id: 1,
+      id: testId(1),
       name: 'planner',
       label: 'Planung',
       description: 'Plant den Dienstplan.',
       users: [
-        { id: 5, givenname: 'Franz', surname: 'HUBER', has_email: true },
-        { id: 6, givenname: 'Anna', surname: 'MAYER', has_email: false },
+        { id: testId(5), givenname: 'Franz', surname: 'HUBER', has_email: true },
+        { id: testId(6), givenname: 'Anna', surname: 'MAYER', has_email: false },
       ],
     },
     {
-      id: 2,
+      id: testId(2),
       name: 'billing',
       label: 'Abrechnung',
       description: 'Erstellt die Gagenabrechnung.',
@@ -96,7 +97,7 @@ describe('MessageToContactpersonView', () => {
     const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
     expect(sendButton?.attributes('disabled')).toBeDefined()
 
-    await wrapper.find('select').setValue('5')
+    await wrapper.find('select').setValue(testId(5))
     await wrapper.find('textarea').setValue('Hi')
     expect(sendButton?.attributes('disabled')).toBeDefined()
 
@@ -110,13 +111,13 @@ describe('MessageToContactpersonView', () => {
     const wrapper = mount(MessageToContactpersonView)
     await flushPromises()
 
-    await wrapper.find('select').setValue('5')
+    await wrapper.find('select').setValue(testId(5))
     await wrapper.find('textarea').setValue('Bitte um Rückruf.')
     const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
     await sendButton?.trigger('click')
     await flushPromises()
 
-    expect(mockSendMessageToContactperson).toHaveBeenCalledWith(5, 'Bitte um Rückruf.')
+    expect(mockSendMessageToContactperson).toHaveBeenCalledWith(testId(5), 'Bitte um Rückruf.')
     expect(mockShowToast).toHaveBeenCalledWith('Nachricht versandt.')
     expect(wrapper.find('textarea').element.value).toBe('')
   })
@@ -127,7 +128,7 @@ describe('MessageToContactpersonView', () => {
     const wrapper = mount(MessageToContactpersonView)
     await flushPromises()
 
-    await wrapper.find('select').setValue('5')
+    await wrapper.find('select').setValue(testId(5))
     await wrapper.find('textarea').setValue('Bitte um Rückruf.')
     const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
     await sendButton?.trigger('click')
@@ -142,7 +143,7 @@ describe('MessageToContactpersonView', () => {
     const wrapper = mount(MessageToContactpersonView)
     await flushPromises()
 
-    await wrapper.find('select').setValue('5')
+    await wrapper.find('select').setValue(testId(5))
     await wrapper.find('textarea').setValue('Bitte um Rückruf.')
     const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
     await sendButton?.trigger('click')

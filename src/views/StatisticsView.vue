@@ -60,7 +60,10 @@ onMounted(async () => {
             <span class="badge bg-primary rounded-pill">{{ formatCount(stats.scores) }}</span>
           </div>
         </div>
-        <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div
+          v-if="stats.email"
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
           <span>
             <span>E-Mail-Output der vergangenen {{ stats.email.period_days }} Tage</span>
             <small class="text-black-50 ms-2">(max. {{ stats.email.threshold }})</small>

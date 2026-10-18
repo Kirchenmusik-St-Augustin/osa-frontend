@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import RequestLogUserView from '../RequestLogUserView.vue'
 import type { RequestLogEntry, RequestLogUserDetail } from '@/composables/useRequestLogs'
+import { linkTarget } from '@/__tests__/linkTarget'
 
 let mockQuery: Record<string, string> = {}
 vi.mock('vue-router', async (importOriginal) => ({
@@ -81,7 +82,7 @@ describe('RequestLogUserView', () => {
 
     const links = wrapper.findAllComponents(RouterLinkStub)
     const showLink = links.find(
-      (link) => link.props('to')?.name === 'administrator-request-logs-show',
+      (link) => linkTarget(link)?.name === 'administrator-request-logs-show',
     )
     expect(showLink?.props('to')).toEqual({
       name: 'administrator-request-logs-show',
@@ -90,7 +91,7 @@ describe('RequestLogUserView', () => {
 
     // The "zurück" button is shown both above and below the log list.
     const backLinks = links.filter(
-      (link) => link.props('to')?.name === 'administrator-request-logs-index',
+      (link) => linkTarget(link)?.name === 'administrator-request-logs-index',
     )
     expect(backLinks).toHaveLength(2)
     for (const backLink of backLinks) {

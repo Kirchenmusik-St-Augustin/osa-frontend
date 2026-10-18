@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Serves both "anlegen" (no `id` prop) and "bearbeiten" (`id` set).
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ScoreDataComponent from '@/components/scores/ScoreDataComponent.vue'
 import ScoreFieldsComponent from '@/components/scores/ScoreFieldsComponent.vue'
@@ -18,7 +18,7 @@ const router = useRouter()
 const { getFieldsConfig, getDefaults, get, create, update } = useScores()
 
 const score = ref<Score | null>(null)
-const fields = reactive<ScoreFieldsPayload>({})
+const fields = ref<ScoreFieldsPayload>({})
 const fieldsConfig = ref<Record<string, ScoreFieldConfig>>({})
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
@@ -33,7 +33,7 @@ async function loadInitialFields(): Promise<ScoreFieldsPayload> {
 onMounted(async () => {
   const [config, initialFields] = await Promise.all([getFieldsConfig(), loadInitialFields()])
   fieldsConfig.value = config
-  Object.assign(fields, initialFields)
+  fields.value = initialFields
   ready.value = true
 })
 
@@ -44,7 +44,7 @@ async function save(): Promise<void> {
   submitting.value = true
   fieldErrors.value = {}
   try {
-    const saved = props.id ? await update(props.id, fields) : await create(fields)
+    const saved = props.id ? await update(props.id, fields.value) : await create(fields.value)
     showToast('gespeichert.')
     await router.push({ name: 'repertoire-scores-show', params: { id: saved.id } })
   } catch (error) {

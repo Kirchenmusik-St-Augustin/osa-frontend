@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useFees } from '../useFees'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -40,9 +41,12 @@ describe('useFees', () => {
     mockedApi.get.mockResolvedValueOnce({ data: [] })
     const { save } = useFees()
 
-    await save(1, { name: 'Solist', amount: 140 })
+    await save(testId(1), { name: 'Solist', amount: 140 })
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/fees/1', { name: 'Solist', amount: 140 })
+    expect(mockedApi.put).toHaveBeenCalledWith(`/fees/${testId(1)}`, {
+      name: 'Solist',
+      amount: 140,
+    })
     expect(mockedApi.get).toHaveBeenCalledWith('/fees')
   })
 
@@ -51,9 +55,9 @@ describe('useFees', () => {
     mockedApi.get.mockResolvedValueOnce({ data: [] })
     const { remove } = useFees()
 
-    await remove(1)
+    await remove(testId(1))
 
-    expect(mockedApi.delete).toHaveBeenCalledWith('/fees/1')
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/fees/${testId(1)}`)
     expect(mockedApi.get).toHaveBeenCalledWith('/fees')
   })
 })

@@ -62,6 +62,75 @@ describe('SearchTypeahead', () => {
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('')
   })
 
+  it('ignores a slow answer to an older query that arrives after the answer to the newer one', async () => {
+    const resolvers: Record<string, (hits: { id: string; label: string }[]) => void> = {}
+    const search = vi.fn(
+      (query: string) =>
+        new Promise<{ id: string; label: string }[]>((resolve) => {
+          resolvers[query] = resolve
+        }),
+    )
+    const wrapper = mount(SearchTypeahead, { props: { search } })
+
+    await wrapper.find('input').setValue('Moz')
+    await vi.advanceTimersByTimeAsync(300)
+    await wrapper.find('input').setValue('Mozart')
+    await vi.advanceTimersByTimeAsync(300)
+
+    resolvers['Mozart']?.([{ id: 'new', label: 'MOZART, Wolfgang' }])
+    await flushPromises()
+    resolvers['Moz']?.([{ id: 'old', label: 'MOZZI, Old' }])
+    await flushPromises()
+
+    expect(wrapper.findAll('.list-group-item').map((item) => item.text())).toEqual([
+      'MOZART, Wolfgang',
+    ])
+  })
+
+  it('does not repopulate the list from a response that lands after the field was cleared', async () => {
+    let resolveSearch: (hits: { id: string; label: string }[]) => void = () => undefined
+    const search = vi.fn(
+      () =>
+        new Promise<{ id: string; label: string }[]>((resolve) => {
+          resolveSearch = resolve
+        }),
+    )
+    const wrapper = mount(SearchTypeahead, { props: { search } })
+
+    await wrapper.find('input').setValue('Mozart')
+    await vi.advanceTimersByTimeAsync(300)
+    await wrapper.find('input').setValue('')
+    resolveSearch([{ id: 'late', label: 'MOZART, Wolfgang' }])
+    await flushPromises()
+
+    expect(wrapper.find('.list-group').exists()).toBe(false)
+  })
+
+  it('does not reopen the list from a response that lands after a hit was selected', async () => {
+    const resolvers: Record<string, (hits: { id: string; label: string }[]) => void> = {}
+    const search = vi.fn(
+      (query: string) =>
+        new Promise<{ id: string; label: string }[]>((resolve) => {
+          resolvers[query] = resolve
+        }),
+    )
+    const wrapper = mount(SearchTypeahead, { props: { search } })
+
+    await wrapper.find('input').setValue('Moz')
+    await vi.advanceTimersByTimeAsync(300)
+    resolvers['Moz']?.([{ id: 'first', label: 'MOZART, Wolfgang' }])
+    await flushPromises()
+    await wrapper.find('input').setValue('Mozart')
+    await vi.advanceTimersByTimeAsync(300)
+
+    await wrapper.find('.list-group-item').trigger('click')
+    resolvers['Mozart']?.([{ id: 'late', label: 'MOZART, Leopold' }])
+    await flushPromises()
+
+    expect(wrapper.emitted('select')?.[0]).toEqual(['first'])
+    expect(wrapper.find('.list-group').exists()).toBe(false)
+  })
+
   it('renders the results list as a floating overlay, not pushing the page down', async () => {
     const search = vi.fn().mockResolvedValue([{ id: 5, label: 'MOZART, Wolfgang' }])
     const wrapper = mount(SearchTypeahead, { props: { search } })

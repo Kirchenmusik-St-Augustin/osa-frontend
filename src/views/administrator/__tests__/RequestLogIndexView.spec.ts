@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import RequestLogIndexView from '../RequestLogIndexView.vue'
 import type { RequestLogDayGroup } from '@/composables/useRequestLogs'
+import { testId } from '@/__tests__/testId'
+import { linkTarget } from '@/__tests__/linkTarget'
 
 let mockQuery: Record<string, string> = {}
 vi.mock('vue-router', async (importOriginal) => ({
@@ -18,7 +20,7 @@ vi.mock('@/composables/useRequestLogs', () => ({
 function makeDayGroup(overrides: Partial<RequestLogDayGroup> = {}): RequestLogDayGroup {
   return {
     day: '2026-08-12',
-    users: [{ id: 1, label: 'SCHINDLER, Margot' }],
+    users: [{ id: testId(1), label: 'SCHINDLER, Margot' }],
     ...overrides,
   }
 }
@@ -67,7 +69,7 @@ describe('RequestLogIndexView', () => {
 
   it('links each user to the per-user view with year/month/day from that day group', async () => {
     mockListDaysWithUsersForMonth.mockResolvedValueOnce([
-      makeDayGroup({ day: '2026-08-12', users: [{ id: 42, label: 'SCHINDLER, Margot' }] }),
+      makeDayGroup({ day: '2026-08-12', users: [{ id: testId(42), label: 'SCHINDLER, Margot' }] }),
     ])
     const wrapper = mount(RequestLogIndexView)
     await flushPromises()
@@ -75,11 +77,11 @@ describe('RequestLogIndexView', () => {
 
     const userLink = wrapper
       .findAllComponents(RouterLinkStub)
-      .find((link) => link.props('to')?.name === 'administrator-request-logs-user')
+      .find((link) => linkTarget(link)?.name === 'administrator-request-logs-user')
     expect(userLink).toBeDefined()
     expect(userLink?.props('to')).toEqual({
       name: 'administrator-request-logs-user',
-      params: { userId: 42 },
+      params: { userId: testId(42) },
       query: { year: 2026, month: 8, day: 12 },
     })
   })
@@ -99,8 +101,8 @@ describe('RequestLogIndexView', () => {
     mockListDaysWithUsersForMonth.mockResolvedValueOnce([
       makeDayGroup({
         users: [
-          { id: 1, label: 'SCHINDLER, Margot' },
-          { id: 2, label: 'AAAMSTETTER, Bernd' },
+          { id: testId(1), label: 'SCHINDLER, Margot' },
+          { id: testId(2), label: 'AAAMSTETTER, Bernd' },
         ],
       }),
     ])

@@ -51,6 +51,21 @@ const INSTRUMENT_GRID: string[][] = [
   ['pauke', 'trombalt', 'klarinette1', 'kontrafagott'],
 ]
 
+// One field's value plus its update handler: the changed value is written to
+// a copy of the model and emitted, the object received from the parent is
+// never mutated.
+function fieldBinding(key: string): {
+  modelValue: string | number | null
+  'onUpdate:modelValue': (value: string | number | null) => void
+} {
+  return {
+    modelValue: model.value[key] ?? null,
+    'onUpdate:modelValue': (value) => {
+      model.value = { ...model.value, [key]: value }
+    },
+  }
+}
+
 function hasAnzField(name: string): boolean {
   return `${name}anz` in props.fieldsConfig
 }
@@ -62,7 +77,7 @@ function hasAnzField(name: string): boolean {
       <div class="row">
         <div class="col-lg-5">
           <ScoreFieldsFieldComponent
-            v-model="model['werk']!"
+            v-bind="fieldBinding('werk')"
             name="werk"
             with-title
             :config="fieldsConfig['werk']"
@@ -72,7 +87,7 @@ function hasAnzField(name: string): boolean {
         </div>
         <div class="col-lg-5">
           <ScoreFieldsFieldComponent
-            v-model="model['teil']!"
+            v-bind="fieldBinding('teil')"
             name="teil"
             with-title
             :config="fieldsConfig['teil']"
@@ -82,7 +97,7 @@ function hasAnzField(name: string): boolean {
         </div>
         <div class="col-lg-2">
           <ScoreFieldsFieldComponent
-            v-model="model['sparte']!"
+            v-bind="fieldBinding('sparte')"
             name="sparte"
             with-title
             :config="fieldsConfig['sparte']"
@@ -94,7 +109,7 @@ function hasAnzField(name: string): boolean {
       <div class="row">
         <div class="col-lg-2">
           <ScoreFieldsFieldComponent
-            v-model="model['givenname']!"
+            v-bind="fieldBinding('givenname')"
             name="givenname"
             with-title
             :config="fieldsConfig['givenname']"
@@ -104,7 +119,7 @@ function hasAnzField(name: string): boolean {
         </div>
         <div class="col-lg-2">
           <ScoreFieldsFieldComponent
-            v-model="model['surname']!"
+            v-bind="fieldBinding('surname')"
             name="surname"
             with-title
             :config="fieldsConfig['surname']"
@@ -114,7 +129,7 @@ function hasAnzField(name: string): boolean {
         </div>
         <div class="col-lg-2">
           <ScoreFieldsFieldComponent
-            v-model="model['geboren']!"
+            v-bind="fieldBinding('geboren')"
             name="geboren"
             with-title
             :config="fieldsConfig['geboren']"
@@ -124,7 +139,7 @@ function hasAnzField(name: string): boolean {
         </div>
         <div class="col-lg-2">
           <ScoreFieldsFieldComponent
-            v-model="model['gestorben']!"
+            v-bind="fieldBinding('gestorben')"
             name="gestorben"
             with-title
             :config="fieldsConfig['gestorben']"
@@ -134,7 +149,7 @@ function hasAnzField(name: string): boolean {
         </div>
         <div class="col-lg-2">
           <ScoreFieldsFieldComponent
-            v-model="model['verz']!"
+            v-bind="fieldBinding('verz')"
             name="verz"
             with-title
             :config="fieldsConfig['verz']"
@@ -144,7 +159,7 @@ function hasAnzField(name: string): boolean {
         </div>
         <div class="col-lg-2">
           <ScoreFieldsFieldComponent
-            v-model="model['jahr']!"
+            v-bind="fieldBinding('jahr')"
             name="jahr"
             with-title
             :config="fieldsConfig['jahr']"
@@ -159,7 +174,7 @@ function hasAnzField(name: string): boolean {
   <div class="row">
     <div class="col-sm-1">
       <ScoreFieldsFieldComponent
-        v-model="model['kasten']!"
+        v-bind="fieldBinding('kasten')"
         name="kasten"
         with-title
         :config="fieldsConfig['kasten']"
@@ -169,7 +184,7 @@ function hasAnzField(name: string): boolean {
     </div>
     <div class="col-sm-2">
       <ScoreFieldsFieldComponent
-        v-model="model['boxnr']!"
+        v-bind="fieldBinding('boxnr')"
         name="boxnr"
         with-title
         :config="fieldsConfig['boxnr']"
@@ -179,7 +194,7 @@ function hasAnzField(name: string): boolean {
     </div>
     <div class="col-sm-5">
       <ScoreFieldsFieldComponent
-        v-model="model['auch']!"
+        v-bind="fieldBinding('auch')"
         name="auch"
         with-title
         :config="fieldsConfig['auch']"
@@ -189,7 +204,7 @@ function hasAnzField(name: string): boolean {
     </div>
     <div class="col-sm-4">
       <ScoreFieldsFieldComponent
-        v-model="model['inhalt']!"
+        v-bind="fieldBinding('inhalt')"
         name="inhalt"
         with-title
         :config="fieldsConfig['inhalt']"
@@ -213,42 +228,46 @@ function hasAnzField(name: string): boolean {
       </div>
       <div class="col-sm-5">
         <ScoreFieldsFieldComponent
-          v-model="model[`${group.name}verl`]!"
+          v-bind="fieldBinding(`${group.name}verl`)"
           :name="`${group.name}verl`"
           :config="fieldsConfig[`${group.name}verl`]"
           :readonly="readonly"
           :error="errors[`${group.name}verl`]"
+          :aria-label="`${group.label}: Verlag`"
           small
         />
       </div>
       <div class="col-sm-2">
         <ScoreFieldsFieldComponent
-          v-model="model[`${group.name}art`]!"
+          v-bind="fieldBinding(`${group.name}art`)"
           :name="`${group.name}art`"
           :config="fieldsConfig[`${group.name}art`]"
           :readonly="readonly"
           :error="errors[`${group.name}art`]"
+          :aria-label="`${group.label}: Art`"
           small
         />
       </div>
       <div class="col-sm-2">
         <ScoreFieldsFieldComponent
-          v-model="model[`${group.name}zust`]!"
+          v-bind="fieldBinding(`${group.name}zust`)"
           :name="`${group.name}zust`"
           :config="fieldsConfig[`${group.name}zust`]"
           :readonly="readonly"
           :error="errors[`${group.name}zust`]"
+          :aria-label="`${group.label}: Zustand`"
           small
         />
       </div>
       <div class="col-sm-1">
         <ScoreFieldsFieldComponent
           v-if="hasAnzField(group.name)"
-          v-model="model[`${group.name}anz`]!"
+          v-bind="fieldBinding(`${group.name}anz`)"
           :name="`${group.name}anz`"
           :config="fieldsConfig[`${group.name}anz`]"
           :readonly="readonly"
           :error="errors[`${group.name}anz`]"
+          :aria-label="`${group.label}: Anzahl`"
           small
         />
       </div>
@@ -261,7 +280,7 @@ function hasAnzField(name: string): boolean {
       <div v-for="(row, rowIndex) in INSTRUMENT_GRID" :key="rowIndex" class="row">
         <div v-for="fieldName in row" :key="fieldName" class="col-md-3">
           <ScoreFieldsFieldComponent
-            v-model="model[fieldName]!"
+            v-bind="fieldBinding(fieldName)"
             :name="fieldName"
             with-title
             :config="fieldsConfig[fieldName]"
@@ -276,7 +295,7 @@ function hasAnzField(name: string): boolean {
       <div class="row mb-2">
         <div v-for="index in 4" :key="index" class="col-md-3">
           <ScoreFieldsFieldComponent
-            v-model="model[`soinstr${index}art`]!"
+            v-bind="fieldBinding(`soinstr${index}art`)"
             :name="`soinstr${index}art`"
             with-title
             :config="fieldsConfig[`soinstr${index}art`]"
@@ -286,7 +305,7 @@ function hasAnzField(name: string): boolean {
             small
           />
           <ScoreFieldsFieldComponent
-            v-model="model[`soinstr${index}anz`]!"
+            v-bind="fieldBinding(`soinstr${index}anz`)"
             :name="`soinstr${index}anz`"
             with-title
             :config="fieldsConfig[`soinstr${index}anz`]"
@@ -302,7 +321,7 @@ function hasAnzField(name: string): boolean {
     <div class="row">
       <div class="col-sm-6">
         <ScoreFieldsFieldComponent
-          v-model="model['zusatznoten']!"
+          v-bind="fieldBinding('zusatznoten')"
           name="zusatznoten"
           with-title
           :config="fieldsConfig['zusatznoten']"
@@ -312,7 +331,7 @@ function hasAnzField(name: string): boolean {
       </div>
       <div class="col-sm-6">
         <ScoreFieldsFieldComponent
-          v-model="model['bemerkung']!"
+          v-bind="fieldBinding('bemerkung')"
           name="bemerkung"
           with-title
           :config="fieldsConfig['bemerkung']"

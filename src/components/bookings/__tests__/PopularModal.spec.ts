@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PopularModal from '../PopularModal.vue'
 import type { PopularItem } from '@/composables/useBookings'
+import { testId } from '@/__tests__/testId'
 
 const popular: PopularItem = {
-  frequent: [{ id: 1, name: 'Muster, Max', total: 5 }],
-  recent: [{ id: 2, name: 'Beispiel, Erika', booked: '2026-07-01T11:00:00' }],
+  frequent: [{ id: testId(1), name: 'Muster, Max', total: 5 }],
+  recent: [{ id: testId(2), name: 'Beispiel, Erika', booked: '2026-07-01T11:00:00' }],
 }
 
 describe('PopularModal', () => {

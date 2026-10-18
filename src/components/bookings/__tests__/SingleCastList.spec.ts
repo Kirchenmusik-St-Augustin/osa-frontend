@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SingleCastList from '../SingleCastList.vue'
 import type { CastMember, NotBookedEntry } from '@/composables/useBookings'
+import { testId } from '@/__tests__/testId'
 
 // vuedraggable/SortableJS drive real drag gestures via native pointer/touch
 // events jsdom doesn't implement -- stubbed minimally instead (same
@@ -38,13 +39,13 @@ vi.mock('vuedraggable', () => ({
 
 function cast(): CastMember[] {
   return [
-    { id: 1, name: 'Regular', fee: 80 },
-    { id: 2, name: 'Standby', fee: 80 },
+    { id: testId(1), name: 'Regular', fee: 80 },
+    { id: testId(2), name: 'Standby', fee: 80 },
   ]
 }
 
 function notBooked(): NotBookedEntry[] {
-  return [{ id: 3, name: 'REJECTED, Kandidat' }]
+  return [{ id: testId(3), name: 'REJECTED, Kandidat' }]
 }
 
 // Mounts SingleCastList behind a thin REACTIVE host that mirrors
@@ -93,8 +94,8 @@ describe('SingleCastList', () => {
     const downArrows = wrapper.findAll('.fa-arrow-down')
     await downArrows[0]?.trigger('click')
     expect(wrapper.emitted('cast-changed')?.[0]?.[0]).toEqual([
-      { id: 2, name: 'Standby', fee: 80 },
-      { id: 1, name: 'Regular', fee: 80 },
+      { id: testId(2), name: 'Standby', fee: 80 },
+      { id: testId(1), name: 'Regular', fee: 80 },
     ])
   })
 
@@ -113,7 +114,9 @@ describe('SingleCastList', () => {
     })
     const removeIcons = wrapper.findAll('.fa-times')
     await removeIcons[0]?.trigger('click')
-    expect(wrapper.emitted('cast-changed')?.[0]?.[0]).toEqual([{ id: 2, name: 'Standby', fee: 80 }])
+    expect(wrapper.emitted('cast-changed')?.[0]?.[0]).toEqual([
+      { id: testId(2), name: 'Standby', fee: 80 },
+    ])
   })
 
   it('renders its own "nicht gebucht" section when notBooked entries are passed', () => {
@@ -137,7 +140,7 @@ describe('SingleCastList', () => {
     })
     const notBookedRemoveIcon = wrapper.findAll('.fa-times').at(-1)
     await notBookedRemoveIcon?.trigger('click')
-    expect(wrapper.emitted('remove-not-booked')?.[0]).toEqual([3])
+    expect(wrapper.emitted('remove-not-booked')?.[0]).toEqual([testId(3)])
     expect(wrapper.emitted('cast-changed')).toBeUndefined()
   })
 
@@ -151,7 +154,7 @@ describe('SingleCastList', () => {
   it('hides the drag handle and both arrows when only one person is booked -- nothing to reorder against', () => {
     const wrapper = mount(SingleCastList, {
       props: {
-        cast: [{ id: 1, name: 'Solo', fee: 80 }],
+        cast: [{ id: testId(1), name: 'Solo', fee: 80 }],
         required: 1,
         notBooked: [],
         allowAutoSort: false,
@@ -192,7 +195,7 @@ describe('SingleCastList', () => {
     const wrapper = mount(SingleCastList, {
       props: { cast: cast(), required: 1, notBooked: [], allowAutoSort: false },
     })
-    const newCast: CastMember[] = [{ id: 4, name: 'ADDED, Kandidat', fee: 90 }]
+    const newCast: CastMember[] = [{ id: testId(4), name: 'ADDED, Kandidat', fee: 90 }]
 
     await wrapper.setProps({ cast: newCast })
 
@@ -220,11 +223,11 @@ describe('SingleCastList', () => {
   describe('autom. Sortierung (choirjobs only)', () => {
     function voicedCast(): CastMember[] {
       return [
-        { id: 1, name: 'ZIMMERMANN, Anna', fee: 35, voice_name: 'Alt', voice_order: 2 },
-        { id: 2, name: 'ADLER, Bernd', fee: 35, voice_name: 'Sopran', voice_order: 1 },
-        { id: 3, name: 'MUELLER, Clara', fee: 35, voice_name: 'Sopran', voice_order: 1 },
-        { id: 4, name: 'ZIEGLER, Dora', fee: 35 }, // no voice assigned
-        { id: 5, name: 'ABEL, Egon', fee: 35 }, // no voice assigned
+        { id: testId(1), name: 'ZIMMERMANN, Anna', fee: 35, voice_name: 'Alt', voice_order: 2 },
+        { id: testId(2), name: 'ADLER, Bernd', fee: 35, voice_name: 'Sopran', voice_order: 1 },
+        { id: testId(3), name: 'MUELLER, Clara', fee: 35, voice_name: 'Sopran', voice_order: 1 },
+        { id: testId(4), name: 'ZIEGLER, Dora', fee: 35 }, // no voice assigned
+        { id: testId(5), name: 'ABEL, Egon', fee: 35 }, // no voice assigned
       ]
     }
 
@@ -299,7 +302,7 @@ describe('SingleCastList', () => {
       await wrapper.findAll('.fa-times')[0]?.trigger('click')
 
       const emitted = wrapper.emitted('cast-changed')
-      expect(emitted?.at(-1)?.[0]).not.toContainEqual(expect.objectContaining({ id: 2 }))
+      expect(emitted?.at(-1)?.[0]).not.toContainEqual(expect.objectContaining({ id: testId(2) }))
     })
 
     it('colors regular/standby by the GLOBAL sorted index, not a per-group index', async () => {
@@ -327,7 +330,7 @@ describe('SingleCastList', () => {
       await wrapper.find('input[role="switch"]').setValue(true)
 
       const newCandidate: CastMember = {
-        id: 6,
+        id: testId(6),
         name: 'AAA, Neu',
         fee: 35,
         voice_name: 'Sopran',
@@ -383,9 +386,9 @@ describe('SingleCastList', () => {
       // the known data gap), so auto-sort collapses everything into one
       // "Stimmlage unbekannt" group, sorted purely alphabetically.
       const original: CastMember[] = [
-        { id: 1, name: 'ZIMMERMANN, Anna', fee: 35 },
-        { id: 2, name: 'ADLER, Bernd', fee: 35 },
-        { id: 3, name: 'MUELLER, Clara', fee: 35 },
+        { id: testId(1), name: 'ZIMMERMANN, Anna', fee: 35 },
+        { id: testId(2), name: 'ADLER, Bernd', fee: 35 },
+        { id: testId(3), name: 'MUELLER, Clara', fee: 35 },
       ]
       const wrapper = mount(ReactiveHost, { props: { initialCast: original, required: 3 } })
       const switchInput = wrapper.find('input[role="switch"]')
@@ -413,7 +416,7 @@ describe('SingleCastList', () => {
       await switchInput.setValue(true)
       const sorted = wrapper.emitted('cast-changed')?.at(-1)?.[0] as CastMember[]
       const newMember: CastMember = {
-        id: 6,
+        id: testId(6),
         name: 'NEU, Zusatz',
         fee: 35,
         voice_name: 'Sopran',
@@ -426,7 +429,7 @@ describe('SingleCastList', () => {
       await switchInput.setValue(false)
 
       const restored = wrapper.emitted('cast-changed')?.at(-1)?.[0] as CastMember[]
-      expect(restored.map((m) => m.id)).toEqual([...original.map((m) => m.id), 6])
+      expect(restored.map((m) => m.id)).toEqual([...original.map((m) => m.id), testId(6)])
     })
 
     it('drops a member removed while auto-sort was on, instead of resurrecting them on restore', async () => {
@@ -437,12 +440,14 @@ describe('SingleCastList', () => {
       const switchInput = wrapper.find('input[role="switch"]')
       await switchInput.setValue(true)
       const sorted = wrapper.emitted('cast-changed')?.at(-1)?.[0] as CastMember[]
-      await wrapper.setProps({ cast: sorted.filter((m) => m.id !== 2) })
+      await wrapper.setProps({ cast: sorted.filter((m) => m.id !== testId(2)) })
 
       await switchInput.setValue(false)
 
       const restored = wrapper.emitted('cast-changed')?.at(-1)?.[0] as CastMember[]
-      expect(restored.map((m) => m.id)).toEqual(original.filter((m) => m.id !== 2).map((m) => m.id))
+      expect(restored.map((m) => m.id)).toEqual(
+        original.filter((m) => m.id !== testId(2)).map((m) => m.id),
+      )
     })
   })
 })

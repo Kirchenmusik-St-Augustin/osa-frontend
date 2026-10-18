@@ -3,10 +3,11 @@ import { mount } from '@vue/test-utils'
 import UserDataCard from '../UserDataCard.vue'
 import type { User } from '@/composables/useUsers'
 import { formatUtcDateTime } from '@/services/dateFormat'
+import { testId } from '@/__tests__/testId'
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: 1,
+    id: testId(1),
     surname: 'SCHINDLER',
     givenname: 'Margot',
     email: null,
@@ -19,7 +20,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     oauth2_bindings: [],
     instruments: [],
     voices: [],
-    choirjobs: [{ id: 3, name: 'Substitut' }],
+    choirjobs: [{ id: testId(3), name: 'Substitut' }],
     roles: [],
     ...overrides,
   }

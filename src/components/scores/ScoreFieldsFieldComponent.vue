@@ -19,6 +19,7 @@ withDefaults(
     titleSmall?: boolean
     error?: string
     readonly?: boolean
+    ariaLabel?: string
   }>(),
   {
     config: undefined,
@@ -27,6 +28,7 @@ withDefaults(
     titleSmall: false,
     error: '',
     readonly: false,
+    ariaLabel: undefined,
   },
 )
 </script>
@@ -41,6 +43,7 @@ withDefaults(
     :small="small"
     :title-small="titleSmall"
     :error="error"
+    :aria-label="ariaLabel"
     :required="config.required"
     :max="config.kind === 'number' ? 9999 : (config.length ?? undefined)"
     :type="config.kind === 'number' ? 'number' : 'text'"
@@ -54,6 +57,7 @@ withDefaults(
     :small="small"
     :title-small="titleSmall"
     :error="error"
+    :aria-label="ariaLabel"
     :required="config.required"
     :max="config.length ?? undefined"
     type="textarea"
@@ -68,6 +72,7 @@ withDefaults(
       v-model="model"
       class="form-select"
       :disabled="readonly"
+      :aria-label="ariaLabel"
       :class="small ? ['form-select-sm'] : []"
     >
       <option v-for="value in config.values ?? []" :key="value" :value="value">

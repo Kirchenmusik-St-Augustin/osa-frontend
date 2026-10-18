@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useProfile } from '../useProfile'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -64,8 +65,8 @@ describe('useProfile', () => {
     mockedApi.delete.mockResolvedValueOnce({ data: null })
     const { disconnectOauth2 } = useProfile()
 
-    await disconnectOauth2(7)
+    await disconnectOauth2(testId(7))
 
-    expect(mockedApi.delete).toHaveBeenCalledWith('/auth/oauth2/7')
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/auth/oauth2/${testId(7)}`)
   })
 })

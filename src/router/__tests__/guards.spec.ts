@@ -46,14 +46,19 @@ beforeEach(() => {
 
 describe('runAuthGuards', () => {
   it('allows a public route through when logged out', async () => {
-    const result = await runAuthGuards(makeRoute({ meta: {} }), makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(
+      undefined,
+      makeRoute({ meta: {} }),
+      makeRoute(),
+      vi.fn(),
+    )
     expect(result).toBe(true)
   })
 
   it('redirects to login for a requiresAuth route when logged out', async () => {
     const to = makeRoute({ fullPath: '/some-protected-page', meta: { requiresAuth: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toEqual({ name: 'login', query: { redirect: '/some-protected-page' } })
   })
@@ -66,7 +71,7 @@ describe('runAuthGuards', () => {
     mockedApi.get.mockResolvedValueOnce({ data: authenticatedProfile })
     const to = makeRoute({ meta: { requiresAuth: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -79,7 +84,7 @@ describe('runAuthGuards', () => {
     mockedApi.get.mockResolvedValueOnce({ data: authenticatedProfile })
     const to = makeRoute({ meta: { requiresGuest: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toEqual({ name: 'home' })
   })
@@ -87,7 +92,7 @@ describe('runAuthGuards', () => {
   it('allows a requiresGuest route through when logged out', async () => {
     const to = makeRoute({ meta: { requiresGuest: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -95,7 +100,7 @@ describe('runAuthGuards', () => {
   it('allows a route with neither meta flag through regardless of auth state', async () => {
     const to = makeRoute({ meta: {} })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -108,7 +113,7 @@ describe('runAuthGuards', () => {
     mockedApi.get.mockResolvedValueOnce({ data: authenticatedProfile })
     const to = makeRoute({ meta: { requiredPermission: 'artistMaintain' } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toEqual({ name: 'home' })
   })
@@ -123,7 +128,7 @@ describe('runAuthGuards', () => {
     })
     const to = makeRoute({ meta: { requiredPermission: 'artistMaintain' } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -138,7 +143,7 @@ describe('runAuthGuards', () => {
     })
     const to = makeRoute({ meta: { requiresAuth: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toEqual({ name: 'verify-email-notice' })
   })
@@ -153,7 +158,7 @@ describe('runAuthGuards', () => {
     })
     const to = makeRoute({ name: 'verify-email-notice', meta: { requiresAuth: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -168,7 +173,7 @@ describe('runAuthGuards', () => {
     })
     const to = makeRoute({ name: 'verify-email', meta: {} })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })

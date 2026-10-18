@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ScoreDataComponent from '../ScoreDataComponent.vue'
+import { testId } from '@/__tests__/testId'
 
 describe('ScoreDataComponent', () => {
   it('renders id, created_at, and updated_at', () => {
     const wrapper = mount(ScoreDataComponent, {
       props: {
         score: {
-          id: 42,
+          id: testId(42),
           created_at: '2026-01-01T10:00:00+00:00',
           updated_at: '2026-01-02T10:00:00+00:00',
         },
       },
     })
 
-    expect(wrapper.text()).toContain('Eintrags-ID: 42')
+    expect(wrapper.text()).toContain(`Eintrags-ID: ${testId(42)}`)
     expect(wrapper.text()).toMatch(/Erstelldatum:.*2026/)
   })
 
@@ -22,7 +23,7 @@ describe('ScoreDataComponent', () => {
     const wrapper = mount(ScoreDataComponent, {
       props: {
         score: {
-          id: 1,
+          id: testId(1),
           created_at: '2026-01-01T10:00:00+00:00',
           updated_at: '2026-01-02T10:00:00+00:00',
         },

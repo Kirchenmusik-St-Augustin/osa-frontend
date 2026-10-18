@@ -126,7 +126,7 @@ describe('OrdinariumworkFormView', () => {
   it('pre-fills the form and its setup editors when editing', async () => {
     mockGet.mockResolvedValueOnce(makeWork())
     mockGetSetup.mockResolvedValueOnce(
-      makeSetup({ instruments: [{ id: '10', name: 'Fagott', quantity: 3 }] }),
+      makeSetup({ instruments: [{ id: '10', name: 'Fagott', quantity: 3, active: true }] }),
     )
     mockUpdate.mockResolvedValueOnce(makeWork())
     const wrapper = mount(OrdinariumworkFormView, { props: { id: '1' } })

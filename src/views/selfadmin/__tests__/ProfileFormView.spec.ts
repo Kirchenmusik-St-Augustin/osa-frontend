@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import ProfileFormView from '../ProfileFormView.vue'
 import type { User } from '@/composables/useUsers'
+import { testId } from '@/__tests__/testId'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
 vi.mock('vue-router', async (importOriginal) => ({
@@ -25,7 +26,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: 1,
+    id: testId(1),
     surname: 'SCHINDLER',
     givenname: 'Margot',
     email: 'margot@example.com',

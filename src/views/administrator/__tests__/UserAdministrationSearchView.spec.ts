@@ -4,6 +4,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import UserAdministrationSearchView from '../UserAdministrationSearchView.vue'
 import SearchTypeahead from '@/components/common/SearchTypeahead.vue'
 import type { UserAdministrationDeletedEntry } from '@/composables/useUserAdministration'
+import { testId } from '@/__tests__/testId'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
 vi.mock('vue-router', async (importOriginal) => ({
@@ -18,7 +19,7 @@ vi.mock('@/composables/useUserAdministration', () => ({
 }))
 
 const deletedUsers: UserAdministrationDeletedEntry[] = [
-  { id: 9, surname: 'ABICHT', givenname: 'Luis', email: 'luis.abicht@gmx.at' },
+  { id: testId(9), surname: 'ABICHT', givenname: 'Luis', email: 'luis.abicht@gmx.at' },
 ]
 
 beforeEach(() => {
@@ -39,11 +40,11 @@ describe('UserAdministrationSearchView', () => {
     const wrapper = mount(UserAdministrationSearchView)
     await flushPromises()
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 9)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', testId(9))
 
     expect(mockPush).toHaveBeenCalledWith({
       name: 'administrator-users-show',
-      params: { id: 9 },
+      params: { id: testId(9) },
     })
   })
 
@@ -57,7 +58,7 @@ describe('UserAdministrationSearchView', () => {
     const link = wrapper.findComponent({ name: 'RouterLinkStub' })
     expect(link.props('to')).toEqual({
       name: 'administrator-users-show',
-      params: { id: 9 },
+      params: { id: testId(9) },
     })
   })
 

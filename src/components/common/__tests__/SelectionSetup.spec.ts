@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SelectionSetup from '../SelectionSetup.vue'
+import { testId } from '@/__tests__/testId'
 
 const available = [
-  { id: 1, name: 'Konzertmeister' },
-  { id: 2, name: 'Violine 1' },
-  { id: 3, name: 'Violine 2' },
+  { id: testId(1), name: 'Konzertmeister' },
+  { id: testId(2), name: 'Violine 1' },
+  { id: testId(3), name: 'Violine 2' },
 ]
 
 describe('SelectionSetup', () => {
@@ -68,7 +69,7 @@ describe('SelectionSetup', () => {
     // `available` is filtered to active-only server-side). Before the fix,
     // the left column iterated `available` only, so a since-archived
     // assignment became invisible and unremovable.
-    const archivedButAssigned = { id: 99, name: 'Serpent' }
+    const archivedButAssigned = { id: testId(99), name: 'Serpent' }
     const wrapper = mount(SelectionSetup, {
       props: { available, modelValue: [available[0]!, archivedButAssigned] },
     })

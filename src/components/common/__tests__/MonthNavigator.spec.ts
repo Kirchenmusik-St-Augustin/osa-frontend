@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import MonthNavigator from '../MonthNavigator.vue'
+import { linkTarget } from '@/__tests__/linkTarget'
 
 describe('MonthNavigator', () => {
   it('renders the formatted month/year heading', () => {
@@ -19,15 +20,15 @@ describe('MonthNavigator', () => {
     const links = wrapper.findAllComponents(RouterLinkStub)
     expect(links).toHaveLength(3)
     for (const link of links) {
-      expect(link.props('to').name).toBe('administrator-sent-emails-index')
+      expect(linkTarget(link)?.name).toBe('administrator-sent-emails-index')
     }
-    expect(links[0]?.props('to').query).toEqual({ year: 2026, month: 7 })
+    expect(linkTarget(links[0])?.query).toEqual({ year: 2026, month: 7 })
     const now = new Date()
-    expect(links[1]?.props('to').query).toEqual({
+    expect(linkTarget(links[1])?.query).toEqual({
       year: now.getFullYear(),
       month: now.getMonth() + 1,
     })
-    expect(links[2]?.props('to').query).toEqual({ year: 2026, month: 9 })
+    expect(linkTarget(links[2])?.query).toEqual({ year: 2026, month: 9 })
   })
 
   it('rolls over into the previous/next year at the boundaries', () => {
@@ -36,7 +37,7 @@ describe('MonthNavigator', () => {
     })
 
     const links = wrapper.findAllComponents(RouterLinkStub)
-    expect(links[0]?.props('to').query).toEqual({ year: 2025, month: 12 })
+    expect(linkTarget(links[0])?.query).toEqual({ year: 2025, month: 12 })
   })
 
   it('rolls over into the next year at the December boundary', () => {
@@ -45,6 +46,6 @@ describe('MonthNavigator', () => {
     })
 
     const links = wrapper.findAllComponents(RouterLinkStub)
-    expect(links[2]?.props('to').query).toEqual({ year: 2027, month: 1 })
+    expect(linkTarget(links[2])?.query).toEqual({ year: 2027, month: 1 })
   })
 })

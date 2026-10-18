@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useCoreelements } from '../useCoreelements'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -51,9 +52,9 @@ describe('useCoreelements', () => {
     mockedApi.get.mockResolvedValueOnce({ data: [sampleItem] })
     const { save } = useCoreelements('location')
 
-    await save(5, { name: 'Chorraum', address: 'Hauptstraße 1', color: 'ff0000' })
+    await save(testId(5), { name: 'Chorraum', address: 'Hauptstraße 1', color: 'ff0000' })
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/coreelements/location/5', {
+    expect(mockedApi.put).toHaveBeenCalledWith(`/coreelements/location/${testId(5)}`, {
       name: 'Chorraum',
       address: 'Hauptstraße 1',
       color: 'ff0000',
@@ -65,9 +66,9 @@ describe('useCoreelements', () => {
     mockedApi.get.mockResolvedValueOnce({ data: [{ ...sampleItem, active: false }] })
     const { items, save } = useCoreelements('instrument')
 
-    await save(1, { name: 'Fagott', active: false })
+    await save(testId(1), { name: 'Fagott', active: false })
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/coreelements/instrument/1', {
+    expect(mockedApi.put).toHaveBeenCalledWith(`/coreelements/instrument/${testId(1)}`, {
       name: 'Fagott',
       active: false,
     })
@@ -79,9 +80,9 @@ describe('useCoreelements', () => {
     mockedApi.get.mockResolvedValueOnce({ data: [] })
     const { items, remove } = useCoreelements('instrument')
 
-    await remove(1)
+    await remove(testId(1))
 
-    expect(mockedApi.delete).toHaveBeenCalledWith('/coreelements/instrument/1')
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/coreelements/instrument/${testId(1)}`)
     expect(items.value).toEqual([])
   })
 
@@ -90,9 +91,9 @@ describe('useCoreelements', () => {
     mockedApi.post.mockResolvedValueOnce({ data: reordered })
     const { items, move } = useCoreelements('instrument')
 
-    await move(1, 'up')
+    await move(testId(1), 'up')
 
-    expect(mockedApi.post).toHaveBeenCalledWith('/coreelements/instrument/1/move/up')
+    expect(mockedApi.post).toHaveBeenCalledWith(`/coreelements/instrument/${testId(1)}/move/up`)
     expect(items.value).toEqual(reordered)
   })
 
