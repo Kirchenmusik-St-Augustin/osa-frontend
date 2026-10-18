@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useProfile } from '../useProfile'
 import api from '@/services/api'

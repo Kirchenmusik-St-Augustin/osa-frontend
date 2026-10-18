@@ -6,6 +6,10 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
+      // jsdom is the default because most specs mount components. Specs that
+      // never touch the DOM opt out with `// @vitest-environment node` on
+      // their first line: creating a jsdom per file is the largest single cost
+      // of a test run.
       environment: 'jsdom',
       exclude: [...configDefaults.exclude, 'e2e/*'],
       root: fileURLToPath(new URL('./', import.meta.url)),

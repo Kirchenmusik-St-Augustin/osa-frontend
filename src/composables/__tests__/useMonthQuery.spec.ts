@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type * as VueRouter from 'vue-router'
 import { describe, expect, it, vi } from 'vitest'
 import { useMonthQuery } from '../useMonthQuery'

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { usePropriumworks } from '../usePropriumworks'
 import api from '@/services/api'

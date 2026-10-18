@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useBookings, nextActionFor, type CastSavePayload } from '../useBookings'
 import api from '@/services/api'
