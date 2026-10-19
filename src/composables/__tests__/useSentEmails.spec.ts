@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSentEmails } from '../useSentEmails'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
 import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
@@ -17,14 +18,15 @@ beforeEach(() => {
 describe('useSentEmails', () => {
   it('listForMonth requests the month-scoped endpoint', async () => {
     const entries = [{ id: 1, datetime: '2026-08-01T10:00:00Z', to: 'a@b.test', subject: 'X' }]
-    mockedApi.get.mockResolvedValueOnce({ data: entries })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf(entries) })
     const { listForMonth } = useSentEmails()
 
     const result = await listForMonth(2026, 8)
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/sent-emails', {
-      params: { year: 2026, month: 8 },
-    })
+    expect(mockedApi.get).toHaveBeenCalledWith(
+      '/administrator/sent-emails',
+      firstPageRequest({ year: 2026, month: 8 }),
+    )
     expect(result).toEqual(entries)
   })
 

@@ -41,8 +41,12 @@ vi.mock('vue-router', async (importOriginal) => ({
 }))
 
 const mockLogout = vi.fn()
+let mockCanTrigger: boolean
 vi.mock('@/stores/auth', () => ({
-  useAuthStore: () => ({ logout: mockLogout }),
+  useAuthStore: () => ({
+    logout: mockLogout,
+    hasPermission: (permission: string) => permission === 'schedulerTrigger' && mockCanTrigger,
+  }),
 }))
 
 function makeJob(overrides: Partial<ScheduledJob> = {}): ScheduledJob {
@@ -86,6 +90,7 @@ function makeDownsyncTrigger(overrides: Partial<DownsyncTrigger> = {}): Downsync
 beforeEach(() => {
   vi.clearAllMocks()
   mockAppEnvironment = undefined
+  mockCanTrigger = true
   mockConfirmAction.mockResolvedValue(true)
   mockLogout.mockResolvedValue(undefined)
 })
@@ -267,6 +272,23 @@ describe('SchedulerView', () => {
     expect(wrapper.text()).toContain('Downsync jetzt durchführen')
     expect(wrapper.text()).not.toContain('Backup jetzt erstellen')
   })
+
+  it.each(['production', 'development'])(
+    'shows no trigger button on %s without the schedulerTrigger permission',
+    async (environment) => {
+      mockAppEnvironment = environment
+      mockCanTrigger = false
+      mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+
+      const wrapper = mount(SchedulerView)
+      await flushPromises()
+
+      expect(wrapper.find('button').exists()).toBe(false)
+      expect(wrapper.text()).not.toContain('Backup jetzt erstellen')
+      expect(wrapper.text()).not.toContain('Downsync jetzt durchführen')
+      expect(wrapper.findAll('.card')).toHaveLength(1)
+    },
+  )
 
   it('does nothing when the downsync confirm dialog is cancelled', async () => {
     mockAppEnvironment = 'development'

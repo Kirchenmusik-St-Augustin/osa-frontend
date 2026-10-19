@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useUserAdministration } from '../useUserAdministration'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
 import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
@@ -42,12 +43,12 @@ describe('useUserAdministration', () => {
   })
 
   it('listDeleted requests the deleted endpoint', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([]) })
     const { listDeleted } = useUserAdministration()
 
     await listDeleted()
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/users/deleted')
+    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/users/deleted', firstPageRequest())
   })
 
   it('get requests the user by id', async () => {

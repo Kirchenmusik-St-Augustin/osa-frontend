@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useArtists } from '../useArtists'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
 import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
@@ -37,12 +38,14 @@ describe('useArtists', () => {
   })
 
   it('listComposers requests the composers endpoint', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [{ id: 1, label: 'MOZART, Wolfgang' }] })
+    mockedApi.get.mockResolvedValueOnce({
+      data: pageOf([{ id: 1, label: 'MOZART, Wolfgang' }]),
+    })
     const { listComposers } = useArtists()
 
     const results = await listComposers()
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/artists/composers')
+    expect(mockedApi.get).toHaveBeenCalledWith('/artists/composers', firstPageRequest())
     expect(results).toEqual([{ id: 1, label: 'MOZART, Wolfgang' }])
   })
 

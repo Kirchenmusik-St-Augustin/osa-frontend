@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useUserdirectory } from '../useUserdirectory'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
 import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
@@ -27,24 +28,23 @@ describe('useUserdirectory', () => {
   })
 
   it('listUsers requests type=all without an id param', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([]) })
     const { listUsers } = useUserdirectory()
 
     await listUsers('all', null)
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/userdirectory', {
-      params: { type: 'all' },
-    })
+    expect(mockedApi.get).toHaveBeenCalledWith('/userdirectory', firstPageRequest({ type: 'all' }))
   })
 
   it('listUsers requests a specific type+id', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([]) })
     const { listUsers } = useUserdirectory()
 
     await listUsers('choirjobs', testId(3))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/userdirectory', {
-      params: { type: 'choirjobs', id: testId(3) },
-    })
+    expect(mockedApi.get).toHaveBeenCalledWith(
+      '/userdirectory',
+      firstPageRequest({ type: 'choirjobs', id: testId(3) }),
+    )
   })
 })

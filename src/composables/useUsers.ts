@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 import type { PerformanceShortBase } from '@/composables/useBookings'
 
 export interface RoleRef {
@@ -102,8 +103,7 @@ export function useUsers() {
   // same backend function, scoped to an arbitrary user id (the Show page's
   // "Anfragen und Buchungen für dieses Konto einsehen" link).
   async function getRequestsAndBookings(id: string): Promise<PerformanceShortBase[]> {
-    const response = await api.get<PerformanceShortBase[]>(`/users/${id}/requests-and-bookings`)
-    return response.data
+    return fetchAllPages<PerformanceShortBase>(`/users/${id}/requests-and-bookings`)
   }
 
   return { search, getFormOptions, get, create, update, remove, getRequestsAndBookings }

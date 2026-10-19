@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 
 export interface DirectoryPositionRef {
   id: string
@@ -36,8 +37,7 @@ export function useUserdirectory() {
   ): Promise<DirectoryEntry[]> {
     const params: Record<string, string> = { type }
     if (id !== null) params['id'] = id
-    const response = await api.get<DirectoryEntry[]>('/userdirectory', { params })
-    return response.data
+    return fetchAllPages<DirectoryEntry>('/userdirectory', params)
   }
 
   return { getAbilities, listUsers }

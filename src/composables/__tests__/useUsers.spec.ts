@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useUsers } from '../useUsers'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
 import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
@@ -133,12 +134,15 @@ describe('useUsers', () => {
         rehearsals: [],
       },
     ]
-    mockedApi.get.mockResolvedValueOnce({ data: entries })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf(entries) })
     const { getRequestsAndBookings } = useUsers()
 
     const result = await getRequestsAndBookings(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith(`/users/${testId(1)}/requests-and-bookings`)
+    expect(mockedApi.get).toHaveBeenCalledWith(
+      `/users/${testId(1)}/requests-and-bookings`,
+      firstPageRequest(),
+    )
     expect(result).toEqual(entries)
   })
 })

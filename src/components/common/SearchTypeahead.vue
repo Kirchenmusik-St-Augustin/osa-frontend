@@ -11,6 +11,10 @@ export interface SearchResult {
   label: string
 }
 
+// Longest search term the API accepts; a longer one is answered with a 422
+// and the typeahead would silently keep showing the old results.
+const MAX_QUERY_LENGTH = 64
+
 const props = defineProps<{
   search: (query: string) => Promise<SearchResult[]>
 }>()
@@ -87,6 +91,7 @@ function onKeydown(event: KeyboardEvent): void {
       class="form-control"
       type="text"
       placeholder="Suchen..."
+      :maxlength="MAX_QUERY_LENGTH"
       @input="onInput"
       @keydown="onKeydown"
     />

@@ -5,7 +5,8 @@
 // recently completed run of each job, if any. Plus a manual Koofr-backup
 // trigger, production-only in the UI -- the backend endpoint itself stays
 // callable in every stage (see useScheduler.ts/backend comments), the
-// `schedulerView` permission is the real guard. The downsync button is its
+// `schedulerTrigger` permission is the real guard and the only one that
+// shows the trigger buttons. The downsync button is its
 // mirror image: only outside production, where the backend enforces the
 // same boundary as a real 409 (not just UI convenience -- see the backend
 // router's docstring).
@@ -37,6 +38,7 @@ const backupSubmitting = ref(false)
 const downsyncSubmitting = ref(false)
 
 const isProduction = computed(() => appEnvironment() === 'production')
+const canTrigger = computed(() => authStore.hasPermission('schedulerTrigger'))
 
 onMounted(async () => {
   try {
@@ -93,7 +95,7 @@ async function onTriggerDownsync(): Promise<void> {
 
   <div class="row justify-content-center mt-4">
     <div class="col-sm-10">
-      <div v-if="isProduction" class="mb-4">
+      <div v-if="canTrigger && isProduction" class="mb-4">
         <button
           type="button"
           class="btn btn-primary"
@@ -110,7 +112,7 @@ async function onTriggerDownsync(): Promise<void> {
           täglichen automatischen Backup.
         </p>
       </div>
-      <div v-else class="mb-4">
+      <div v-else-if="canTrigger" class="mb-4">
         <button
           type="button"
           class="btn btn-primary"

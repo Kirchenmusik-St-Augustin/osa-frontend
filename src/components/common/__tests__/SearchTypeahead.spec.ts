@@ -11,6 +11,12 @@ afterEach(() => {
 })
 
 describe('SearchTypeahead', () => {
+  it('limits the input to the longest search term the API accepts', () => {
+    const wrapper = mount(SearchTypeahead, { props: { search: vi.fn() } })
+
+    expect(wrapper.find('input').attributes('maxlength')).toBe('64')
+  })
+
   it('does not search for an empty/whitespace-only query', async () => {
     const search = vi.fn()
     const wrapper = mount(SearchTypeahead, { props: { search } })

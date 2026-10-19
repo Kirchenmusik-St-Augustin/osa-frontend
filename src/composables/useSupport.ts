@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 import type { PerformanceShortBase } from '@/composables/useBookings'
 
 // UI-independent API layer for the self-service support pages ("Meine
@@ -23,8 +24,7 @@ export interface RoleWithContacts {
 
 export function useSupport() {
   async function getMyRequestsAndBookings(): Promise<PerformanceShortBase[]> {
-    const response = await api.get<PerformanceShortBase[]>('/support/requests-and-bookings')
-    return response.data
+    return fetchAllPages<PerformanceShortBase>('/support/requests-and-bookings')
   }
 
   async function getContactpersons(): Promise<RoleWithContacts[]> {

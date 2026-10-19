@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 
 export interface UserAdministrationSearchResult {
   id: string
@@ -43,8 +44,7 @@ export function useUserAdministration() {
   }
 
   async function listDeleted(): Promise<UserAdministrationDeletedEntry[]> {
-    const response = await api.get<UserAdministrationDeletedEntry[]>('/administrator/users/deleted')
-    return response.data
+    return fetchAllPages<UserAdministrationDeletedEntry>('/administrator/users/deleted')
   }
 
   async function get(id: string): Promise<UserAdministrationActionResult> {

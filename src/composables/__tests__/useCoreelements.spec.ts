@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useCoreelements } from '../useCoreelements'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
 import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
@@ -28,18 +29,18 @@ beforeEach(() => {
 
 describe('useCoreelements', () => {
   it('fetchList requests the type-scoped list endpoint', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [sampleItem] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([sampleItem]) })
     const { items, fetchList } = useCoreelements('instrument')
 
     await fetchList()
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/coreelements/instrument')
+    expect(mockedApi.get).toHaveBeenCalledWith('/coreelements/instrument', firstPageRequest())
     expect(items.value).toEqual([sampleItem])
   })
 
   it('save without an id POSTs and refreshes the list', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: sampleItem })
-    mockedApi.get.mockResolvedValueOnce({ data: [sampleItem] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([sampleItem]) })
     const { items, save } = useCoreelements('instrument')
 
     await save(null, { name: 'Fagott' })
@@ -50,7 +51,7 @@ describe('useCoreelements', () => {
 
   it('save with an id PUTs to that id and refreshes the list', async () => {
     mockedApi.put.mockResolvedValueOnce({ data: sampleItem })
-    mockedApi.get.mockResolvedValueOnce({ data: [sampleItem] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([sampleItem]) })
     const { save } = useCoreelements('location')
 
     await save(testId(5), { name: 'Chorraum', address: 'Hauptstraße 1', color: 'ff0000' })
@@ -64,7 +65,7 @@ describe('useCoreelements', () => {
 
   it('save passes the active field through in the payload', async () => {
     mockedApi.put.mockResolvedValueOnce({ data: { ...sampleItem, active: false } })
-    mockedApi.get.mockResolvedValueOnce({ data: [{ ...sampleItem, active: false }] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([{ ...sampleItem, active: false }]) })
     const { items, save } = useCoreelements('instrument')
 
     await save(testId(1), { name: 'Fagott', active: false })
@@ -78,7 +79,7 @@ describe('useCoreelements', () => {
 
   it('remove DELETEs the item and refreshes the list', async () => {
     mockedApi.delete.mockResolvedValueOnce({ data: null })
-    mockedApi.get.mockResolvedValueOnce({ data: [] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([]) })
     const { items, remove } = useCoreelements('instrument')
 
     await remove(testId(1))
@@ -111,15 +112,15 @@ describe('useCoreelements', () => {
     // between two administrator-coreelement routes -- a plain string
     // captured once would silently keep requesting the FIRST type forever.
     const type = ref<'instrument' | 'voice'>('instrument')
-    mockedApi.get.mockResolvedValueOnce({ data: [] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([]) })
     const { fetchList } = useCoreelements(type)
     await fetchList()
-    expect(mockedApi.get).toHaveBeenLastCalledWith('/coreelements/instrument')
+    expect(mockedApi.get).toHaveBeenLastCalledWith('/coreelements/instrument', firstPageRequest())
 
     type.value = 'voice'
-    mockedApi.get.mockResolvedValueOnce({ data: [] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([]) })
     await fetchList()
 
-    expect(mockedApi.get).toHaveBeenLastCalledWith('/coreelements/voice')
+    expect(mockedApi.get).toHaveBeenLastCalledWith('/coreelements/voice', firstPageRequest())
   })
 })
