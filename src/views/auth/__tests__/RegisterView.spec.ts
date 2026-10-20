@@ -108,7 +108,7 @@ describe('RegisterView', () => {
           detail: [
             {
               loc: ['body', 'password'],
-              msg: 'Das Passwort muss zwischen 8 und 16 Zeichen lang sein. Das Passwort muss mindestens eine Ziffer enthalten.',
+              msg: 'Das Passwort muss zwischen 10 und 64 Zeichen lang sein.',
               type: 'value_error',
             },
           ],
@@ -118,7 +118,6 @@ describe('RegisterView', () => {
     const wrapper = mount(RegisterView)
 
     await fillAndSubmit(wrapper)
-    await vi.waitFor(() => expect(wrapper.text()).toContain('zwischen 8 und 16 Zeichen'))
-    expect(wrapper.text()).toContain('mindestens eine Ziffer')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('zwischen 10 und 64 Zeichen'))
   })
 })
