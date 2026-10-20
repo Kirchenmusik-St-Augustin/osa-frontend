@@ -144,12 +144,11 @@ describe('useAuthStore', () => {
     expect(mockedApi.get).not.toHaveBeenCalled()
   })
 
-  it('register sends the payload, sets the token, and fetches the profile', async () => {
-    mockedApi.post.mockResolvedValueOnce({ data: { access_token: 'token', token_type: 'bearer' } })
-    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: '3' }) })
+  it('register sends the payload and returns the notice without starting a session', async () => {
+    mockedApi.post.mockResolvedValueOnce({ data: { status: 'ok', message: 'Bitte prüfe.' } })
     const store = useAuthStore()
 
-    await store.register({
+    const notice = await store.register({
       surname: 'c',
       givenname: 'z',
       email: 'c@example.test',
@@ -158,7 +157,9 @@ describe('useAuthStore', () => {
       password_confirmation: 'Passw0rd1',
     })
 
-    expect(store.isAuthenticated).toBe(true)
+    expect(notice).toBe('Bitte prüfe.')
+    expect(store.isAuthenticated).toBe(false)
+    expect(mockedApi.get).not.toHaveBeenCalled()
     expect(mockedApi.post).toHaveBeenCalledWith(
       '/auth/register',
       expect.objectContaining({ email: 'c@example.test' }),

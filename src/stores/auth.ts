@@ -40,6 +40,11 @@ interface TokenResponse {
   token_type: string
 }
 
+interface RegisterResponse {
+  status: string
+  message: string
+}
+
 // Access token lives in memory only (this store), never localStorage --
 // the httponly refresh-token cookie is what survives a page reload; see
 // restoreSession(), called once at app boot (router/guards.ts).
@@ -102,10 +107,11 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchProfile()
   }
 
-  async function register(payload: RegisterPayload): Promise<void> {
-    const response = await api.post<TokenResponse>('/auth/register', payload)
-    accessToken.value = response.data.access_token
-    await fetchProfile()
+  // Registration issues no session: the verification link in the mail logs in.
+  // The answer is the same for every outcome, so the notice text is passed on.
+  async function register(payload: RegisterPayload): Promise<string> {
+    const response = await api.post<RegisterResponse>('/auth/register', payload)
+    return response.data.message
   }
 
   async function verifyEmail(token: string): Promise<void> {
