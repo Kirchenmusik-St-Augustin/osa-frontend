@@ -33,7 +33,7 @@ onMounted(async () => {
 const emailKillSwitchActive = computed(() => authStore.user?.email_kill_switch.active ?? false)
 
 const canSend = computed(
-  () => message.value.length >= 3 && selectedRecipientId.value !== null && !sending.value,
+  () => message.value.trim().length >= 3 && selectedRecipientId.value !== null && !sending.value,
 )
 
 async function send(): Promise<void> {

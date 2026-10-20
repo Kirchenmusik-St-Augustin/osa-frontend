@@ -105,6 +105,33 @@ describe('MessageToContactpersonView', () => {
     expect(sendButton?.attributes('disabled')).toBeUndefined()
   })
 
+  it.each(['   ', '  ab  ', '\n\n\n'])(
+    'keeps send disabled for the blank or too short message %j',
+    async (text) => {
+      mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+      const wrapper = mount(MessageToContactpersonView)
+      await flushPromises()
+
+      await wrapper.find('select').setValue(testId(5))
+      await wrapper.find('textarea').setValue(text)
+
+      const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
+      expect(sendButton?.attributes('disabled')).toBeDefined()
+    },
+  )
+
+  it('enables send for a message of three real characters between blanks', async () => {
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+
+    await wrapper.find('select').setValue(testId(5))
+    await wrapper.find('textarea').setValue('  abc  ')
+
+    const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
+    expect(sendButton?.attributes('disabled')).toBeUndefined()
+  })
+
   it('sends the message on confirm and resets the textarea afterward', async () => {
     mockGetContactpersons.mockResolvedValueOnce(makeRoles())
     mockSendMessageToContactperson.mockResolvedValueOnce(undefined)

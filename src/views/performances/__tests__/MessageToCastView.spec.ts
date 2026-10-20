@@ -185,6 +185,58 @@ describe('MessageToCastView', () => {
     expect(sendButton?.attributes('disabled')).toBeUndefined()
   })
 
+  it.each(['   ', '\n\t '])(
+    'keeps send disabled for the blank message %j even with a recipient selected',
+    async (text) => {
+      mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+      mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+      const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+      await flushPromises()
+
+      await rowCheckbox(wrapper, 0).setValue(true)
+      await wrapper.find('textarea').setValue(text)
+
+      const sendButton = wrapper.findAll('button').find((button) => button.text() === 'Senden')
+      expect(sendButton?.attributes('disabled')).toBeDefined()
+    },
+  )
+
+  it('keeps send disabled for a typed message while no recipient is selected', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('textarea').setValue('Bitte pünktlich erscheinen.')
+
+    const sendButton = wrapper.findAll('button').find((button) => button.text() === 'Senden')
+    expect(sendButton?.attributes('disabled')).toBeDefined()
+  })
+
+  it('disables send while the message is on its way', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    let finishSending: () => void = () => undefined
+    mockSendMessageToCast.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishSending = resolve
+      }),
+    )
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    await rowCheckbox(wrapper, 0).setValue(true)
+    await wrapper.find('textarea').setValue('Bitte pünktlich erscheinen.')
+    const sendButton = wrapper.findAll('button').find((button) => button.text() === 'Senden')
+    await sendButton?.trigger('click')
+    await flushPromises()
+
+    expect(sendButton?.attributes('disabled')).toBeDefined()
+
+    finishSending()
+    await flushPromises()
+  })
+
   it('sends the message on confirm', async () => {
     mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
     mockGetMessageRecipients.mockResolvedValueOnce(recipients)

@@ -101,6 +101,11 @@ const hasBookings = computed(() => {
   return [...instruments, ...voices, ...choirjobs].some((item) => item.cast.length > 0)
 })
 
+// The API refuses a message of blanks, so the button stays disabled for one.
+const canSend = computed(
+  () => message.value.trim() !== '' && selectedRecipientIds.value.length > 0 && !sending.value,
+)
+
 const eligibleCount = computed(() => recipients.value.filter((r) => r.has_email).length)
 
 // While the mail kill switch is active only the message-textarea+Senden
@@ -298,12 +303,7 @@ async function send(): Promise<void> {
             placeholder="Nachricht"
           ></textarea>
           <div class="text-center mt-2">
-            <button
-              type="button"
-              class="btn btn-primary"
-              :disabled="!message || !selectedRecipientIds.length || sending"
-              @click="send"
-            >
+            <button type="button" class="btn btn-primary" :disabled="!canSend" @click="send">
               Senden
             </button>
           </div>
