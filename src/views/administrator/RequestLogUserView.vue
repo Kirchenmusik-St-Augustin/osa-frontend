@@ -4,14 +4,20 @@
 import { ref, watch } from 'vue'
 import { useRequestLogs, type RequestLogEntry } from '@/composables/useRequestLogs'
 import { useDayQuery } from '@/composables/useDayQuery'
+import { useLatestResult } from '@/composables/useLatestResult'
+import { extractApiErrors } from '@/services/apiErrors'
 import { formatTimeOnly } from '@/services/dateFormat'
+import { showToast } from '@/services/notifications'
 
 const props = defineProps<{ userId: string }>()
 const { getForUser } = useRequestLogs()
 const { year, month, day } = useDayQuery()
 
+const applyLatest = useLatestResult()
+
 const username = ref('')
 const entries = ref<RequestLogEntry[]>([])
+const loadFailed = ref(false)
 
 // Vue Router reuses this component instance on a pure query-param change
 // (a different day/user picked from the Index page's day groups) AND on a
@@ -22,9 +28,25 @@ const entries = ref<RequestLogEntry[]>([])
 watch(
   [year, month, day, () => props.userId],
   async ([currentYear, currentMonth, currentDay, currentUserId]) => {
-    const detail = await getForUser(currentUserId, currentYear, currentMonth, currentDay)
-    username.value = detail.username
-    entries.value = detail.entries
+    try {
+      await applyLatest(
+        () => getForUser(currentUserId, currentYear, currentMonth, currentDay),
+        (detail) => {
+          username.value = detail.username
+          entries.value = detail.entries
+          loadFailed.value = false
+        },
+      )
+    } catch (error) {
+      // Neither the entries of another day nor "no entries" may stand for a
+      // day that could not be loaded.
+      entries.value = []
+      loadFailed.value = true
+      showToast(
+        extractApiErrors(error).generalError ?? 'Die Log-Einträge konnten nicht geladen werden.',
+        true,
+      )
+    }
   },
   { immediate: true },
 )
@@ -63,7 +85,9 @@ watch(
           </tbody>
         </table>
       </div>
-      <div v-else class="text-center">Für diesen Tag wurden keine Log-Einträge gefunden.</div>
+      <div v-else-if="!loadFailed" class="text-center">
+        Für diesen Tag wurden keine Log-Einträge gefunden.
+      </div>
 
       <div class="text-center my-4">
         <RouterLink

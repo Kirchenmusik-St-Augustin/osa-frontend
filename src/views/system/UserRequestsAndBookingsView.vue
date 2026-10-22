@@ -6,7 +6,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { useUsers, type User } from '@/composables/useUsers'
 import type { PerformanceShortBase } from '@/composables/useBookings'
+import { unattachedErrorMessage } from '@/services/apiErrors'
 import { formatDateTime } from '@/services/dateFormat'
+import { showToast } from '@/services/notifications'
 import BookingStatusBadge from '@/components/bookings/BookingStatusBadge.vue'
 
 const props = defineProps<{ id: string }>()
@@ -20,12 +22,16 @@ const subtitle = computed(() =>
 )
 
 onMounted(async () => {
-  const [loadedUser, loadedEntries] = await Promise.all([
-    get(props.id),
-    getRequestsAndBookings(props.id),
-  ])
-  user.value = loadedUser
-  entries.value = loadedEntries
+  try {
+    const [loadedUser, loadedEntries] = await Promise.all([
+      get(props.id),
+      getRequestsAndBookings(props.id),
+    ])
+    user.value = loadedUser
+    entries.value = loadedEntries
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Die Daten konnten nicht geladen werden.', true)
+  }
 })
 </script>
 

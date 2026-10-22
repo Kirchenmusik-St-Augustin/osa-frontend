@@ -156,6 +156,37 @@ describe('ProfileFormView', () => {
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 
+  it('tells the member when the profile cannot be loaded', async () => {
+    mockGet.mockReset()
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Gesperrt.' } } })
+    mount(ProfileFormView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Gesperrt.', true)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGet.mockReset()
+    mockGet.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(ProfileFormView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Das Profil konnte nicht geladen werden.', true)
+  })
+
+  it('tells the member when saving fails without a field-level reason', async () => {
+    mockUpdate.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(ProfileFormView)
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
   it('shows field-level validation errors under the matching input', async () => {
     mockUpdate.mockRejectedValueOnce({
       response: {

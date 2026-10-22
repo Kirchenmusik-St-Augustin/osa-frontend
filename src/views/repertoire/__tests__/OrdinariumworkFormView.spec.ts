@@ -150,6 +150,43 @@ describe('OrdinariumworkFormView', () => {
     )
   })
 
+  it('keeps the form hidden and returns to the search when the existing work cannot be loaded', async () => {
+    mockListComposers.mockResolvedValueOnce([])
+    mockGetAvailablePositions.mockResolvedValueOnce({ instruments: [], voices: [] })
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    mockGetSetup.mockResolvedValueOnce({ instruments: [], voices: [] })
+    const wrapper = mount(OrdinariumworkFormView, { props: { id: '5' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'repertoire-ordinariumworks-search' })
+    expect(wrapper.find('input#ordinariumwork-name').exists()).toBe(false)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockListComposers.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mockGetAvailablePositions.mockResolvedValueOnce({ instruments: [], voices: [] })
+    mount(OrdinariumworkFormView, { props: {} })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Das Formular konnte nicht geladen werden.', true)
+  })
+
+  it('tells the user when saving fails without a field-level reason', async () => {
+    mockListComposers.mockResolvedValueOnce([])
+    mockGetAvailablePositions.mockResolvedValueOnce({ instruments: [], voices: [] })
+    mockCreate.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(OrdinariumworkFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
   it('shows the setup validation error under the setup section', async () => {
     mockCreate.mockRejectedValueOnce({
       response: {

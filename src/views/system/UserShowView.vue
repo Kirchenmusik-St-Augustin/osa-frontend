@@ -6,7 +6,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import UserDataCard from '@/components/common/UserDataCard.vue'
 import { useUsers, type User } from '@/composables/useUsers'
-import { extractApiErrors } from '@/services/apiErrors'
+import { unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id: string }>()
@@ -20,7 +20,14 @@ const subtitle = computed(() =>
 )
 
 onMounted(async () => {
-  user.value = await get(props.id)
+  try {
+    user.value = await get(props.id)
+  } catch (error) {
+    showToast(
+      unattachedErrorMessage(error) ?? 'Das Benutzerkonto konnte nicht geladen werden.',
+      true,
+    )
+  }
 })
 
 async function destroy(): Promise<void> {
@@ -32,9 +39,10 @@ async function destroy(): Promise<void> {
     showToast('gelöscht.')
     await router.push({ name: 'system-users-search' })
   } catch (error) {
-    const { fieldErrors } = extractApiErrors(error)
+    // The server answers "in use" with its own German message; anything
+    // else (server error, lost connection) must not be reported as "in use".
     showToast(
-      fieldErrors['general'] ?? 'Benutzerkonto kann nicht gelöscht werden, da noch in Verwendung.',
+      unattachedErrorMessage(error) ?? 'Das Benutzerkonto konnte nicht gelöscht werden.',
       true,
     )
   }

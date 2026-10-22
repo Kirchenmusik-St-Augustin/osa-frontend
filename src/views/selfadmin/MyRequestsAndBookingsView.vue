@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useSupport } from '@/composables/useSupport'
 import { useBookings, type PerformanceShortBase } from '@/composables/useBookings'
+import { unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 
@@ -12,9 +13,20 @@ const { getMyRequestsAndBookings } = useSupport()
 const { changeBookingStatus } = useBookings()
 
 const performances = ref<PerformanceShortBase[]>([])
+const loaded = ref(false)
 
+// A failed load says so: showing "Derzeit liegen keine Anfragen oder
+// Buchungen vor." would tell a member with bookings that they have none.
 async function load(): Promise<void> {
-  performances.value = await getMyRequestsAndBookings()
+  try {
+    performances.value = await getMyRequestsAndBookings()
+    loaded.value = true
+  } catch (error) {
+    showToast(
+      unattachedErrorMessage(error) ?? 'Die Anfragen und Buchungen konnten nicht geladen werden.',
+      true,
+    )
+  }
 }
 
 onMounted(load)
@@ -49,7 +61,9 @@ async function handleChangeStatus(performanceId: string): Promise<void> {
           @change-status="handleChangeStatus(performance.id)"
         />
       </div>
-      <div v-else class="text-center">Derzeit liegen keine Anfragen oder Buchungen vor.</div>
+      <div v-else-if="loaded" class="text-center">
+        Derzeit liegen keine Anfragen oder Buchungen vor.
+      </div>
     </div>
   </div>
 </template>

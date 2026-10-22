@@ -3,7 +3,9 @@ import { computed, onMounted, ref } from 'vue'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 import BookingStatusBadge from '@/components/bookings/BookingStatusBadge.vue'
 import { useBookings, type PerformanceRequestsAndBookings } from '@/composables/useBookings'
+import { extractApiErrors } from '@/services/apiErrors'
 import { parseWallClock } from '@/services/dateFormat'
+import { showToast } from '@/services/notifications'
 
 // Available to planner AND disponent (gated on performanceMaintain, not
 // performanceCast), unlike the actual Cast page.
@@ -13,7 +15,15 @@ const { getRequestsAndBookings } = useBookings()
 const performance = ref<PerformanceRequestsAndBookings | null>(null)
 
 onMounted(async () => {
-  performance.value = await getRequestsAndBookings(props.id)
+  try {
+    performance.value = await getRequestsAndBookings(props.id)
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ??
+        'Die Anfragen und Buchungen konnten nicht geladen werden.',
+      true,
+    )
+  }
 })
 
 // "zurück" goes to the calendar month of the performance's own schedule,

@@ -12,6 +12,11 @@ vi.mock('vue-router', async (importOriginal) => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
+const mockShowToast = vi.fn()
+vi.mock('@/services/notifications', () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
+}))
+
 const mockSearch = vi.fn()
 const mockListDeleted = vi.fn()
 vi.mock('@/composables/useUserAdministration', () => ({
@@ -62,10 +67,31 @@ describe('UserAdministrationSearchView', () => {
     })
   })
 
+  it('tells the administrator when the deleted-users list cannot be loaded', async () => {
+    mockListDeleted.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(UserAdministrationSearchView, {
+      global: { stubs: { RouterLink: true } },
+    })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.text()).not.toContain('Liste gelöschter Benutzerkonten')
+  })
+
   it('omits the deleted-users section when there are none', async () => {
     const wrapper = mount(UserAdministrationSearchView)
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('Liste gelöschter Benutzerkonten')
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockListDeleted.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(UserAdministrationSearchView, { global: { stubs: { RouterLink: true } } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Die Liste konnte nicht geladen werden.', true)
   })
 })

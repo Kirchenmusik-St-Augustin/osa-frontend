@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import AppModal from '@/components/common/AppModal.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import { useFees, type Fee } from '@/composables/useFees'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 // Deliberately its own small modal-edit page (fees are administered through
@@ -16,14 +16,23 @@ import { confirmAction, showToast } from '@/services/notifications'
 // gate.
 const { items, fetchList, save, remove } = useFees()
 
-const editForm = reactive({ name: '', amount: 0 })
+// A cleared amount field is '' after `v-model.number`, which the API would
+// refuse with an English validation text.
+const editForm = reactive({ name: '', amount: 0 as number | string | null })
+const AMOUNT_REQUIRED_MESSAGE = 'Bitte einen Betrag angeben.'
 const editingId = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 
 const modalOpen = ref(false)
 
-onMounted(fetchList)
+onMounted(async () => {
+  try {
+    await fetchList()
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Die Tarife konnten nicht geladen werden.', true)
+  }
+})
 
 // The sort starts on name/ascending, so the FIRST click on "Name" flips to
 // descending, not a no-op. Clicking the currently-inactive column switches
@@ -42,6 +51,11 @@ function toggleSort(column: SortColumn): void {
     sortColumn.value = column
     sortDirection.value = 'asc'
   }
+}
+
+function ariaSort(column: SortColumn): 'ascending' | 'descending' | 'none' {
+  if (column !== sortColumn.value) return 'none'
+  return sortDirection.value === 'asc' ? 'ascending' : 'descending'
 }
 
 const sortedItems = computed(() => {
@@ -81,14 +95,20 @@ function closeModal(): void {
 }
 
 async function submitForm(): Promise<void> {
-  submitting.value = true
   fieldErrors.value = {}
+  if (typeof editForm.amount !== 'number') {
+    fieldErrors.value = { amount: AMOUNT_REQUIRED_MESSAGE }
+    return
+  }
+  submitting.value = true
   try {
     await save(editingId.value, { name: editForm.name, amount: editForm.amount })
     showToast('Tarif gespeichert')
     closeModal()
   } catch (error) {
     fieldErrors.value = extractApiErrors(error).fieldErrors
+    const unattached = unattachedErrorMessage(error)
+    if (unattached) showToast(unattached, true)
   } finally {
     submitting.value = false
   }
@@ -153,19 +173,39 @@ async function deleteItem(fee: Fee): Promise<void> {
         <table class="table table-striped table-sm">
           <thead>
             <tr>
-              <th class="c-pointer text-nowrap" @click="toggleSort('name')">
-                <span class="me-1">Name</span>
-                <span v-if="sortColumn === 'name'">
-                  <i v-if="sortDirection === 'desc'" class="fas fa-caret-down"></i>
-                  <i v-else class="fas fa-caret-up"></i>
-                </span>
+              <th
+                class="c-pointer text-nowrap"
+                :aria-sort="ariaSort('name')"
+                @click="toggleSort('name')"
+              >
+                <!-- The button gives keyboard users the control; its click
+                     bubbles to the header, which owns the handler. -->
+                <button
+                  type="button"
+                  class="btn btn-link p-0 text-reset text-decoration-none fw-bold"
+                >
+                  <span class="me-1">Name</span>
+                  <span v-if="sortColumn === 'name'" aria-hidden="true">
+                    <i v-if="sortDirection === 'desc'" class="fas fa-caret-down"></i>
+                    <i v-else class="fas fa-caret-up"></i>
+                  </span>
+                </button>
               </th>
-              <th class="text-end pe-3 c-pointer text-nowrap" @click="toggleSort('amount')">
-                <span v-if="sortColumn === 'amount'">
-                  <i v-if="sortDirection === 'desc'" class="fas fa-caret-down"></i>
-                  <i v-else class="fas fa-caret-up"></i>
-                </span>
-                <span class="ms-1">Betrag</span>
+              <th
+                class="text-end pe-3 c-pointer text-nowrap"
+                :aria-sort="ariaSort('amount')"
+                @click="toggleSort('amount')"
+              >
+                <button
+                  type="button"
+                  class="btn btn-link p-0 text-reset text-decoration-none fw-bold"
+                >
+                  <span v-if="sortColumn === 'amount'" aria-hidden="true">
+                    <i v-if="sortDirection === 'desc'" class="fas fa-caret-down"></i>
+                    <i v-else class="fas fa-caret-up"></i>
+                  </span>
+                  <span class="ms-1">Betrag</span>
+                </button>
               </th>
               <th>&nbsp;</th>
               <th>&nbsp;</th>

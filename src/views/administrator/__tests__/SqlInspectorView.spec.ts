@@ -147,4 +147,28 @@ describe('SqlInspectorView', () => {
 
     expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
   })
+
+  it('shows the rows of the LAST table choice when an earlier answer arrives late', async () => {
+    mockListTables.mockResolvedValueOnce(['users', 'roles'])
+    let finishFirst: (value: TableData) => void = () => {}
+    mockGetTableData.mockReturnValueOnce(
+      new Promise<TableData>((resolve) => {
+        finishFirst = resolve
+      }),
+    )
+    mockGetTableData.mockResolvedValueOnce(
+      makeTableData({ table_name: 'roles', rows: [{ id: '2', phone: 'ZEILE-ROLLEN' }] }),
+    )
+    const wrapper = mount(SqlInspectorView)
+    await flushPromises()
+    await wrapper.find('select').setValue('users')
+    await wrapper.find('select').setValue('roles')
+    await flushPromises()
+
+    finishFirst(makeTableData({ rows: [{ id: '1', phone: 'ZEILE-BENUTZER' }] }))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('ZEILE-ROLLEN')
+    expect(wrapper.text()).not.toContain('ZEILE-BENUTZER')
+  })
 })

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePropriumworks, type Propriumwork } from '@/composables/usePropriumworks'
-import { extractApiErrors } from '@/services/apiErrors'
+import { unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id: string }>()
@@ -21,7 +21,11 @@ const fields = computed(() => {
 })
 
 onMounted(async () => {
-  work.value = await get(props.id)
+  try {
+    work.value = await get(props.id)
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Der Eintrag konnte nicht geladen werden.', true)
+  }
 })
 
 async function destroy(): Promise<void> {
@@ -33,12 +37,9 @@ async function destroy(): Promise<void> {
     showToast('gelöscht.')
     await router.push({ name: 'repertoire-propriumworks-search' })
   } catch (error) {
-    const { fieldErrors } = extractApiErrors(error)
-    showToast(
-      fieldErrors['general'] ??
-        'Die Proprium-Komposition kann nicht gelöscht werden, da sie im Kalender verwendet wird.',
-      true,
-    )
+    // The server answers "in use" with its own German message; anything
+    // else (server error, lost connection) must not be reported as "in use".
+    showToast(unattachedErrorMessage(error) ?? 'Der Eintrag konnte nicht gelöscht werden.', true)
   }
 }
 </script>

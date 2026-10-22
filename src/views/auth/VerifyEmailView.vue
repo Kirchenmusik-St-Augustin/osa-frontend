@@ -21,6 +21,8 @@ const errorMessage = ref<string | null>(null)
 
 onMounted(async () => {
   const token = typeof route.query['token'] === 'string' ? route.query['token'] : ''
+  // Read once; drop it from the address bar and the history entry.
+  if (token) await router.replace({ name: 'verify-email' })
   if (!token) {
     status.value = 'error'
     errorMessage.value = 'Der Bestätigungslink ist ungültig oder abgelaufen.'

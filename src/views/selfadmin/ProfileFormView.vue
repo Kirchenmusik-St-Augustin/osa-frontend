@@ -7,7 +7,7 @@ import { useRouter } from 'vue-router'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import { useProfile } from '@/composables/useProfile'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const router = useRouter()
@@ -27,11 +27,15 @@ const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 
 onMounted(async () => {
-  const user = await get()
-  form.givenname = user.givenname
-  form.surname = user.surname
-  form.email = user.email ?? ''
-  form.phone = user.phone ?? ''
+  try {
+    const user = await get()
+    form.givenname = user.givenname
+    form.surname = user.surname
+    form.email = user.email ?? ''
+    form.phone = user.phone ?? ''
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Das Profil konnte nicht geladen werden.', true)
+  }
 })
 
 async function save(): Promise<void> {
@@ -57,6 +61,8 @@ async function save(): Promise<void> {
     await router.push({ name: 'selfadmin-profile-show' })
   } catch (error) {
     fieldErrors.value = extractApiErrors(error).fieldErrors
+    const unattached = unattachedErrorMessage(error)
+    if (unattached) showToast(unattached, true)
   } finally {
     submitting.value = false
   }

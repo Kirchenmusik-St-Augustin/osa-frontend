@@ -322,6 +322,21 @@ describe('SchedulerView', () => {
     expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
   })
 
+  it('still redirects to login, without an error toast, when only the logout request fails', async () => {
+    mockAppEnvironment = 'development'
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+    mockTriggerDownsync.mockResolvedValueOnce(makeDownsyncTrigger())
+    mockLogout.mockRejectedValueOnce(new Error('session already gone'))
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).not.toHaveBeenCalledWith(expect.any(String), true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
+  })
+
   it('shows an error toast without logging out when triggering a downsync fails', async () => {
     mockAppEnvironment = 'development'
     mockListScheduledJobs.mockResolvedValueOnce([makeJob()])

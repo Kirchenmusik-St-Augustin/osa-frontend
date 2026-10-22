@@ -1,11 +1,12 @@
 import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { reactive } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import PerformanceCalendarView from '../PerformanceCalendarView.vue'
 import type { PerformanceCalendarItem } from '@/composables/usePerformances'
 import { testId } from '@/__tests__/testId'
 
-let mockQuery: Record<string, string> = {}
+let mockQuery = reactive<Record<string, string>>({})
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof VueRouter>()),
   useRoute: () => ({ query: mockQuery }),
@@ -56,7 +57,7 @@ function makeItem(overrides: Partial<PerformanceCalendarItem> = {}): Performance
 
 beforeEach(() => {
   vi.resetAllMocks()
-  mockQuery = { year: '2026', month: '8' }
+  mockQuery = reactive({ year: '2026', month: '8' })
   mockPermissions = []
   mockConfirmAction.mockResolvedValue(true)
 })
@@ -72,6 +73,15 @@ describe('PerformanceCalendarView', () => {
     expect(wrapper.text()).toContain('August 2026')
   })
 
+  it('tells the user when the month cannot be loaded instead of claiming nothing is planned', async () => {
+    mockListForMonth.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PerformanceCalendarView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.find('.card').exists()).toBe(false)
+  })
+
   it('shows the empty-state text when there are no performances', async () => {
     mockListForMonth.mockResolvedValueOnce([])
     const wrapper = mount(PerformanceCalendarView)
@@ -81,7 +91,7 @@ describe('PerformanceCalendarView', () => {
   })
 
   it('defaults to the current month when no query params are given', async () => {
-    mockQuery = {}
+    mockQuery = reactive({})
     mockListForMonth.mockResolvedValueOnce([])
     mount(PerformanceCalendarView)
     await flushPromises()
@@ -153,5 +163,88 @@ describe('PerformanceCalendarView', () => {
     await flushPromises()
 
     expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
+  it('drops a late answer for a month that is no longer shown', async () => {
+    let finishFirst: (value: unknown) => void = () => {}
+    mockListForMonth.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishFirst = resolve
+      }),
+    )
+    mockListForMonth.mockResolvedValueOnce([makeItem({ ordinariumwork_name: 'Septembermesse' })])
+    const wrapper = mount(PerformanceCalendarView)
+    await flushPromises()
+    mockQuery['month'] = '9'
+    await flushPromises()
+
+    finishFirst([makeItem({ ordinariumwork_name: 'Augustmesse' })])
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Septembermesse')
+    expect(wrapper.text()).not.toContain('Augustmesse')
+  })
+
+  it('does not claim that nothing was found when the load fails', async () => {
+    mockListForMonth.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PerformanceCalendarView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.text()).not.toContain('Für diesen Monat sind keine Aufführungen geplant.')
+  })
+
+  it('shows neither the previous data nor the empty text after a later load fails', async () => {
+    mockListForMonth.mockResolvedValueOnce([makeItem({ ordinariumwork_name: 'Augustmesse' })])
+    mockListForMonth.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PerformanceCalendarView)
+    await flushPromises()
+    expect(wrapper.text()).toContain('Augustmesse')
+    mockQuery['month'] = '9'
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Augustmesse')
+    expect(wrapper.text()).not.toContain('Für diesen Monat sind keine Aufführungen geplant.')
+  })
+
+  it('shows the empty text again once a later load succeeds with nothing', async () => {
+    mockListForMonth.mockRejectedValueOnce(new Error('network'))
+    mockListForMonth.mockResolvedValueOnce([])
+    const wrapper = mount(PerformanceCalendarView)
+    await flushPromises()
+    mockQuery['month'] = '9'
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Für diesen Monat sind keine Aufführungen geplant.')
+  })
+
+  it('ignores the failure of an older request once a newer one has been answered', async () => {
+    let failFirst: (reason: unknown) => void = () => {}
+    mockListForMonth.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        failFirst = reject
+      }),
+    )
+    mockListForMonth.mockResolvedValueOnce([makeItem({ ordinariumwork_name: 'Septembermesse' })])
+    const wrapper = mount(PerformanceCalendarView)
+    await flushPromises()
+    mockQuery['month'] = '9'
+    await flushPromises()
+
+    failFirst(new Error('late failure'))
+    await flushPromises()
+
+    expect(mockShowToast).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Septembermesse')
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockListForMonth.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(PerformanceCalendarView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Der Kalender konnte nicht geladen werden.', true)
   })
 })

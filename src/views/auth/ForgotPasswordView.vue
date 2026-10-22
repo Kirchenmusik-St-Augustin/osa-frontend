@@ -18,8 +18,11 @@ async function submit(): Promise<void> {
     await authStore.forgotPassword(email.value)
     submitted.value = true
   } catch (error) {
-    const { fieldErrors: fe } = extractApiErrors(error)
-    fieldErrors.value = fe
+    const { fieldErrors: fe, generalError } = extractApiErrors(error)
+    // A throttled or failed request has no field to blame; saying nothing
+    // would look like a dead button. The message is the same for every
+    // address, so it does not reveal whether an account exists.
+    fieldErrors.value = generalError ? { email: generalError, ...fe } : fe
   } finally {
     submitting.value = false
   }

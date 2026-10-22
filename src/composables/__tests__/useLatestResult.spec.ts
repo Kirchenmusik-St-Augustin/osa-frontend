@@ -56,6 +56,38 @@ describe('useLatestResult', () => {
     expect(apply).toHaveBeenCalledExactlyOnceWith('new')
   })
 
+  it('drops the failure of an older call once a newer call has been made', async () => {
+    const applyLatest = useLatestResult()
+    const apply = vi.fn()
+    const first = deferred<string>()
+    const second = deferred<string>()
+
+    const firstCall = applyLatest(() => first.promise, apply)
+    const secondCall = applyLatest(() => second.promise, apply)
+    second.resolve('new')
+    await secondCall
+    first.reject(new Error('late failure'))
+
+    await expect(firstCall).resolves.toBeUndefined()
+    expect(apply).toHaveBeenCalledExactlyOnceWith('new')
+  })
+
+  it('lets the failure of the newest call reach the caller even if an older call is pending', async () => {
+    const applyLatest = useLatestResult()
+    const apply = vi.fn()
+    const first = deferred<string>()
+    const second = deferred<string>()
+
+    const firstCall = applyLatest(() => first.promise, apply)
+    const secondCall = applyLatest(() => second.promise, apply)
+    second.reject(new Error('newest failed'))
+
+    await expect(secondCall).rejects.toThrow('newest failed')
+    first.resolve('old')
+    await firstCall
+    expect(apply).not.toHaveBeenCalled()
+  })
+
   it('lets a failing load reach the caller without applying anything', async () => {
     const applyLatest = useLatestResult()
     const apply = vi.fn()

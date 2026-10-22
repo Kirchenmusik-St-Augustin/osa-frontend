@@ -4,10 +4,11 @@ import { mount, flushPromises } from '@vue/test-utils'
 import VerifyEmailView from '../VerifyEmailView.vue'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
+const mockReplace = vi.fn().mockResolvedValue(undefined)
 const mockRoute = { query: {} as Record<string, string> }
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof VueRouter>()),
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   useRoute: () => mockRoute,
 }))
 
@@ -28,6 +29,7 @@ describe('VerifyEmailView', () => {
 
     expect(wrapper.text()).toContain('Der Bestätigungslink ist ungültig oder abgelaufen.')
     expect(mockVerifyEmail).not.toHaveBeenCalled()
+    expect(mockReplace).not.toHaveBeenCalled()
   })
 
   it('shows the success message and a continue button on a valid token', async () => {
@@ -41,6 +43,19 @@ describe('VerifyEmailView', () => {
 
     await wrapper.find('button').trigger('click')
     expect(mockPush).toHaveBeenCalledWith({ name: 'home' })
+  })
+
+  it('removes the token from the address bar before it is verified', async () => {
+    mockRoute.query = { token: 'verify-token-abc' }
+    mockVerifyEmail.mockResolvedValueOnce(undefined)
+    mount(VerifyEmailView)
+    await flushPromises()
+
+    expect(mockReplace).toHaveBeenCalledWith({ name: 'verify-email' })
+    expect(mockVerifyEmail).toHaveBeenCalledWith('verify-token-abc')
+    expect(mockReplace.mock.invocationCallOrder[0]).toBeLessThan(
+      mockVerifyEmail.mock.invocationCallOrder[0] ?? 0,
+    )
   })
 
   it('shows the backend error message on an invalid/expired token', async () => {

@@ -66,6 +66,30 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
   })
 
+  it.each([
+    ['login', (store: ReturnType<typeof useAuthStore>) => store.login('a@example.test', 's')],
+    ['verifyEmail', (store: ReturnType<typeof useAuthStore>) => store.verifyEmail('t')],
+    [
+      'loginWithGoogleCredential',
+      (store: ReturnType<typeof useAuthStore>) => store.loginWithGoogleCredential('c'),
+    ],
+    [
+      'linkGoogleAccount',
+      (store: ReturnType<typeof useAuthStore>) =>
+        store.linkGoogleAccount('c', 'a@example.test', 's'),
+    ],
+  ])('%s drops the token again when the profile cannot be loaded', async (_name, run) => {
+    mockedApi.post.mockResolvedValueOnce({ data: { access_token: 'token', token_type: 'bearer' } })
+    mockedApi.get.mockRejectedValueOnce(new Error('profile unavailable'))
+    const store = useAuthStore()
+
+    await expect(run(store)).rejects.toThrow('profile unavailable')
+
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.accessToken).toBeNull()
+    expect(store.user).toBeNull()
+  })
+
   it('hasPermission reflects the fetched profile', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { access_token: 't', token_type: 'bearer' } })
     mockedApi.get.mockResolvedValueOnce({

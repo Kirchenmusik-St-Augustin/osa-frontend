@@ -61,10 +61,21 @@ describe('PropriumworkShowView', () => {
     expect(wrapper.find('.text-danger').text()).toBe('anspruchsvoll')
   })
 
-  it('deletes after confirmation with the calendar-specific in-use message', async () => {
+  it("shows the server's in-use message when delete is blocked", async () => {
     mockGet.mockResolvedValueOnce(makeWork())
     mockConfirmAction.mockResolvedValueOnce(true)
-    mockRemove.mockRejectedValueOnce(new Error('blocked'))
+    mockRemove.mockRejectedValueOnce({
+      response: {
+        data: {
+          detail: [
+            {
+              loc: ['body', 'general'],
+              msg: 'Die Proprium-Komposition kann nicht gelöscht werden, da sie im Kalender verwendet wird.',
+            },
+          ],
+        },
+      },
+    })
     const wrapper = mount(PropriumworkShowView, { props: { id: '1' } })
     await flushPromises()
 
@@ -88,5 +99,51 @@ describe('PropriumworkShowView', () => {
     await flushPromises()
 
     expect(mockPush).toHaveBeenCalledWith({ name: 'repertoire-propriumworks-search' })
+  })
+
+  it('tells the user when the entry cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    mount(PropriumworkShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGet.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(PropriumworkShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Der Eintrag konnte nicht geladen werden.', true)
+  })
+
+  it('uses its own text when the delete error carries no message of its own', async () => {
+    mockGet.mockResolvedValueOnce(makeWork())
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['body', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    const wrapper = mount(PropriumworkShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('button.btn-danger').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Der Eintrag konnte nicht gelöscht werden.', true)
+  })
+
+  it('does not call a failed delete "in use" when the request itself failed', async () => {
+    mockGet.mockResolvedValueOnce(makeWork())
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PropriumworkShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('button.btn-danger').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 })

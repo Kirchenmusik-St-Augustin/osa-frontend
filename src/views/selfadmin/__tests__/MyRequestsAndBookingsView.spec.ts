@@ -61,6 +61,29 @@ describe('MyRequestsAndBookingsView', () => {
     expect(wrapper.text()).toContain('Krönungsmesse')
   })
 
+  it('tells the member when the list cannot be loaded instead of claiming there are none', async () => {
+    mockGetMyRequestsAndBookings.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(MyRequestsAndBookingsView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.find('.card').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Derzeit liegen keine Anfragen oder Buchungen vor.')
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGetMyRequestsAndBookings.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(MyRequestsAndBookingsView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Die Anfragen und Buchungen konnten nicht geladen werden.',
+      true,
+    )
+  })
+
   it('shows the empty-state text when there are none', async () => {
     mockGetMyRequestsAndBookings.mockResolvedValueOnce([])
     const wrapper = mount(MyRequestsAndBookingsView)

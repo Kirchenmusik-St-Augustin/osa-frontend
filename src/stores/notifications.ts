@@ -8,6 +8,11 @@ import { ref } from 'vue'
 // fails WCAG 2.2.1 "Timing Adjustable").
 export const TOAST_DURATION_MS = 4000
 
+// Error toasts stay until closed, so a failing loop (retried saves, a broken
+// endpoint polled by several components) must not stack them without limit:
+// beyond this many, the oldest toast makes room.
+export const MAX_VISIBLE_TOASTS = 5
+
 export interface Toast {
   id: number
   message: string
@@ -35,6 +40,9 @@ export const useNotificationStore = defineStore('notifications', () => {
   function showToast(message: string, isError = false): void {
     const id = nextToastId++
     toasts.value.push({ id, message, isError })
+    toasts.value
+      .slice(0, Math.max(0, toasts.value.length - MAX_VISIBLE_TOASTS))
+      .forEach((overflow) => dismissToast(overflow.id))
     if (isError) return
     dismissTimers.set(
       id,

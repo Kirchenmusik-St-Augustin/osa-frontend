@@ -45,6 +45,94 @@ beforeEach(() => {
 })
 
 describe('UserdirectoryView', () => {
+  it('shows the entries of the LAST dropdown choice when an earlier answer arrives late', async () => {
+    let answerFirst: (value: DirectoryEntry[]) => void = () => {}
+    mockListUsers
+      .mockResolvedValueOnce([]) // initial "alle"
+      .mockReturnValueOnce(
+        new Promise<DirectoryEntry[]>((resolve) => {
+          answerFirst = resolve
+        }),
+      )
+      .mockResolvedValueOnce([entries[1]!])
+    const wrapper = mount(UserdirectoryView)
+    await flushPromises()
+
+    await wrapper.find('select#userdirectory-ability').setValue('instruments@1')
+    await wrapper.find('select#userdirectory-ability').setValue('all')
+    await flushPromises()
+    answerFirst([entries[0]!])
+    await flushPromises()
+
+    expect(wrapper.findAll('tbody tr')).toHaveLength(1)
+    expect(wrapper.text()).toContain('MAYER')
+    expect(wrapper.text()).not.toContain('HUBER')
+  })
+
+  it('does not claim the list was copied when the browser refuses the clipboard write', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('NotAllowedError'))
+    Object.assign(navigator, { clipboard: { writeText } })
+    mockListUsers.mockResolvedValueOnce(entries)
+    const wrapper = mount(UserdirectoryView)
+    await flushPromises()
+    await rowCheckbox(wrapper, 0).setValue(true)
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Mailing-Liste in Zwischenablage kopieren')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Die Mailing-Liste konnte nicht kopiert werden.',
+      true,
+    )
+    expect(mockShowToast).not.toHaveBeenCalledWith('Mailing-Liste in Zwischenablage kopiert.')
+  })
+
+  it('tells the user when the directory cannot be loaded', async () => {
+    mockGetAbilities.mockReset()
+    mockGetAbilities.mockRejectedValueOnce({ response: { data: { detail: 'Gesperrt.' } } })
+    mount(UserdirectoryView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Gesperrt.', true)
+  })
+
+  it('tells the user when the list of members cannot be loaded', async () => {
+    mockListUsers.mockReset()
+    mockListUsers.mockRejectedValueOnce({ response: { data: { detail: 'Gesperrt.' } } })
+    mount(UserdirectoryView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Gesperrt.', true)
+  })
+
+  it('uses its own text when a load error carries no message of its own', async () => {
+    mockGetAbilities.mockReset()
+    mockGetAbilities.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mockListUsers.mockReset()
+    mockListUsers.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(UserdirectoryView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledTimes(2)
+    expect(mockShowToast).toHaveBeenNthCalledWith(
+      1,
+      'Das Verzeichnis konnte nicht geladen werden.',
+      true,
+    )
+    expect(mockShowToast).toHaveBeenNthCalledWith(
+      2,
+      'Das Verzeichnis konnte nicht geladen werden.',
+      true,
+    )
+  })
+
   it('loads the abilities catalog on mount, into the optgroups', async () => {
     const wrapper = mount(UserdirectoryView)
     await flushPromises()
@@ -128,7 +216,8 @@ describe('UserdirectoryView', () => {
     await flushPromises()
 
     const copyLinkText = 'Mailing-Liste in Zwischenablage kopieren'
-    const findCopyLinks = () => wrapper.findAll('div').filter((div) => div.text() === copyLinkText)
+    const findCopyLinks = () =>
+      wrapper.findAll('button').filter((button) => button.text() === copyLinkText)
     expect(findCopyLinks()).toHaveLength(2)
     for (const link of findCopyLinks()) {
       expect(link.classes()).toContain('invisible')

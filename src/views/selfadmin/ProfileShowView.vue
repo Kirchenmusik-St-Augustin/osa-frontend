@@ -6,6 +6,7 @@ import UserDataCard from '@/components/common/UserDataCard.vue'
 import { useProfile } from '@/composables/useProfile'
 import { useSystem } from '@/composables/useSystem'
 import type { User } from '@/composables/useUsers'
+import { unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 import { appEnvironment } from '@/runtimeConfig'
 
@@ -16,7 +17,12 @@ const user = ref<User | null>(null)
 const backendEnvironment = ref<string | null>(null)
 
 onMounted(async () => {
-  user.value = await get()
+  try {
+    user.value = await get()
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Das Profil konnte nicht geladen werden.', true)
+    return
+  }
   try {
     backendEnvironment.value = (await getEnvironment()).environment
   } catch {
@@ -30,7 +36,7 @@ function capitalize(value: string): string {
 }
 
 async function removeOauth2(bindingId: string): Promise<void> {
-  const confirmed = await confirmAction('Soll diese Binding tatsächlich entfernt werden?')
+  const confirmed = await confirmAction('Soll diese Bindung tatsächlich entfernt werden?')
   if (!confirmed) return
 
   try {
@@ -62,11 +68,15 @@ async function removeOauth2(bindingId: string): Promise<void> {
         <div class="card-body">
           <div v-for="binding in user.oauth2_bindings" :key="binding.provider">
             <span class="me-2">{{ capitalize(binding.provider) }}</span>
-            <i
-              class="fas fa-trash-alt c-pointer"
+            <button
+              type="button"
+              class="btn btn-link btn-sm p-0 text-reset"
               title="entfernen"
+              :aria-label="`${capitalize(binding.provider)}-Bindung entfernen`"
               @click="removeOauth2(binding.id)"
-            ></i>
+            >
+              <i class="fas fa-trash-alt" aria-hidden="true"></i>
+            </button>
           </div>
         </div>
       </div>

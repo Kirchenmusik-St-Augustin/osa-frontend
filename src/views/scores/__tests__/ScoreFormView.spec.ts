@@ -147,6 +147,53 @@ describe('ScoreFormView', () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
+  it('keeps the form hidden and returns to the search when the score cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    const wrapper = mount(ScoreFormView, { props: { id: '8' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'repertoire-scores-search' })
+    expect(wrapper.find('form').exists()).toBe(false)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGetDefaults.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(ScoreFormView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Das Formular konnte nicht geladen werden.', true)
+  })
+
+  it('shows the server reason instead of the generic text when no field carries it', async () => {
+    mockGetDefaults.mockResolvedValueOnce({ werk: '' })
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockCreate.mockRejectedValueOnce({ response: { data: { detail: 'Gesperrt.' } } })
+    const wrapper = mount(ScoreFormView)
+    await flushPromises()
+
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Gesperrt.', true)
+    expect(mockShowToast).not.toHaveBeenCalledWith('Ein Fehler ist aufgetreten.', true)
+  })
+
+  it('tells the user when saving fails without any answer', async () => {
+    mockGetDefaults.mockResolvedValueOnce({ werk: '' })
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockCreate.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(ScoreFormView)
+    await flushPromises()
+
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
   it('links "zurück" to the show page when editing, and to search when creating', async () => {
     mockGetDefaults.mockResolvedValueOnce({ werk: '' })
     const createWrapper = mount(ScoreFormView)

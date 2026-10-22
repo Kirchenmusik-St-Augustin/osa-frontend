@@ -9,6 +9,8 @@ import {
   type ScoreFieldConfig,
   type ScoreFieldsPayload,
 } from '@/composables/useScores'
+import { unattachedErrorMessage } from '@/services/apiErrors'
+import { showToast } from '@/services/notifications'
 
 const props = defineProps<{ id: string }>()
 const { get, getFieldsConfig } = useScores()
@@ -18,10 +20,14 @@ const fields = ref<ScoreFieldsPayload>({})
 const fieldsConfig = ref<Record<string, ScoreFieldConfig>>({})
 
 onMounted(async () => {
-  const [scoreData, config] = await Promise.all([get(props.id), getFieldsConfig()])
-  score.value = scoreData
-  fields.value = scoreData.fields
-  fieldsConfig.value = config
+  try {
+    const [scoreData, config] = await Promise.all([get(props.id), getFieldsConfig()])
+    score.value = scoreData
+    fields.value = scoreData.fields
+    fieldsConfig.value = config
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Der Eintrag konnte nicht geladen werden.', true)
+  }
 })
 </script>
 

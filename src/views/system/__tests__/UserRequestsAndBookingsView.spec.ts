@@ -4,6 +4,11 @@ import UserRequestsAndBookingsView from '../UserRequestsAndBookingsView.vue'
 import type { PerformanceShortBase } from '@/composables/useBookings'
 import type { User } from '@/composables/useUsers'
 
+const mockShowToast = vi.fn()
+vi.mock('@/services/notifications', () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
+}))
+
 const mockGet = vi.fn()
 const mockGetRequestsAndBookings = vi.fn()
 vi.mock('@/composables/useUsers', () => ({
@@ -53,6 +58,25 @@ beforeEach(() => {
 })
 
 describe('UserRequestsAndBookingsView', () => {
+  it('tells the administrator when the data cannot be loaded', async () => {
+    mockGetRequestsAndBookings.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(UserRequestsAndBookingsView, { props: { id: '7' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.findAll('tbody tr')).toHaveLength(0)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGetRequestsAndBookings.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(UserRequestsAndBookingsView, { props: { id: '7' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Die Daten konnten nicht geladen werden.', true)
+  })
+
   it('loads and lists the requests and bookings for the given user id', async () => {
     mockGetRequestsAndBookings.mockResolvedValueOnce([makeEntry()])
     const wrapper = mount(UserRequestsAndBookingsView, { props: { id: '7' } })

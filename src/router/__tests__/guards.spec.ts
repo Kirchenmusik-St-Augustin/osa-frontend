@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import type { RouteLocationNormalized } from 'vue-router'
 import { runAuthGuards } from '../guards'
 import api from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn() },
@@ -147,6 +148,18 @@ describe('runAuthGuards', () => {
     const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toEqual({ name: 'verify-email-notice' })
+  })
+
+  it('does not call a signed-in user without a loaded profile unverified', async () => {
+    const authStore = useAuthStore()
+    await authStore.restoreSession()
+    authStore.accessToken = 'token-without-profile'
+    const to = makeRoute({ meta: { requiresAuth: true } })
+
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
+
+    expect(authStore.user).toBeNull()
+    expect(result).toBe(true)
   })
 
   it('lets an unverified logged-in user reach verify-email-notice itself', async () => {

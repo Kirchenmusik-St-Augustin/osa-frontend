@@ -5,7 +5,7 @@ import FormCheckbox from '@/components/common/FormCheckbox.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import { useCoreelements, type Coreelement } from '@/composables/useCoreelements'
 import { findCoreelementTypeMeta, type CoreelementType } from '@/constants/coreelementTypes'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 // Only these three CoreelementTypes carry the `active` flag -- they're the
@@ -133,6 +133,11 @@ async function submitForm(): Promise<void> {
     closeModal()
   } catch (error) {
     fieldErrors.value = extractApiErrors(error).fieldErrors
+    // Without an input to show the message under (server error, lost
+    // connection, error for the request as a whole) the dialog would just
+    // stay open and silent.
+    const message = unattachedErrorMessage(error)
+    if (message) showToast(message, true)
   } finally {
     submitting.value = false
   }

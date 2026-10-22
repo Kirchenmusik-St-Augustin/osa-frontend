@@ -15,17 +15,35 @@ export function isChunkLoadError(message: string): boolean {
   return CHUNK_LOAD_ERROR_PATTERN.test(message)
 }
 
-export function registerChunkReload(router: Router): void {
-  router.afterEach(() => {
+// Storage can be unavailable (blocked site data, some private modes) or
+// silently drop writes. Without a flag that provably persisted, a reload
+// could repeat forever, so "could not remember" means "do not reload".
+function claimReloadAttempt(): boolean {
+  try {
+    if (window.sessionStorage.getItem(CHUNK_RELOAD_FLAG)) return false
+    window.sessionStorage.setItem(CHUNK_RELOAD_FLAG, '1')
+    return window.sessionStorage.getItem(CHUNK_RELOAD_FLAG) === '1'
+  } catch {
+    return false
+  }
+}
+
+function clearReloadAttempt(): void {
+  try {
     window.sessionStorage.removeItem(CHUNK_RELOAD_FLAG)
-  })
+  } catch {
+    // Nothing was stored, so there is nothing to clear.
+  }
+}
+
+export function registerChunkReload(router: Router): void {
+  router.afterEach(clearReloadAttempt)
 
   router.onError((error: unknown, to) => {
     const message = error instanceof Error ? error.message : String(error)
     if (!isChunkLoadError(message)) return
-    if (window.sessionStorage.getItem(CHUNK_RELOAD_FLAG)) return
+    if (!claimReloadAttempt()) return
 
-    window.sessionStorage.setItem(CHUNK_RELOAD_FLAG, '1')
     window.location.href = to.fullPath
   })
 }

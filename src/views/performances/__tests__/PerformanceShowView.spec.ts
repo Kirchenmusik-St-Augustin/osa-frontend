@@ -3,6 +3,11 @@ import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import PerformanceShowView from '../PerformanceShowView.vue'
 import type { PerformanceShow } from '@/composables/usePerformances'
 
+const mockShowToast = vi.fn()
+vi.mock('@/services/notifications', () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
+}))
+
 const mockGetDetail = vi.fn()
 vi.mock('@/composables/usePerformances', () => ({
   usePerformances: () => ({ getDetail: mockGetDetail }),
@@ -49,6 +54,15 @@ describe('PerformanceShowView', () => {
     expect(wrapper.text()).toContain('Krönungsmesse')
   })
 
+  it('tells the user when the performance cannot be loaded', async () => {
+    mockGetDetail.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    const wrapper = mount(PerformanceShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+    expect(wrapper.text()).not.toContain('Krönungsmesse')
+  })
+
   it('never renders a Besetzung/cast section (disabled by design)', async () => {
     mockGetDetail.mockResolvedValueOnce(makeShow())
     const wrapper = mount(PerformanceShowView, { props: { id: '1' } })
@@ -88,5 +102,15 @@ describe('PerformanceShowView', () => {
 
     const backLink = wrapper.findComponent(RouterLinkStub)
     expect(backLink.props('to')).toEqual({ name: 'home', query: { year: 2026, month: 3 } })
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGetDetail.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(PerformanceShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Die Aufführung konnte nicht geladen werden.', true)
   })
 })

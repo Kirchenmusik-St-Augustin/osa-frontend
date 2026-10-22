@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useArtists, type Artist } from '@/composables/useArtists'
-import { extractApiErrors } from '@/services/apiErrors'
+import { unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id: string }>()
@@ -31,7 +31,11 @@ const listedAs = computed(() => {
 })
 
 onMounted(async () => {
-  artist.value = await get(props.id)
+  try {
+    artist.value = await get(props.id)
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Der Eintrag konnte nicht geladen werden.', true)
+  }
 })
 
 async function destroy(): Promise<void> {
@@ -43,12 +47,9 @@ async function destroy(): Promise<void> {
     showToast('gelöscht.')
     await router.push({ name: 'repertoire-artists-search' })
   } catch (error) {
-    const { fieldErrors } = extractApiErrors(error)
-    showToast(
-      fieldErrors['general'] ??
-        'Komponist / Dirigent kann nicht gelöscht werden, da noch in Verwendung.',
-      true,
-    )
+    // The server answers "in use" with its own German message; anything
+    // else (server error, lost connection) must not be reported as "in use".
+    showToast(unattachedErrorMessage(error) ?? 'Der Eintrag konnte nicht gelöscht werden.', true)
   }
 }
 </script>

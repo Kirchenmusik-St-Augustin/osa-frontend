@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { TOAST_DURATION_MS, useNotificationStore } from '../notifications'
+import { MAX_VISIBLE_TOASTS, TOAST_DURATION_MS, useNotificationStore } from '../notifications'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -50,6 +50,31 @@ describe('notifications store -- toasts', () => {
 
     store.dismissToast(store.toasts[0]!.id)
     expect(store.toasts).toHaveLength(0)
+  })
+
+  it('lets the oldest toast make room once the visible limit is reached, cancelling its timer', () => {
+    const store = useNotificationStore()
+
+    for (let index = 0; index < MAX_VISIBLE_TOASTS + 2; index++) {
+      store.showToast(`erfolg ${index}`)
+    }
+
+    expect(store.toasts.map((toast) => toast.message)).toEqual([
+      'erfolg 2',
+      'erfolg 3',
+      'erfolg 4',
+      'erfolg 5',
+      'erfolg 6',
+    ])
+    expect(vi.getTimerCount()).toBe(MAX_VISIBLE_TOASTS)
+  })
+
+  it('does not let a flood of persistent error toasts grow without limit', () => {
+    const store = useNotificationStore()
+
+    for (let index = 0; index < 50; index++) store.showToast('kaputt', true)
+
+    expect(store.toasts).toHaveLength(MAX_VISIBLE_TOASTS)
   })
 
   it('times every toast independently', () => {

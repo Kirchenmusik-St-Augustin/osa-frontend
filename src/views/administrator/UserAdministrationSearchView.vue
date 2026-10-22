@@ -7,6 +7,8 @@ import {
   useUserAdministration,
   type UserAdministrationDeletedEntry,
 } from '@/composables/useUserAdministration'
+import { extractApiErrors } from '@/services/apiErrors'
+import { showToast } from '@/services/notifications'
 
 const router = useRouter()
 const { search, listDeleted } = useUserAdministration()
@@ -14,7 +16,14 @@ const { search, listDeleted } = useUserAdministration()
 const deletedUsers = ref<UserAdministrationDeletedEntry[]>([])
 
 onMounted(async () => {
-  deletedUsers.value = await listDeleted()
+  try {
+    deletedUsers.value = await listDeleted()
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Die Liste konnte nicht geladen werden.',
+      true,
+    )
+  }
 })
 
 function onSelect(id: string): void {

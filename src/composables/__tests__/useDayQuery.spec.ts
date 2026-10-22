@@ -47,4 +47,23 @@ describe('useDayQuery', () => {
     expect(month.value).toBe(3)
     expect(day.value).toBe(15)
   })
+
+  it.each([[''], [null], ['0'], ['32'], ['-1'], ['1e1']])(
+    'falls back to today for the unusable value %j',
+    (value) => {
+      mockQuery = { year: value, month: value, day: value }
+      const { year, month, day } = useDayQuery()
+
+      const now = new Date()
+      expect(year.value).toBe(now.getFullYear())
+      expect(month.value).toBe(now.getMonth() + 1)
+      expect(day.value).toBe(now.getDate())
+    },
+  )
+
+  it('accepts the last day of a month', () => {
+    mockQuery = { year: '2026', month: '8', day: '31' }
+
+    expect(useDayQuery().day.value).toBe(31)
+  })
 })

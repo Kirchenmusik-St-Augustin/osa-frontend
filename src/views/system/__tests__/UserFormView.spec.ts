@@ -94,6 +94,38 @@ describe('UserFormView', () => {
     expect(mockPush).toHaveBeenCalledWith({ name: 'system-users-show', params: { id: '9' } })
   })
 
+  it('keeps the form hidden and returns to the search when the account cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    const wrapper = mount(UserFormView, { props: { id: '5' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'system-users-search' })
+    expect(wrapper.find('input#user-email').exists()).toBe(false)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGetFormOptions.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(UserFormView, { props: {} })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Das Formular konnte nicht geladen werden.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'system-users-search' })
+  })
+
+  it('tells the user when saving fails without a field-level reason', async () => {
+    mockCreate.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(UserFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
   it('shows the "Benutzerkonto erstellen" subtitle when creating', async () => {
     const wrapper = mount(UserFormView, { props: {} })
     await flushPromises()

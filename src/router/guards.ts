@@ -21,7 +21,8 @@ const EXEMPT_FROM_VERIFIED_GATE = new Set(['verify-email-notice', 'verify-email'
 function blockedByVerifiedGate(authStore: ReturnType<typeof useAuthStore>, toName: unknown) {
   return (
     authStore.isAuthenticated &&
-    !authStore.user?.email_verified_at &&
+    authStore.user !== null &&
+    !authStore.user.email_verified_at &&
     !EXEMPT_FROM_VERIFIED_GATE.has(String(toName))
   )
 }

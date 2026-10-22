@@ -71,22 +71,27 @@ async function onTriggerDownsync(): Promise<void> {
   if (!confirmed) return
 
   downsyncSubmitting.value = true
+  let restoredBackup: string
   try {
-    const result = await triggerDownsync()
-    showToast(`Downsync abgeschlossen: ${result.restored_backup}`)
-    // The restore replaces the personal_access_tokens table too, so this
-    // stage's own session may already be invalid -- log out proactively
-    // instead of letting the next request surface a confusing 401.
-    await authStore.logout()
-    await router.push({ name: 'login' })
+    restoredBackup = (await triggerDownsync()).restored_backup
   } catch (error) {
     showToast(
       extractApiErrors(error).generalError ?? 'Downsync konnte nicht durchgeführt werden.',
       true,
     )
+    return
   } finally {
     downsyncSubmitting.value = false
   }
+
+  showToast(`Downsync abgeschlossen: ${restoredBackup}`)
+  // The restore replaces the personal_access_tokens table too, so this
+  // stage's own session may already be invalid -- log out proactively
+  // instead of letting the next request surface a confusing 401. The local
+  // state is cleared even when the logout request fails, and a failing
+  // logout must not turn the finished downsync into an error message.
+  await authStore.logout().catch(() => undefined)
+  await router.push({ name: 'login' })
 }
 </script>
 

@@ -57,6 +57,7 @@ const showLinkForm = ref(false)
 const pendingCredential = ref<string | null>(null)
 const linkPassword = ref('')
 const linkFieldErrors = ref<Record<string, string>>({})
+const linkSubmitting = ref(false)
 const googleError = ref<string | null>(null)
 
 async function handleGoogleCredential(
@@ -79,14 +80,17 @@ async function handleGoogleCredential(
 }
 
 async function submitLinkAccount(): Promise<void> {
-  if (!pendingCredential.value) return
+  if (!pendingCredential.value || linkSubmitting.value) return
   linkFieldErrors.value = {}
+  linkSubmitting.value = true
   try {
     await authStore.linkGoogleAccount(pendingCredential.value, email.value, linkPassword.value)
     await redirectAfterLogin()
   } catch (error) {
     const { fieldErrors: fe, generalError } = extractApiErrors(error)
     linkFieldErrors.value = generalError ? { email: generalError, ...fe } : fe
+  } finally {
+    linkSubmitting.value = false
   }
 }
 
@@ -191,7 +195,9 @@ function cancelLinkAccount(): void {
               />
             </div>
             <div class="text-center">
-              <button type="submit" class="btn btn-primary">Verbinden</button>
+              <button type="submit" class="btn btn-primary" :disabled="linkSubmitting">
+                Verbinden
+              </button>
             </div>
           </form>
         </div>

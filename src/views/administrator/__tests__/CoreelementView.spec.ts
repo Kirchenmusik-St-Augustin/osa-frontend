@@ -232,6 +232,48 @@ describe('CoreelementView', () => {
     expect(wrapper.find('.modal').exists()).toBe(true)
   })
 
+  it('tells the user when saving fails without a field-level error', async () => {
+    mockSave.mockRejectedValueOnce({ response: { status: 500, data: {} } })
+    const wrapper = await mountWithCreateModalOpen('instrument')
+
+    await wrapper.find('input#coreelement-name').setValue('Fagott')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.find('.modal').exists()).toBe(true)
+  })
+
+  it('tells the user about an error for the whole request, which has no input of its own', async () => {
+    mockSave.mockRejectedValueOnce({
+      response: {
+        data: { detail: [{ loc: ['body', 'general'], msg: 'Speichern nicht möglich.' }] },
+      },
+    })
+    const wrapper = await mountWithCreateModalOpen('instrument')
+
+    await wrapper.find('input#coreelement-name').setValue('Fagott')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Speichern nicht möglich.', true)
+  })
+
+  it('does not add a toast when the error is shown under a field', async () => {
+    mockSave.mockRejectedValueOnce({
+      response: {
+        data: { detail: [{ loc: ['body', 'name'], msg: 'Der Name ist bereits vergeben.' }] },
+      },
+    })
+    const wrapper = await mountWithCreateModalOpen('instrument')
+
+    await wrapper.find('input#coreelement-name').setValue('Fagott')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).not.toHaveBeenCalled()
+  })
+
   it('deletes an item after the user confirms', async () => {
     mockItems.value = [makeItem({ id: testId(3), name: 'Fagott' })]
     mockConfirmAction.mockResolvedValueOnce(true)

@@ -10,7 +10,7 @@ import {
   type ScoreFieldConfig,
   type ScoreFieldsPayload,
 } from '@/composables/useScores'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id?: string }>()
@@ -31,10 +31,17 @@ async function loadInitialFields(): Promise<ScoreFieldsPayload> {
 }
 
 onMounted(async () => {
-  const [config, initialFields] = await Promise.all([getFieldsConfig(), loadInitialFields()])
-  fieldsConfig.value = config
-  fields.value = initialFields
-  ready.value = true
+  try {
+    const [config, initialFields] = await Promise.all([getFieldsConfig(), loadInitialFields()])
+    fieldsConfig.value = config
+    fields.value = initialFields
+    ready.value = true
+  } catch (error) {
+    // The form stays hidden: an empty form saved over an existing score
+    // would erase it.
+    showToast(unattachedErrorMessage(error) ?? 'Das Formular konnte nicht geladen werden.', true)
+    await router.push({ name: 'repertoire-scores-search' })
+  }
 })
 
 async function save(): Promise<void> {
@@ -49,7 +56,8 @@ async function save(): Promise<void> {
     await router.push({ name: 'repertoire-scores-show', params: { id: saved.id } })
   } catch (error) {
     fieldErrors.value = extractApiErrors(error).fieldErrors
-    showToast('Ein Fehler ist aufgetreten.', true)
+    // The server's reason when there is no field to show it under.
+    showToast(unattachedErrorMessage(error) ?? 'Ein Fehler ist aufgetreten.', true)
   } finally {
     submitting.value = false
   }

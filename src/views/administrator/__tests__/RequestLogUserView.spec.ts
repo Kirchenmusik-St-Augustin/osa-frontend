@@ -1,14 +1,20 @@
 import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { reactive } from 'vue'
 import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import RequestLogUserView from '../RequestLogUserView.vue'
 import type { RequestLogEntry, RequestLogUserDetail } from '@/composables/useRequestLogs'
 import { linkTarget } from '@/__tests__/linkTarget'
 
-let mockQuery: Record<string, string> = {}
+let mockQuery = reactive<Record<string, string>>({})
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof VueRouter>()),
   useRoute: () => ({ query: mockQuery }),
+}))
+
+const mockShowToast = vi.fn()
+vi.mock('@/services/notifications', () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
 }))
 
 const mockGetForUser = vi.fn()
@@ -32,7 +38,7 @@ function makeDetail(entries: RequestLogEntry[]): RequestLogUserDetail {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockQuery = { year: '2026', month: '8', day: '12' }
+  mockQuery = reactive({ year: '2026', month: '8', day: '12' })
 })
 
 describe('RequestLogUserView', () => {
@@ -117,5 +123,97 @@ describe('RequestLogUserView', () => {
     await flushPromises()
 
     expect(mockGetForUser).toHaveBeenCalledWith('8', 2026, 8, 12)
+  })
+
+  it('drops a late answer for a month that is no longer shown', async () => {
+    let finishFirst: (value: unknown) => void = () => {}
+    mockGetForUser.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishFirst = resolve
+      }),
+    )
+    mockGetForUser.mockResolvedValueOnce(
+      makeDetail([makeEntry({ request_path: '/vom-naechsten-tag' })]),
+    )
+    const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
+    await flushPromises()
+    mockQuery['day'] = '13'
+    await flushPromises()
+
+    finishFirst(makeDetail([makeEntry({ request_path: '/aus-dem-august' })]))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('/vom-naechsten-tag')
+    expect(wrapper.text()).not.toContain('/aus-dem-august')
+  })
+
+  it('does not claim that nothing was found when the load fails', async () => {
+    mockGetForUser.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.text()).not.toContain('Für diesen Tag wurden keine Log-Einträge gefunden.')
+  })
+
+  it('shows neither the previous data nor the empty text after a later load fails', async () => {
+    mockGetForUser.mockResolvedValueOnce(
+      makeDetail([makeEntry({ request_path: '/aus-dem-august' })]),
+    )
+    mockGetForUser.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
+    await flushPromises()
+    expect(wrapper.text()).toContain('/aus-dem-august')
+    mockQuery['day'] = '13'
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('/aus-dem-august')
+    expect(wrapper.text()).not.toContain('Für diesen Tag wurden keine Log-Einträge gefunden.')
+  })
+
+  it('shows the empty text again once a later load succeeds with nothing', async () => {
+    mockGetForUser.mockRejectedValueOnce(new Error('network'))
+    mockGetForUser.mockResolvedValueOnce([])
+    const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
+    await flushPromises()
+    mockQuery['day'] = '13'
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Für diesen Tag wurden keine Log-Einträge gefunden.')
+  })
+
+  it('ignores the failure of an older request once a newer one has been answered', async () => {
+    let failFirst: (reason: unknown) => void = () => {}
+    mockGetForUser.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        failFirst = reject
+      }),
+    )
+    mockGetForUser.mockResolvedValueOnce(
+      makeDetail([makeEntry({ request_path: '/vom-naechsten-tag' })]),
+    )
+    const wrapper = mount(RequestLogUserView, { props: { userId: '7' } })
+    await flushPromises()
+    mockQuery['day'] = '13'
+    await flushPromises()
+
+    failFirst(new Error('late failure'))
+    await flushPromises()
+
+    expect(mockShowToast).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('/vom-naechsten-tag')
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGetForUser.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(RequestLogUserView, { props: { userId: '7' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Die Log-Einträge konnten nicht geladen werden.',
+      true,
+    )
   })
 })

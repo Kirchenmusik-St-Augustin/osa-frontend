@@ -5,7 +5,7 @@ import FormCheckbox from '@/components/common/FormCheckbox.vue'
 import FormInput from '@/components/common/FormInput.vue'
 import SelectionSetup, { type SelectableItem } from '@/components/common/SelectionSetup.vue'
 import { useUsers, type UserFormOptions } from '@/composables/useUsers'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { formatUtcDateTime } from '@/services/dateFormat'
 import { confirmAction, showToast } from '@/services/notifications'
 import { useAuthStore } from '@/stores/auth'
@@ -38,22 +38,30 @@ const emailVerifiedAt = ref<string | null>(null)
 const emailTouched = computed(() => initialEmail !== form.email)
 
 onMounted(async () => {
-  options.value = await getFormOptions()
-  if (!props.id) return
-
-  const user = await get(props.id)
-  form.givenname = user.givenname
-  form.surname = user.surname
-  form.email = user.email
-  form.phone = user.phone
-  form.auth_locked = user.auth_locked
-  form.instruments = user.instruments
-  form.voices = user.voices
-  form.choirjobs = user.choirjobs
-  form.roles = user.roles
-  form.administrator = user.administrator
-  initialEmail = user.email
-  emailVerifiedAt.value = user.email_verified_at
+  try {
+    const formOptions = await getFormOptions()
+    if (props.id) {
+      const user = await get(props.id)
+      form.givenname = user.givenname
+      form.surname = user.surname
+      form.email = user.email
+      form.phone = user.phone
+      form.auth_locked = user.auth_locked
+      form.instruments = user.instruments
+      form.voices = user.voices
+      form.choirjobs = user.choirjobs
+      form.roles = user.roles
+      form.administrator = user.administrator
+      initialEmail = user.email
+      emailVerifiedAt.value = user.email_verified_at
+    }
+    // Shown last: the form stays hidden unless the account to edit was
+    // loaded, so an empty form can never be saved over it.
+    options.value = formOptions
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Das Formular konnte nicht geladen werden.', true)
+    await router.push({ name: 'system-users-search' })
+  }
 })
 
 const nameSubtitle = computed(() =>
@@ -88,6 +96,8 @@ async function save(): Promise<void> {
     await router.push({ name: 'system-users-show', params: { id: user.id } })
   } catch (error) {
     fieldErrors.value = extractApiErrors(error).fieldErrors
+    const unattached = unattachedErrorMessage(error)
+    if (unattached) showToast(unattached, true)
   } finally {
     submitting.value = false
   }
