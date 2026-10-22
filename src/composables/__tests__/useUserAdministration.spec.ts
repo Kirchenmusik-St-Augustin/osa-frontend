@@ -26,7 +26,7 @@ const sampleResult = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useUserAdministration', () => {

@@ -25,6 +25,7 @@ describe('ConfirmDialog', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('.modal-body').text()).toBe('Wirklich löschen?')
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Bestätigung')
     expect(button(wrapper, 'Nein').exists()).toBe(true)
     expect(button(wrapper, 'Ja').exists()).toBe(true)
   })

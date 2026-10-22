@@ -28,8 +28,8 @@ repos:
         name: Vue TypeScript Strict Type Checking
         entry: podman exec osa-frontend npm run type-check
         language: system
-        types: [vue]
         pass_filenames: false
+        always_run: true
 
       - id: vitest
         name: Vitest & Code Coverage

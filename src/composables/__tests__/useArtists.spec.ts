@@ -23,7 +23,7 @@ const sampleArtist = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useArtists', () => {

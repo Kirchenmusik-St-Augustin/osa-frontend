@@ -37,6 +37,20 @@ describe('FormSelect', () => {
     expect(wrapper.find('small.text-danger').exists()).toBe(true)
   })
 
+  it('links the error line to the select and flags it invalid only while an error is set', () => {
+    const clean = mount(FormSelect, {
+      props: { id: 'artist', title: 'Komponist', modelValue: null, options },
+    })
+    expect(clean.find('select').attributes('aria-invalid')).toBeUndefined()
+    expect(clean.find('select').attributes('aria-describedby')).toBe('artist-error')
+
+    const failing = mount(FormSelect, {
+      props: { id: 'artist', title: 'Komponist', modelValue: null, options, error: 'Pflicht.' },
+    })
+    expect(failing.find('select').attributes('aria-invalid')).toBe('true')
+    expect(failing.find('#artist-error').text()).toContain('Pflicht.')
+  })
+
   it('shows the given error message', () => {
     const wrapper = mount(FormSelect, {
       props: {

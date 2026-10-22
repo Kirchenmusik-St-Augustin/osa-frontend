@@ -24,7 +24,7 @@ const sampleItem = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useCoreelements', () => {

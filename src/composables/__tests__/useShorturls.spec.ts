@@ -11,13 +11,13 @@ vi.mock('@/services/api', () => ({
 const mockedApi = vi.mocked(api)
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useShorturls', () => {
   it('fetchList populates items and urlprefix from the shorturls endpoint', async () => {
     const body = {
-      urlprefix: 'https://go.hochamt.at.dev.schimpl.cc/',
+      urlprefix: 'https://go.example.test/',
       items: [
         {
           id: 1,

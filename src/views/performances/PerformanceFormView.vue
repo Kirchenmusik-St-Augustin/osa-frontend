@@ -573,7 +573,7 @@ async function destroy(): Promise<void> {
     </div>
   </div>
 
-  <AppModal v-model="ordinariumworkModalOpen" size="lg">
+  <AppModal v-model="ordinariumworkModalOpen" size="lg" label="Ordinarium-Komposition suchen">
     <div class="modal-content pt-3">
       <div class="modal-body">
         <div class="fw-bold mb-2">Ordinarium-Komposition suchen</div>
@@ -582,7 +582,12 @@ async function destroy(): Promise<void> {
     </div>
   </AppModal>
 
-  <AppModal v-model="propriumModalOpen" :dismissible="false" size="lg">
+  <AppModal
+    v-model="propriumModalOpen"
+    :dismissible="false"
+    size="lg"
+    label="Proprium-Komposition hinzufügen"
+  >
     <div class="modal-content">
       <div class="modal-body">
         <select v-model="selectedPropriumelementId" class="form-select mb-3">

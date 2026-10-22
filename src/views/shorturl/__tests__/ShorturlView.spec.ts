@@ -7,7 +7,7 @@ import { formatUtcDateTime } from '@/services/dateFormat'
 import { testId } from '@/__tests__/testId'
 
 const mockItems = ref<Shorturl[]>([])
-const mockUrlprefix = ref('https://go.hochamt.at.dev.schimpl.cc/')
+const mockUrlprefix = ref('https://go.example.test/')
 const mockFetchList = vi.fn(async () => {})
 const mockSave = vi.fn(async () => {})
 const mockRemove = vi.fn(async () => {})
@@ -43,7 +43,7 @@ function makeShorturl(overrides: Partial<Shorturl> = {}): Shorturl {
 beforeEach(() => {
   vi.clearAllMocks()
   mockItems.value = []
-  mockUrlprefix.value = 'https://go.hochamt.at.dev.schimpl.cc/'
+  mockUrlprefix.value = 'https://go.example.test/'
 })
 
 function rows(wrapper: ReturnType<typeof mount>) {
@@ -73,13 +73,23 @@ describe('ShorturlView', () => {
     const wrapper = mount(ShorturlView)
     await flushPromises()
 
-    const link = wrapper.find('a[href="https://go.hochamt.at.dev.schimpl.cc/konzert"]')
+    const link = wrapper.find('a[href="https://go.example.test/konzert"]')
     expect(link.exists()).toBe(true)
     expect(link.text()).toContain('konzert')
 
     const targetLink = wrapper.find('a[href="http://example.org/foo"]')
     expect(targetLink.exists()).toBe(true)
     expect(targetLink.text()).toBe('http://example.org/foo')
+  })
+
+  it('does not link the short URL when the server prefix is not a web URL', async () => {
+    mockUrlprefix.value = 'javascript:alert(1)//'
+    mockItems.value = [makeShorturl({ path: 'konzert', target: 'https://example.org/a' })]
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+
+    const hrefs = wrapper.findAll('a[href]').map((link) => link.attributes('href'))
+    expect(hrefs).toEqual(['https://example.org/a'])
   })
 
   it('links a web target with noopener, and never links a script or data target', async () => {
@@ -129,6 +139,7 @@ describe('ShorturlView', () => {
     expect(wrapper.find('.modal').exists()).toBe(false)
     await wrapper.find('button.btn-secondary.my-3').trigger('click')
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Bearbeiten')
 
     await wrapper.find('input#shorturl-path').setValue('konzert')
     await wrapper.find('input#shorturl-target').setValue('example.org')

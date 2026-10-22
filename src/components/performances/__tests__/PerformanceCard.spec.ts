@@ -91,6 +91,38 @@ describe('PerformanceCard', () => {
     expect(wrapper.text()).toContain('GP')
   })
 
+  it('exposes both toggles as buttons that mirror their state in aria-expanded', async () => {
+    const wrapper = mount(PerformanceCard, {
+      props: {
+        performance: {
+          ...basePerformance,
+          rehearsals: [{ schedule: futureIso(), comment: 'GP' }],
+          proprium: [
+            {
+              propriumelement_id: testId(1),
+              propriumelement_name: 'Introitus',
+              propriumwork_id: testId(2),
+              propriumwork_name: 'Gregorianik I',
+              artist_name: 'HAYDN, Joseph',
+              description: null,
+              demanding: false,
+            },
+          ],
+        },
+      },
+    })
+    const toggles = wrapper.findAll('button')
+    expect(toggles).toHaveLength(2)
+
+    for (const toggle of toggles) {
+      expect(toggle.attributes('type')).toBe('button')
+      expect(toggle.find('i').attributes('aria-hidden')).toBe('true')
+      expect(toggle.attributes('aria-expanded')).toBe('false')
+      await toggle.trigger('click')
+      expect(toggle.attributes('aria-expanded')).toBe('true')
+    }
+  })
+
   it('toggles the read-only Proprium display without a remove control', async () => {
     const wrapper = mount(PerformanceCard, {
       props: {

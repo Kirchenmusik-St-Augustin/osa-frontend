@@ -57,22 +57,44 @@ async function submit(): Promise<void> {
                 class="form-control"
                 required
                 autofocus
+                autocomplete="given-name"
               />
               <small class="text-danger">{{ fieldErrors['givenname'] }}</small>
             </div>
             <div class="mb-2">
               <label class="form-label" for="surname">Nachname</label>
-              <input id="surname" v-model="surname" type="text" class="form-control" required />
+              <input
+                id="surname"
+                v-model="surname"
+                type="text"
+                class="form-control"
+                required
+                autocomplete="family-name"
+              />
               <small class="text-danger">{{ fieldErrors['surname'] }}</small>
             </div>
             <div class="mb-2">
               <label class="form-label" for="email">E-Mail</label>
-              <input id="email" v-model="email" type="email" class="form-control" required />
+              <input
+                id="email"
+                v-model="email"
+                type="email"
+                class="form-control"
+                required
+                autocomplete="username"
+              />
               <small class="text-danger">{{ fieldErrors['email'] }}</small>
             </div>
             <div class="mb-2">
               <label class="form-label" for="phone">Telefon</label>
-              <input id="phone" v-model="phone" type="tel" class="form-control" required />
+              <input
+                id="phone"
+                v-model="phone"
+                type="tel"
+                class="form-control"
+                required
+                autocomplete="tel"
+              />
               <small class="text-danger">{{ fieldErrors['phone'] }}</small>
             </div>
             <div class="mb-2">

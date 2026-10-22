@@ -195,7 +195,10 @@ describe('QuantityEditor', () => {
     await wrapper.find('.fa-plus-circle').trigger('click')
     await wrapper.setProps({ modelValue: [{ id: testId(1), name: 'Fagott', quantity: 2 }] })
 
-    await wrapper.find('button.btn-link').trigger('click')
+    const resetButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'auf derz. Werte zurücksetzen')
+    await resetButton?.trigger('click')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted?.[emitted.length - 1]).toEqual([

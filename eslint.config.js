@@ -24,7 +24,6 @@ export default tseslint.config(
       },
       globals: {
         ...globals.browser,
-        ...globals.node,
       },
     },
     rules: {
@@ -41,6 +40,22 @@ export default tseslint.config(
       // --- SECURITY & ARCHITECTURE ---
       // Prevent XSS via v-html
       'vue/no-v-html': 'error',
+
+      // A data value bound to href/src can be a javascript: or data: URL.
+      // Allowed: a literal, a mailto:/tel: template (the scheme is fixed), a
+      // call of safeHref() or a value named ...Href that was computed with it.
+      'vue/no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "VAttribute[directive=true][key.name.name='bind'][key.argument.name=/^(href|src)$/] > VExpressionContainer[expression.type!='Literal']" +
+            ":not([expression.type='TemplateLiteral'][expression.quasis.0.value.cooked=/^(mailto|tel):/])" +
+            ":not([expression.type='MemberExpression'][expression.property.name=/Href$/])" +
+            ":not([expression.type='CallExpression'][expression.callee.name='safeHref'])",
+          message:
+            'Bind href/src through safeHref() (src/services/safeUrl.ts) so a data value cannot be a javascript: URL.',
+        },
+      ],
 
       // Enforce script-setup & Composition API
       'vue/component-api-style': ['error', ['script-setup', 'composition']],
@@ -86,6 +101,11 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    // Test runner files run in Node.
+    files: ['vitest.setup.ts', 'vite.env-check*.ts', '**/*.spec.ts'],
+    languageOptions: { globals: { ...globals.node } },
   },
   {
     // Test mocks frequently need loose object shapes.

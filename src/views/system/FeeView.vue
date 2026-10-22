@@ -131,7 +131,7 @@ async function deleteItem(fee: Fee): Promise<void> {
 <template>
   <h2 class="h2 text-center mb-4">Tarife verwalten</h2>
 
-  <AppModal v-model="modalOpen" :dismissible="false">
+  <AppModal v-model="modalOpen" :dismissible="false" label="Bearbeiten">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Bearbeiten</h5>

@@ -322,6 +322,21 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('Notenarchiv')
   })
 
+  it.each([
+    ['artistMaintain', 'Komponisten und Dirigenten'],
+    ['propriumworkMaintain', 'Proprium-Werke'],
+  ])('opens the Repertoire menu with just %s', (permission, linkText) => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [permission],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('Repertoire')
+    expect(wrapper.text()).toContain(linkText)
+  })
+
   it('shows only "Notenarchiv" with just scoreMaintain', () => {
     mockAuthState = {
       isAuthenticated: true,

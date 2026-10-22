@@ -27,7 +27,11 @@ onMounted(fetchList)
 // Only web URLs become links; any other stored target is shown as plain
 // text (see services/safeUrl.ts).
 const rows = computed(() =>
-  items.value.map((item) => ({ ...item, targetHref: safeHref(item.target) })),
+  items.value.map((item) => ({
+    ...item,
+    shortHref: safeHref(urlprefix.value + item.path),
+    targetHref: safeHref(item.target),
+  })),
 )
 
 function resetForm(): void {
@@ -86,7 +90,7 @@ async function deleteItem(shorturl: Shorturl): Promise<void> {
 <template>
   <h2 class="h2 text-center mb-4">Kurz-URLs</h2>
 
-  <AppModal v-model="modalOpen" :dismissible="false" size="lg">
+  <AppModal v-model="modalOpen" :dismissible="false" size="lg" label="Bearbeiten">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Bearbeiten</h5>
@@ -160,7 +164,7 @@ async function deleteItem(shorturl: Shorturl): Promise<void> {
           <td class="text-start text-nowrap">
             <a
               class="text-decoration-none"
-              :href="urlprefix + item.path"
+              :href="item.shortHref"
               target="_blank"
               rel="noopener noreferrer"
             >

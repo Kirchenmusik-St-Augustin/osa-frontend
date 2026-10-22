@@ -41,4 +41,15 @@ describe('PropriumSetup', () => {
 
     expect(wrapper.emitted('removeElement')).toEqual([[item]])
   })
+
+  it('renders the remove control as a named button', () => {
+    const wrapper = mount(PropriumSetup, {
+      props: { proprium: [item], withControls: true },
+    })
+
+    const remove = wrapper.find('button')
+    expect(remove.attributes('type')).toBe('button')
+    expect(remove.attributes('aria-label')).toBe('entfernen')
+    expect(remove.find('i').attributes('aria-hidden')).toBe('true')
+  })
 })

@@ -103,6 +103,25 @@ describe('BookingStatusBadge', () => {
     const wrapper = mount(BookingStatusBadge, {
       props: { status: status({ status: statusCode }), interactive: true },
     })
-    expect(wrapper.find('i.fas').attributes('title')).toBe(expectedTitle)
+    expect(wrapper.find('button').attributes('title')).toBe(expectedTitle)
+    expect(wrapper.find('button').attributes('aria-label')).toBe(expectedTitle)
+  })
+
+  it('renders the trigger as a keyboard-operable button and emits on click', async () => {
+    const wrapper = mount(BookingStatusBadge, {
+      props: { status: status({ status: 1 }), interactive: true },
+    })
+    const button = wrapper.find('button')
+    expect(button.attributes('type')).toBe('button')
+    expect(wrapper.find('i.fas').attributes('aria-hidden')).toBe('true')
+    await button.trigger('click')
+    expect(wrapper.emitted('trigger')).toHaveLength(1)
+  })
+
+  it('words the status-change tooltip in German', () => {
+    const wrapper = mount(BookingStatusBadge, {
+      props: { status: status({ status: 4, at: '2026-01-02T10:00:00' }) },
+    })
+    expect(wrapper.find('.badge').attributes('title')).toMatch(/^Status geändert am /)
   })
 })

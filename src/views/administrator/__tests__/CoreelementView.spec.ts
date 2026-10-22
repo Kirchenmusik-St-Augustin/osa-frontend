@@ -156,6 +156,7 @@ describe('CoreelementView', () => {
     expect(wrapper.find('.modal').exists()).toBe(false)
     await wrapper.find('button.btn-secondary.my-3').trigger('click')
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Bearbeiten')
     await wrapper.find('input#coreelement-name').setValue('Fagott')
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()

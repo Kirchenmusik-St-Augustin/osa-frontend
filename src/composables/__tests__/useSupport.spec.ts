@@ -33,7 +33,7 @@ const sampleRole = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useSupport', () => {

@@ -47,6 +47,15 @@ describe('RegisterView', () => {
     )
   })
 
+  it('gives browsers the autofill hints for the personal fields', () => {
+    const wrapper = mount(RegisterView)
+
+    expect(wrapper.find('input#givenname').attributes('autocomplete')).toBe('given-name')
+    expect(wrapper.find('input#surname').attributes('autocomplete')).toBe('family-name')
+    expect(wrapper.find('input#email').attributes('autocomplete')).toBe('username')
+    expect(wrapper.find('input#phone').attributes('autocomplete')).toBe('tel')
+  })
+
   it('registers and replaces the form with the notice of the backend', async () => {
     mockRegister.mockResolvedValueOnce('Bitte prüfe dein Postfach.')
     const wrapper = mount(RegisterView)

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import type { InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 
@@ -41,6 +41,11 @@ beforeEach(() => {
   mockCurrentRoute.value = { name: 'home', fullPath: '/' }
 })
 
+// Also runs when an assertion fails, so a stubbed env never leaks into later tests.
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
+
 describe('api client', () => {
   it('is configured with the default same-origin base URL', async () => {
     // Isolated from the module-level `api` import above on purpose: this
@@ -55,8 +60,6 @@ describe('api client', () => {
     const { default: freshApi } = await import('../api')
 
     expect(freshApi.defaults.baseURL).toBe('/api')
-
-    vi.unstubAllEnvs()
   })
 
   it('sends credentials so same-origin auth cookies are included', () => {
@@ -222,12 +225,14 @@ describe('api (axios interceptors)', () => {
     authStore.$patch({ accessToken: 'expired-token' })
 
     let refreshResolve: () => void = () => {}
+    let refreshStarted = false
     const refreshGate = new Promise<void>((resolve) => {
       refreshResolve = resolve
     })
 
     api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
       if (config.url === '/auth/refresh') {
+        refreshStarted = true
         await refreshGate
         return makeResponse(config, { access_token: 'new-token' })
       }
@@ -242,9 +247,8 @@ describe('api (axios interceptors)', () => {
     const requestA = api.get('/protected/a')
     const requestB = api.get('/protected/b')
 
-    // Let both initial 401s resolve and the refresh call start before completing it.
-    await Promise.resolve()
-    await Promise.resolve()
+    // Both initial 401s must have resolved and the refresh call started before completing it.
+    await vi.waitFor(() => expect(refreshStarted).toBe(true))
     refreshResolve()
 
     const [resA, resB] = await Promise.all([requestA, requestB])
@@ -259,12 +263,14 @@ describe('api (axios interceptors)', () => {
     authStore.$patch({ accessToken: 'expired-token' })
 
     let failRefresh: () => void = () => {}
+    let refreshStarted = false
     const refreshGate = new Promise<void>((resolve) => {
       failRefresh = resolve
     })
 
     api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
       if (config.url === '/auth/refresh') {
+        refreshStarted = true
         await refreshGate
         throw makeError(config, 401, { detail: 'no session' })
       }
@@ -277,9 +283,8 @@ describe('api (axios interceptors)', () => {
     const requestA = api.get('/protected/a')
     const requestB = api.get('/protected/b')
 
-    // Let both initial 401s resolve and the refresh call start before failing it.
-    await Promise.resolve()
-    await Promise.resolve()
+    // Both initial 401s must have resolved and the refresh call started before failing it.
+    await vi.waitFor(() => expect(refreshStarted).toBe(true))
     failRefresh()
 
     await expect(requestA).rejects.toBeTruthy()

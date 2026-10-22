@@ -192,6 +192,105 @@ describe('UserAdministrationShowView', () => {
     expect(wrapper.text()).toContain('wird nur einmal angezeigt!')
   })
 
+  it('hides the generated password again after a minute', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      mockGet.mockResolvedValueOnce(makeResult({ auth_locked: false }))
+      mockSetPassword.mockResolvedValueOnce(makeResult({}, 'aB3xY9kLmQ'))
+      const wrapper = mount(UserAdministrationShowView, { props: { id: '1' } })
+      await flushPromises()
+      await wrapper
+        .findAll('button')
+        .find((b) => b.text() === 'setze ein generiertes Passwort')
+        ?.trigger('click')
+      await flushPromises()
+      expect(wrapper.text()).toContain('aB3xY9kLmQ')
+
+      await vi.advanceTimersByTimeAsync(59_999)
+      expect(wrapper.text()).toContain('aB3xY9kLmQ')
+
+      await vi.advanceTimersByTimeAsync(1)
+      expect(wrapper.text()).not.toContain('aB3xY9kLmQ')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('tells the administrator when the account cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    const wrapper = mount(UserAdministrationShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+    expect(wrapper.text()).not.toContain('MUSTER')
+  })
+
+  it('falls back to a fixed text when the load failure names only a field', async () => {
+    mockGet.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['path', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(UserAdministrationShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Das Benutzerkonto konnte nicht geladen werden.',
+      true,
+    )
+  })
+
+  it('replaces the shown password by a new one and restarts the timer', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      mockGet.mockResolvedValueOnce(makeResult({ auth_locked: false }))
+      mockSetPassword
+        .mockResolvedValueOnce(makeResult({}, 'FirstPw1234'))
+        .mockResolvedValueOnce(makeResult({}, 'SecondPw5678'))
+      const wrapper = mount(UserAdministrationShowView, { props: { id: '1' } })
+      await flushPromises()
+      const generate = () =>
+        wrapper.findAll('button').find((b) => b.text() === 'setze ein generiertes Passwort')
+
+      await generate()?.trigger('click')
+      await flushPromises()
+      await vi.advanceTimersByTimeAsync(40_000)
+      await generate()?.trigger('click')
+      await flushPromises()
+      expect(wrapper.text()).toContain('SecondPw5678')
+
+      // 40 s after the first and 30 s after the second password: the first
+      // timer must not hide the second password.
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(wrapper.text()).toContain('SecondPw5678')
+
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(wrapper.text()).not.toContain('SecondPw5678')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('clears a pending hide timer when the page is left', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      mockGet.mockResolvedValueOnce(makeResult({ auth_locked: false }))
+      mockSetPassword.mockResolvedValueOnce(makeResult({}, 'aB3xY9kLmQ'))
+      const wrapper = mount(UserAdministrationShowView, { props: { id: '1' } })
+      await flushPromises()
+      await wrapper
+        .findAll('button')
+        .find((b) => b.text() === 'setze ein generiertes Passwort')
+        ?.trigger('click')
+      await flushPromises()
+      expect(vi.getTimerCount()).toBe(1)
+
+      wrapper.unmount()
+
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('does not act when the confirmation is declined', async () => {
     mockGet.mockResolvedValueOnce(makeResult({ auth_locked: true }))
     mockConfirmAction.mockResolvedValueOnce(false)

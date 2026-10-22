@@ -92,6 +92,16 @@ describe('SentEmailShowView', () => {
     expect(wrapper.find('iframe').attributes('sandbox')).toBe('')
   })
 
+  it('names the frame and sends no referrer when the body loads images or links', async () => {
+    mockGet.mockResolvedValueOnce(makeEmail())
+    const wrapper = mount(SentEmailShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    const iframe = wrapper.find('iframe')
+    expect(iframe.attributes('title')).toBe('Nachricht')
+    expect(iframe.attributes('referrerpolicy')).toBe('no-referrer')
+  })
+
   it('lays out each field as a label/value grid row (col-md-2/col-md-10)', async () => {
     mockGet.mockResolvedValueOnce(makeEmail())
     const wrapper = mount(SentEmailShowView, { props: { id: '1' } })

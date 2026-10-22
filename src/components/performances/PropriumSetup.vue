@@ -18,12 +18,16 @@ const emit = defineEmits<{ removeElement: [item: PerformancePropriumItem] }>()
   <div v-for="item in proprium" :key="item.propriumelement_id" class="mb-2">
     <div>
       <small>
-        <i
+        <button
           v-if="withControls"
-          class="c-pointer fas fa-trash me-1"
+          type="button"
+          class="btn btn-link btn-sm p-0 me-1 text-reset"
           title="entfernen"
+          aria-label="entfernen"
           @click="emit('removeElement', item)"
-        ></i>
+        >
+          <i class="fas fa-trash" aria-hidden="true"></i>
+        </button>
         <strong>{{ item.propriumelement_name }}:</strong>
       </small>
     </div>

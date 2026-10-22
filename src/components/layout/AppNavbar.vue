@@ -14,6 +14,14 @@ const showRepertoireDivider = computed(
   () => authStore.hasPermission('artistMaintain') && authStore.hasPermission('scoreMaintain'),
 )
 
+// Each dropdown is shown when the user may open at least one of its links.
+const showRepertoire = computed(() =>
+  ['artistMaintain', 'ordinariumworkMaintain', 'propriumworkMaintain', 'scoreMaintain'].some(
+    authStore.hasPermission,
+  ),
+)
+const showSystem = computed(() => ['userMaintain', 'feeMaintain'].some(authStore.hasPermission))
+
 // The store clears the local session even when the logout request fails, so
 // a failing request must not keep the user from reaching the login page.
 async function logout(): Promise<void> {
@@ -55,15 +63,7 @@ onUnmounted(removeAfterEachHook)
     </button>
     <div id="mainNavBar" class="collapse navbar-collapse" :class="{ show: menuOpen }">
       <ul class="navbar-nav mb-2 mb-lg-0">
-        <li
-          v-if="
-            authStore.hasPermission('artistMaintain') ||
-            authStore.hasPermission('ordinariumworkMaintain') ||
-            authStore.hasPermission('propriumworkMaintain') ||
-            authStore.hasPermission('scoreMaintain')
-          "
-          class="nav-item"
-        >
+        <li v-if="showRepertoire" class="nav-item">
           <AppDropdown menu-theme="light">
             <template #toggle>
               <span>Repertoire</span>
@@ -107,10 +107,7 @@ onUnmounted(removeAfterEachHook)
              the 'disponent' role, feeMaintain does not), so the outer
              v-if must cover their union, same pattern as the Repertoire
              dropdown above. -->
-        <li
-          v-if="authStore.hasPermission('userMaintain') || authStore.hasPermission('feeMaintain')"
-          class="nav-item"
-        >
+        <li v-if="showSystem" class="nav-item">
           <AppDropdown menu-theme="light">
             <template #toggle>
               <span>System</span>

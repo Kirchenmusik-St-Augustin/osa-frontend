@@ -76,16 +76,24 @@ const upcoming = computed(() => parseWallClock(props.performance.schedule).getTi
             performance.location.name
           }}</span>
           <div v-if="performance.rehearsals.length" class="d-print-none">
-            <small class="c-pointer" @click="rehearsalsOpen = !rehearsalsOpen">
-              <i
-                :class="
-                  rehearsalsOpen
-                    ? 'fas fa-eye-slash fa-fw text-black-50'
-                    : 'fas fa-eye fa-fw text-black-50'
-                "
-              ></i>
-              <span class="ms-2">Proben</span>
-            </small>
+            <button
+              type="button"
+              class="btn btn-link btn-sm p-0 text-reset text-decoration-none c-pointer"
+              :aria-expanded="rehearsalsOpen"
+              @click="rehearsalsOpen = !rehearsalsOpen"
+            >
+              <small>
+                <i
+                  :class="
+                    rehearsalsOpen
+                      ? 'fas fa-eye-slash fa-fw text-black-50'
+                      : 'fas fa-eye fa-fw text-black-50'
+                  "
+                  aria-hidden="true"
+                ></i>
+                <span class="ms-2">Proben</span>
+              </small>
+            </button>
           </div>
           <div v-if="rehearsalsOpen && performance.rehearsals.length" class="ms-2">
             <small class="d-none d-print-block">Proben:</small>
@@ -179,10 +187,20 @@ const upcoming = computed(() => parseWallClock(props.performance.schedule).getTi
             ></i>
           </div>
           <div v-if="performance.proprium.length">
-            <small class="c-pointer d-print-none" @click="propriumOpen = !propriumOpen">
-              <i :class="propriumOpen ? 'fas fa-caret-down' : 'fas fa-caret-right'"></i>
-              <span class="ms-1">Proprium</span><span v-if="propriumOpen">:</span>
-            </small>
+            <button
+              type="button"
+              class="btn btn-link btn-sm p-0 text-reset text-decoration-none c-pointer d-print-none"
+              :aria-expanded="propriumOpen"
+              @click="propriumOpen = !propriumOpen"
+            >
+              <small>
+                <i
+                  :class="propriumOpen ? 'fas fa-caret-down' : 'fas fa-caret-right'"
+                  aria-hidden="true"
+                ></i>
+                <span class="ms-1">Proprium</span><span v-if="propriumOpen">:</span>
+              </small>
+            </button>
             <div v-if="propriumOpen" class="d-print-none ps-3">
               <PropriumSetup :proprium="performance.proprium" />
             </div>

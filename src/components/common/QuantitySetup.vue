@@ -35,29 +35,41 @@ const emit = defineEmits<{
       <tbody>
         <tr v-for="item in setup" :key="item.id">
           <td class="text-start">
-            <i
+            <button
               v-if="withControls"
-              class="c-pointer me-1 fas fa-trash"
+              type="button"
+              class="btn btn-link btn-sm p-0 me-1 text-reset"
               title="entfernen"
+              aria-label="entfernen"
               @click.prevent="emit('remove', item.id)"
-            ></i>
+            >
+              <i class="fas fa-trash" aria-hidden="true"></i>
+            </button>
             <span>{{ item.name }}</span>
             <small v-if="item.active === false" class="text-muted ms-1">(archiviert)</small>
           </td>
           <td class="text-end">
             <span>{{ item.quantity }}</span>
-            <i
+            <button
               v-if="withControls"
-              class="c-pointer ms-1 fas fa-minus-circle"
+              type="button"
+              class="btn btn-link btn-sm p-0 ms-1 text-reset"
               title="verringern"
+              aria-label="verringern"
               @click.prevent="emit('modify', item.id, false)"
-            ></i>
-            <i
+            >
+              <i class="fas fa-minus-circle" aria-hidden="true"></i>
+            </button>
+            <button
               v-if="withControls"
-              class="c-pointer ms-1 fas fa-plus-circle"
+              type="button"
+              class="btn btn-link btn-sm p-0 ms-1 text-reset"
               title="erhöhen"
+              aria-label="erhöhen"
               @click.prevent="emit('modify', item.id, true)"
-            ></i>
+            >
+              <i class="fas fa-plus-circle" aria-hidden="true"></i>
+            </button>
           </td>
         </tr>
       </tbody>

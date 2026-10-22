@@ -13,7 +13,7 @@ const open = defineModel<boolean>({ required: true })
 </script>
 
 <template>
-  <AppModal v-model="open">
+  <AppModal v-model="open" label="Populäre Buchungen f. diese Komposition & Position">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title fs-6">Populäre Buchungen f. diese Komposition &amp; Position</h5>

@@ -26,6 +26,25 @@ describe('QuantitySetup', () => {
     expect(wrapper.findAll('.fa-plus-circle')).toHaveLength(2)
   })
 
+  it('renders every control as a named button', () => {
+    const wrapper = mount(QuantitySetup, { props: { setup, withControls: true } })
+
+    const buttons = wrapper.findAll('button')
+    expect(buttons).toHaveLength(6)
+    expect(buttons.map((button) => button.attributes('aria-label'))).toEqual([
+      'entfernen',
+      'verringern',
+      'erhöhen',
+      'entfernen',
+      'verringern',
+      'erhöhen',
+    ])
+    for (const button of buttons) {
+      expect(button.attributes('type')).toBe('button')
+      expect(button.find('i').attributes('aria-hidden')).toBe('true')
+    }
+  })
+
   it('emits remove with the item id when the trash icon is clicked', async () => {
     const wrapper = mount(QuantitySetup, { props: { setup, withControls: true } })
 

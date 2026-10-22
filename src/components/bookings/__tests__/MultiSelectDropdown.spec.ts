@@ -26,6 +26,20 @@ describe('MultiSelectDropdown', () => {
     expect(wrapper.find('.list-group-item').exists()).toBe(false)
   })
 
+  it('renders the toggle as a button that reports whether the list is open', async () => {
+    const wrapper = mount(MultiSelectDropdown, {
+      props: { options, modelValue: [] },
+    })
+    const toggle = wrapper.find('button.c-pointer')
+    expect(toggle.attributes('type')).toBe('button')
+    expect(toggle.attributes('aria-haspopup')).toBe('true')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(toggle.find('i.fa-caret-down').attributes('aria-hidden')).toBe('true')
+
+    await toggle.trigger('click')
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+  })
+
   it('opens on badge click and renders only the first group by default', async () => {
     const wrapper = mount(MultiSelectDropdown, {
       props: { options, modelValue: [] },

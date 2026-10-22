@@ -59,6 +59,19 @@ describe('CastItem', () => {
     wrapper.unmount()
   })
 
+  it('renders the header as a button that reports whether the position is expanded', async () => {
+    const wrapper = mountItem([], 1)
+    const header = wrapper.find('button.c-pointer')
+    expect(header.attributes('type')).toBe('button')
+    expect(header.attributes('aria-expanded')).toBe('false')
+
+    await header.trigger('click')
+    expect(header.attributes('aria-expanded')).toBe('true')
+
+    await header.trigger('click')
+    expect(header.attributes('aria-expanded')).toBe('false')
+  })
+
   it('only visually hides the reset link until the cast changed, keeping its line height reserved', async () => {
     // The wrapping line is always kept in the layout to avoid the page
     // jumping when the link appears/disappears -- via Bootstrap's
@@ -71,10 +84,11 @@ describe('CastItem', () => {
     await wrapper.setProps({ cast: [] })
     expect(wrapper.find('.mt-3.small.text-end').classes()).not.toContain('invisible')
 
-    const resetLink = wrapper
-      .findAll('small')
-      .find((small) => small.text() === 'auf derz. Werte zurücksetzen')
-    await resetLink?.trigger('click')
+    const resetButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'auf derz. Werte zurücksetzen')
+    expect(resetButton?.attributes('type')).toBe('button')
+    await resetButton?.trigger('click')
     expect(wrapper.emitted('cast-changed')?.slice(-1)[0]?.[1]).toEqual([
       { id: testId(1), name: 'A', fee: 80 },
     ])

@@ -35,3 +35,12 @@ export function validateViteEnv(env: Record<string, string | undefined>): void {
     )
   }
 }
+
+// Host names the dev server accepts besides localhost, from a comma-separated
+// list; an empty or missing value keeps Vite's default (localhost only).
+export function parseAllowedHosts(value: string | undefined): string[] {
+  return (value ?? '')
+    .split(',')
+    .map((host) => host.trim())
+    .filter((host) => host.length > 0)
+}

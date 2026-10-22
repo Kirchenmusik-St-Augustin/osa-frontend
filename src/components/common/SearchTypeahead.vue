@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue'
+import { onBeforeUnmount, ref, useTemplateRef } from 'vue'
+import { useClickOutside } from '@/composables/useClickOutside'
 
 // Typeahead widget (used on the Artists/Ordinariumworks/Propriumworks Search
 // pages): type -> debounced remote search -> click a result to select.
@@ -56,6 +57,18 @@ onBeforeUnmount(() => {
   latestSearchId += 1
 })
 
+// A result list nobody picks from must not keep covering the page: Escape
+// and a click anywhere outside the widget dismiss it, and an answer that is
+// still on its way must not bring it back.
+function dismiss(): void {
+  clearTimeout(debounceTimer)
+  latestSearchId += 1
+  results.value = []
+}
+
+const rootElement = useTemplateRef<HTMLElement>('rootElement')
+useClickOutside(rootElement, dismiss)
+
 function select(result: SearchResult): void {
   latestSearchId += 1
   results.value = []
@@ -66,6 +79,11 @@ function select(result: SearchResult): void {
 function onKeydown(event: KeyboardEvent): void {
   if (!results.value.length) return
   switch (event.key) {
+    // Only closes the list: an enclosing dialog must not close with the same key press.
+    case 'Escape':
+      event.stopPropagation()
+      dismiss()
+      break
     case 'ArrowDown':
       event.preventDefault()
       highlightedIndex.value = Math.min(highlightedIndex.value + 1, results.value.length - 1)
@@ -85,12 +103,13 @@ function onKeydown(event: KeyboardEvent): void {
 </script>
 
 <template>
-  <div class="position-relative">
+  <div ref="rootElement" class="position-relative">
     <input
       v-model="query"
       class="form-control"
       type="text"
       placeholder="Suchen..."
+      aria-label="Suchen"
       :maxlength="MAX_QUERY_LENGTH"
       @input="onInput"
       @keydown="onKeydown"

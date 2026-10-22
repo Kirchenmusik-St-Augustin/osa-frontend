@@ -23,6 +23,17 @@ describe('SelectionSetup', () => {
     expect(wrapper.text()).toContain('Konzertmeister')
   })
 
+  it('renders each removal as a named button', () => {
+    const wrapper = mount(SelectionSetup, {
+      props: { available, modelValue: [available[0]!] },
+    })
+
+    const remove = wrapper.find('button[aria-label="entfernen"]')
+    expect(remove.exists()).toBe(true)
+    expect(remove.attributes('type')).toBe('button')
+    expect(remove.find('i').attributes('aria-hidden')).toBe('true')
+  })
+
   it('shows the title only when given', () => {
     const withTitle = mount(SelectionSetup, {
       props: { available, modelValue: [], title: 'Instrumente' },
@@ -60,7 +71,7 @@ describe('SelectionSetup', () => {
     expect(wrapper.find('select').exists()).toBe(false)
     expect(wrapper.find('button.btn-primary').exists()).toBe(false)
     // The reset link stays visible regardless.
-    expect(wrapper.text()).toContain('Auf derz. gesp. Werte zurücksetzen')
+    expect(wrapper.text()).toContain('auf derz. Werte zurücksetzen')
   })
 
   it('still renders and allows removing an assigned item missing from available', async () => {
@@ -100,7 +111,7 @@ describe('SelectionSetup', () => {
     await wrapper.find('i.fa-trash').trigger('click')
     expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([])
 
-    await wrapper.find('small.c-pointer').trigger('click')
+    await wrapper.find('button.c-pointer').trigger('click')
     expect(wrapper.emitted('update:modelValue')?.[1]?.[0]).toEqual([available[0]])
   })
 })

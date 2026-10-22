@@ -237,6 +237,7 @@ describe('PerformanceFormView -- create mode', () => {
     expect(wrapper.find('.modal').exists()).toBe(false)
     await openOrdinariumworkModal(wrapper)
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Ordinarium-Komposition suchen')
     await pickOrdinariumwork(wrapper, '5')
 
     expect(mockGetOrdinariumwork).toHaveBeenCalledWith('5')
@@ -349,7 +350,10 @@ describe('PerformanceFormView -- create mode', () => {
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('6')
     expect(instrumentsEditor.text()).toContain('auf derz. Werte zurücksetzen')
 
-    await instrumentsEditor.find('button.btn-link').trigger('click')
+    const resetButton = instrumentsEditor
+      .findAll('button')
+      .find((button) => button.text() === 'auf derz. Werte zurücksetzen')
+    await resetButton?.trigger('click')
 
     // Must land on 5 (Nelsonmesse's own setup), not 2 (Krönungsmesse's
     // stale baseline) and not 6 (the just-added increment).
@@ -499,7 +503,10 @@ describe('PerformanceFormView -- edit mode', () => {
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('9')
     expect(instrumentsEditor.text()).toContain('auf derz. Werte zurücksetzen')
 
-    await instrumentsEditor.find('button.btn-link').trigger('click')
+    const resetButton = instrumentsEditor
+      .findAll('button')
+      .find((button) => button.text() === 'auf derz. Werte zurücksetzen')
+    await resetButton?.trigger('click')
 
     // Must land back on the persisted value (3), not the just-selected
     // Nelsonmesse's setup (9).
@@ -552,6 +559,7 @@ describe('PerformanceFormView -- Proprium editor', () => {
 
     await wrapper.find('.fa-plus-circle').trigger('click')
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Proprium-Komposition hinzufügen')
     // Only the Proprium dialog is open, so this is its own SearchTypeahead.
     await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '7')
     await flushPromises()

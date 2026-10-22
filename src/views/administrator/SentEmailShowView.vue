@@ -76,6 +76,8 @@ const mailerBadgeClass = computed(() =>
           <iframe
             :srcdoc="email.body ?? ''"
             sandbox=""
+            referrerpolicy="no-referrer"
+            title="Nachricht"
             class="border-top"
             width="100%"
             height="1000px"

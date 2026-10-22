@@ -95,7 +95,7 @@ describe('SqlInspectorView', () => {
     await flushPromises()
     await wrapper.find('select').setValue('users')
     await flushPromises()
-    await wrapper.findAll('button').at(1)?.trigger('click') // "Weiter" -> page 2
+    await wrapper.findAll('nav button').at(1)?.trigger('click') // "Weiter" -> page 2
     await flushPromises()
 
     await wrapper.find('select').setValue('roles')
@@ -115,7 +115,7 @@ describe('SqlInspectorView', () => {
     await wrapper.find('select').setValue('users')
     await flushPromises()
 
-    const buttonsPage1 = wrapper.findAll('button')
+    const buttonsPage1 = wrapper.findAll('nav button')
     expect(buttonsPage1[0]?.attributes('disabled')).toBeDefined() // "Zurück" at page 1
     expect(buttonsPage1[1]?.attributes('disabled')).toBeUndefined() // "Weiter" enabled
 
@@ -123,7 +123,7 @@ describe('SqlInspectorView', () => {
     await flushPromises()
 
     expect(mockGetTableData).toHaveBeenLastCalledWith('users', 2, 25)
-    const buttonsPage2 = wrapper.findAll('button')
+    const buttonsPage2 = wrapper.findAll('nav button')
     expect(buttonsPage2[1]?.attributes('disabled')).toBeDefined() // "Weiter" at last page
   })
 

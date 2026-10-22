@@ -19,6 +19,9 @@ describe('PopularModal', () => {
   it('renders frequent and recent bookers with their counts/dates when open', () => {
     const wrapper = mount(PopularModal, { props: { modelValue: true, popular } })
 
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe(
+      'Populäre Buchungen f. diese Komposition & Position',
+    )
     expect(wrapper.text()).toContain('Muster, Max (5)')
     expect(wrapper.text()).toContain('Beispiel, Erika')
   })

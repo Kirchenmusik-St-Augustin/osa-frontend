@@ -11,8 +11,7 @@ export interface Coreelement {
   description: string | null
   address: string | null
   color: string | null
-  // null for types without the concept (location/role/propriumelement) --
-  // osa-only addition, outside the structural 1:1 transfer's scope.
+  // null for types without the concept (location/role/propriumelement).
   active: boolean | null
 }
 

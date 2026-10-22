@@ -29,7 +29,7 @@ const sampleUser = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useProfile', () => {

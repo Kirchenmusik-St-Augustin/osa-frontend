@@ -18,6 +18,22 @@ describe('CollapsibleSection', () => {
     expect(wrapper.text()).toContain('verbergen')
   })
 
+  it('exposes the toggle as a button that mirrors the state in aria-expanded', async () => {
+    const wrapper = mount(CollapsibleSection, {
+      props: { title: 'Details' },
+      slots: { default: 'Hidden content' },
+    })
+    const toggle = wrapper.find('button')
+
+    expect(toggle.attributes('type')).toBe('button')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(toggle.find('i').attributes('aria-hidden')).toBe('true')
+
+    await toggle.trigger('click')
+
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+  })
+
   it('starts expanded when initShow is set', () => {
     const wrapper = mount(CollapsibleSection, {
       props: { title: 'Details', initShow: true },
@@ -36,13 +52,21 @@ describe('CollapsibleSection', () => {
     expect(wrapper.text()).not.toContain('anzeigen')
   })
 
-  it('omits the bordered padding wrapper when hideBorder is set', async () => {
+  it('wraps the content in a bordered box by default', () => {
     const wrapper = mount(CollapsibleSection, {
-      props: { title: 'Details', initShow: true, hideBorder: true },
-      slots: { default: 'Visible content' },
+      props: { title: 'Details', initShow: true },
+      slots: { default: '<p class="content">Visible content</p>' },
     })
 
-    const contentWrapper = wrapper.findAll('div')[1]
-    expect(contentWrapper!.classes()).not.toContain('border')
+    expect(wrapper.find('.content').element.parentElement?.classList).toContain('border')
+  })
+
+  it('omits the bordered padding wrapper when hideBorder is set', () => {
+    const wrapper = mount(CollapsibleSection, {
+      props: { title: 'Details', initShow: true, hideBorder: true },
+      slots: { default: '<p class="content">Visible content</p>' },
+    })
+
+    expect(wrapper.find('.content').element.parentElement?.classList).not.toContain('border')
   })
 })

@@ -3,8 +3,7 @@ dist
 coverage
 .git
 .gitignore
-.env
-.env.example
+.env*
 Dockerfile
 *.md
 src/**/__tests__

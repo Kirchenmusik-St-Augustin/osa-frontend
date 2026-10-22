@@ -1,4 +1,8 @@
 import api from '@/services/api'
+import type { AvailablePosition, PositionEntry, PositionInput } from '@/composables/usePerformances'
+
+// Same shapes as the performance setup (usePerformances.ts owns them).
+export type { AvailablePosition, PositionEntry, PositionInput }
 
 export interface Ordinariumwork {
   id: string
@@ -15,34 +19,14 @@ export interface OrdinariumworkSearchResult {
   label: string
 }
 
-export interface AvailablePosition {
-  id: string
-  name: string
-}
-
 export interface AvailablePositions {
   instruments: AvailablePosition[]
   voices: AvailablePosition[]
 }
 
-export interface PositionEntry {
-  id: string
-  name: string
-  quantity: number
-  // Flags a since-archived Instrument/Voice still present in this setup
-  // (osa-only addition, outside the structural 1:1 transfer's scope) --
-  // get_setup() resolves existing rows by id regardless of active status.
-  active: boolean
-}
-
 export interface OrdinariumworkSetup {
   instruments: PositionEntry[]
   voices: PositionEntry[]
-}
-
-export interface PositionInput {
-  id: string
-  quantity: number
 }
 
 export interface OrdinariumworkSetupInput {

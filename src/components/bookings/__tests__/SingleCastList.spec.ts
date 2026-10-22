@@ -53,10 +53,10 @@ function notBooked(): NotBookedEntry[] {
 // cast}` -- a real reactive mutation, round-tripped back down as a real
 // prop, through Vue's real scheduler) instead of a test manually calling
 // setProps() at a moment it controls. This is what actually exercises the
-// watcher-ordering regression found via live testing (two watchers both
-// reacting to the same `autoSort` change, one of them reactively
-// mutating `cast` before the other's turn) -- a plain setProps()-driven
-// test cannot reproduce that timing at all.
+// watcher-ordering regression (two watchers both reacting to the same
+// `autoSort` change, one of them reactively mutating `cast` before the
+// other's turn) -- a plain setProps()-driven test cannot reproduce that
+// timing at all.
 const ReactiveHost = defineComponent({
   props: {
     initialCast: { type: Array as PropType<CastMember[]>, required: true },
@@ -106,6 +106,25 @@ describe('SingleCastList', () => {
     const upArrows = wrapper.findAll('.fa-arrow-up')
     await upArrows[0]?.trigger('click') // first entry, already at top
     expect(wrapper.emitted('cast-changed')).toBeUndefined()
+  })
+
+  it('renders every row control as a named button and disables the arrows at the list boundaries', () => {
+    const wrapper = mount(SingleCastList, {
+      props: { cast: cast(), required: 1, notBooked: notBooked(), allowAutoSort: false },
+    })
+    const buttons = wrapper.findAll('button')
+    expect(buttons.length).toBeGreaterThan(0)
+    for (const button of buttons) {
+      expect(button.attributes('type')).toBe('button')
+      expect(button.attributes('aria-label')).toBeTruthy()
+      expect(button.find('i').attributes('aria-hidden')).toBe('true')
+    }
+    const up = wrapper.findAll('button[aria-label="nach oben"]')
+    const down = wrapper.findAll('button[aria-label="nach unten"]')
+    expect(up[0]?.attributes('disabled')).toBeDefined()
+    expect(up[1]?.attributes('disabled')).toBeUndefined()
+    expect(down[0]?.attributes('disabled')).toBeUndefined()
+    expect(down.at(-1)?.attributes('disabled')).toBeDefined()
   })
 
   it('emits cast-changed without the removed entry', async () => {
@@ -292,6 +311,21 @@ describe('SingleCastList', () => {
       expect(wrapper.findAll('.fa-times')).toHaveLength(voicedCast().length)
     })
 
+    it('renders the remove control of every grouped row as a named button in auto-sort mode', async () => {
+      const wrapper = mount(SingleCastList, {
+        props: { cast: voicedCast(), required: 5, notBooked: [], allowAutoSort: true },
+      })
+      await wrapper.find('input[role="switch"]').setValue(true)
+
+      const buttons = wrapper.findAll('button')
+      expect(buttons).toHaveLength(voicedCast().length)
+      for (const button of buttons) {
+        expect(button.attributes('type')).toBe('button')
+        expect(button.attributes('aria-label')).toBe('entfernen')
+        expect(button.find('i').attributes('aria-hidden')).toBe('true')
+      }
+    })
+
     it('still removes a member via the ✕ icon in auto-sort mode', async () => {
       const wrapper = mount(SingleCastList, {
         props: { cast: voicedCast(), required: 5, notBooked: [], allowAutoSort: true },
@@ -380,11 +414,10 @@ describe('SingleCastList', () => {
     })
 
     it('restores the manual order through a REAL reactive round trip (regression: watcher-ordering bug, only reproducible with real Vue reactivity, not manual setProps)', async () => {
-      // No voice assignments at all -- exactly the real-world scenario
-      // that surfaced the bug live (every currently-booked choir member
-      // lacks a structured Voice assignment today, see project memory on
-      // the known data gap), so auto-sort collapses everything into one
-      // "Stimmlage unbekannt" group, sorted purely alphabetically.
+      // No voice assignments at all -- the situation of a choir whose
+      // members have no structured Voice assignment yet, so auto-sort
+      // collapses everything into one "Stimmlage unbekannt" group, sorted
+      // purely alphabetically.
       const original: CastMember[] = [
         { id: testId(1), name: 'ZIMMERMANN, Anna', fee: 35 },
         { id: testId(2), name: 'ADLER, Bernd', fee: 35 },

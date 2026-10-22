@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import { validateViteEnv } from './vite.env-check'
+import { parseAllowedHosts, validateViteEnv } from './vite.env-check'
 
 // Skipped under Vitest (process.env.VITEST): running unit tests is
 // environment-agnostic and must not require deployment-stage config.
@@ -21,9 +21,11 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   server: {
-    // Vite 5+ rejects unrecognized Host headers by default -- Caddy proxies
-    // the dev domain straight through, so it must be allowlisted here.
-    allowedHosts: ['einteilung.hochamt.at.dev.schimpl.cc'],
+    // Vite 5+ rejects unrecognized Host headers by default -- the reverse
+    // proxy in front of the dev server passes the public dev domain through,
+    // so that domain is allowlisted from the environment (comma-separated)
+    // instead of being written into the repository.
+    allowedHosts: parseAllowedHosts(process.env.VITE_DEV_ALLOWED_HOSTS),
   },
   build: { sourcemap: false, chunkSizeWarningLimit: 1000 },
 })

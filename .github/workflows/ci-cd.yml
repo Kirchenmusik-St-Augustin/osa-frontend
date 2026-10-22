@@ -141,6 +141,32 @@ jobs:
             exit 1
           fi
 
+      - name: Refuse unsafe runtime configuration
+        run: |
+          # The entrypoint must stop with exit status 1 and a FATAL message
+          # instead of writing a value into the generated config.js that
+          # could end its JavaScript string or send the token elsewhere.
+          # `timeout` turns a container that wrongly starts (and would run
+          # forever) into status 124, which fails the check as well.
+          expect_refusal() {
+            status=0
+            # RUN_RESTRICTIONS is a list of options and must be word-split.
+            # shellcheck disable=SC2086
+            timeout 30 docker run --rm --name osa-frontend-refusal $RUN_RESTRICTIONS \
+              -e "API_BASE_URL=$1" -e "APP_ENVIRONMENT=$2" \
+              "$SMOKE_TEST_IMAGE" > refusal.log 2>&1 || status=$?
+            docker rm -f osa-frontend-refusal > /dev/null 2>&1 || true
+            if [ "$status" -ne 1 ] || ! grep -q "^FATAL: " refusal.log; then
+              echo "::error::API_BASE_URL='$1' APP_ENVIRONMENT='$2' was not refused (status $status)"
+              cat refusal.log
+              exit 1
+            fi
+          }
+          expect_refusal "javascript:alert(1)" test
+          expect_refusal "api" test
+          expect_refusal "/api" "production'; alert(1); //"
+          expect_refusal "/api" staging
+
   release-image:
     name: Build & Push Image
     timeout-minutes: 30

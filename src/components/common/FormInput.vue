@@ -61,6 +61,8 @@ withDefaults(
       :maxlength="max"
       :autocomplete="autocomplete"
       :aria-label="ariaLabel"
+      :aria-invalid="error ? 'true' : undefined"
+      :aria-describedby="`${id}-error`"
     ></textarea>
     <input
       v-else-if="type === 'number'"
@@ -75,6 +77,8 @@ withDefaults(
       :disabled="readonly"
       :autocomplete="autocomplete"
       :aria-label="ariaLabel"
+      :aria-invalid="error ? 'true' : undefined"
+      :aria-describedby="`${id}-error`"
       :class="small ? ['form-control-sm'] : []"
     />
     <input
@@ -89,9 +93,11 @@ withDefaults(
       :maxlength="max"
       :autocomplete="autocomplete"
       :aria-label="ariaLabel"
+      :aria-invalid="error ? 'true' : undefined"
+      :aria-describedby="`${id}-error`"
       :class="small ? ['form-control-sm'] : []"
     />
-    <small class="text-danger">{{ error }}&nbsp;</small>
+    <small :id="`${id}-error`" class="text-danger">{{ error }}&nbsp;</small>
   </div>
 </template>
 

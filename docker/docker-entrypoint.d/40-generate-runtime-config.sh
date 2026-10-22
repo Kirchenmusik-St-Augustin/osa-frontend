@@ -35,6 +35,24 @@ require_env() {
 require_env API_BASE_URL
 require_env APP_ENVIRONMENT
 
+# The browser sends every request, including the bearer token, to this
+# address: only a path on the same origin or an https URL is acceptable.
+case "$API_BASE_URL" in
+  /* | https://*) ;;
+  *)
+    echo "FATAL: API_BASE_URL must start with / or https://. Aborting." >&2
+    exit 1
+    ;;
+esac
+
+case "$APP_ENVIRONMENT" in
+  development | test | qa | production) ;;
+  *)
+    echo "FATAL: APP_ENVIRONMENT must be one of development, test, qa, production. Aborting." >&2
+    exit 1
+    ;;
+esac
+
 # Optional: Google Sign-In stays a graceful no-op (button doesn't render)
 # when unset, mirroring the backend's own GOOGLE_CLIENT_ID-optional pattern.
 : "${GOOGLE_CLIENT_ID:=}"
@@ -44,6 +62,20 @@ if [ ! -f "$TEMPLATE" ]; then
   exit 1
 fi
 
+# The values are written into single-quoted JavaScript strings: escape the
+# backslash and the quote, and refuse a line break, so that no value can end
+# the string and turn into code (or break the file).
+js_escape() {
+  case "$1" in
+    *"
+"*) echo "FATAL: a runtime config value contains a line break. Aborting." >&2; exit 1 ;;
+  esac
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g"
+}
+
+API_BASE_URL=$(js_escape "$API_BASE_URL")
+APP_ENVIRONMENT=$(js_escape "$APP_ENVIRONMENT")
+GOOGLE_CLIENT_ID=$(js_escape "$GOOGLE_CLIENT_ID")
 export API_BASE_URL APP_ENVIRONMENT GOOGLE_CLIENT_ID
 
 mkdir -p "$OUTPUT_DIR"

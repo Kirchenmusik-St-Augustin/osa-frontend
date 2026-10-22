@@ -12,7 +12,7 @@ vi.mock('@/services/api', () => ({
 const mockedApi = vi.mocked(api)
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useFees', () => {

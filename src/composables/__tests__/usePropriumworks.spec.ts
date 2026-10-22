@@ -21,7 +21,7 @@ const sampleWork = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('usePropriumworks', () => {

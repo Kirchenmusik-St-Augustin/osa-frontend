@@ -34,6 +34,9 @@ describe('EmailThresholdWarning', () => {
       expect(icon.exists()).toBe(true)
       expect(icon.classes()).toContain('fa-triangle-exclamation')
       expect(icon.classes()).toContain('text-warning')
+      expect(icon.attributes('aria-label')).toBe('Email-Versand deaktiviert')
+      expect(icon.attributes('title')).toBe('Email-Versand deaktiviert')
+      expect(icon.attributes('role')).toBe('img')
     })
 
     it('renders nothing when the user is not loaded yet', () => {

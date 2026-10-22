@@ -113,6 +113,7 @@ describe('FeeView', () => {
     expect(wrapper.find('.modal').exists()).toBe(false)
     await wrapper.find('button.btn-secondary.my-3').trigger('click')
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Bearbeiten')
 
     await wrapper.find('input#fee-name').setValue('Solist')
     await wrapper.find('input#fee-amount').setValue(80)

@@ -28,13 +28,15 @@ const unused = computed(() => props.available.filter((item) => !assignedIds.valu
 // The "assigned" column below must show EVERY item currently in the model,
 // not just the ones still present in `available` -- an item can be
 // assigned-but-missing-from-available for a real reason (e.g. an archived
-// Instrument/Voice/Choirjob): `available` is filtered to active-only server-side, but an already-
-// assigned item must stay visible/removable regardless. Anything only in
-// this second half is, by construction, no longer offered -- flagged
-// below without needing a dedicated `active` field on SelectableItem.
+// Instrument/Voice/Choirjob): `available` is filtered to active-only
+// server-side, but an already-assigned item must stay visible/removable
+// regardless. Anything only in this second half is, by construction, no
+// longer offered -- flagged below without needing a dedicated `active`
+// field on SelectableItem.
 const assignedOnly = computed(() =>
   model.value.filter((item) => !props.available.some((entry) => entry.id === item.id)),
 )
+const assignedOnlyIds = computed(() => new Set(assignedOnly.value.map((item) => item.id)))
 const displayItems = computed(() => [...props.available, ...assignedOnly.value])
 
 const selectedUnusedId = ref<string | null>(unused.value[0]?.id ?? null)
@@ -69,15 +71,17 @@ function resetToSaved(): void {
         <div v-for="item in displayItems" :key="item.id" class="mb-1">
           <div v-if="assignedIds.has(item.id)" class="row">
             <div class="col-sm-12">
-              <i
-                class="c-pointer fas fa-trash me-2"
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 me-2 text-reset"
                 title="entfernen"
+                aria-label="entfernen"
                 @click.prevent="remove(item.id)"
-              ></i>
+              >
+                <i class="fas fa-trash" aria-hidden="true"></i>
+              </button>
               <span>{{ item.name }}</span>
-              <small
-                v-if="!props.available.some((entry) => entry.id === item.id)"
-                class="text-muted ms-1"
+              <small v-if="assignedOnlyIds.has(item.id)" class="text-muted ms-1"
                 >(nicht mehr aktiv)</small
               >
             </div>
@@ -97,7 +101,9 @@ function resetToSaved(): void {
             </button>
           </div>
         </div>
-        <small class="c-pointer" @click="resetToSaved">Auf derz. gesp. Werte zurücksetzen</small>
+        <button type="button" class="btn btn-link p-0 text-reset c-pointer" @click="resetToSaved">
+          <small>auf derz. Werte zurücksetzen</small>
+        </button>
       </div>
     </div>
   </div>
