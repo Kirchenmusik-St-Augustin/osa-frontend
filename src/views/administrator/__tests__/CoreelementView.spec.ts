@@ -183,6 +183,51 @@ describe('CoreelementView', () => {
     })
   })
 
+  it('treats an existing instrument without a stored active flag as active', async () => {
+    mockItems.value = [makeItem({ id: testId(7), name: 'Fagott', active: null })]
+    mockSave.mockResolvedValueOnce(undefined)
+    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
+    await flushPromises()
+
+    await wrapper.find('button[title="bearbeiten"]').trigger('click')
+    expect((wrapper.find('input#coreelement-active').element as HTMLInputElement).checked).toBe(
+      true,
+    )
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockSave).toHaveBeenCalledWith(testId(7), { name: 'Fagott', active: true })
+  })
+
+  it('tells the user when deleting fails without a reason of its own', async () => {
+    mockItems.value = [makeItem({ id: testId(3) })]
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(CoreelementView, { props: { type: 'role' } })
+    await flushPromises()
+
+    await wrapper.find('button[title="löschen"]').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
+  it('moves an item down when the down-arrow is clicked', async () => {
+    mockItems.value = [
+      makeItem({ id: testId(1), name: 'Erstes' }),
+      makeItem({ id: testId(2), name: 'Zweites' }),
+    ]
+    mockMove.mockResolvedValueOnce(undefined)
+    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
+    await flushPromises()
+
+    const rows = wrapper.findAll('.list-group-item')
+    await rows[0]?.find('button[title="nach unten bewegen"]').trigger('click')
+    await flushPromises()
+
+    expect(mockMove).toHaveBeenCalledWith(testId(1), 'down')
+  })
+
   it('unchecking "Aktiv" archives an existing instrument on save', async () => {
     mockItems.value = [makeItem({ id: testId(7), name: 'Fagott', active: true })]
     mockSave.mockResolvedValueOnce(undefined)

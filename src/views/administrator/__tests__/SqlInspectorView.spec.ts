@@ -148,6 +148,53 @@ describe('SqlInspectorView', () => {
     expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
   })
 
+  it('shows the fixed texts when the table list or the table data fail with a field-only answer', async () => {
+    mockListTables.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(SqlInspectorView)
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith(
+      'Tabellenliste konnte nicht geladen werden.',
+      true,
+    )
+
+    mockListTables.mockResolvedValueOnce(['users'])
+    mockGetTableData.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    const wrapper = mount(SqlInspectorView)
+    await flushPromises()
+    await wrapper.find('select').setValue('users')
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith(
+      'Tabellendaten konnten nicht geladen werden.',
+      true,
+    )
+  })
+
+  it('goes back one page with "Zurück" and shows nothing for an empty selection', async () => {
+    mockListTables.mockResolvedValueOnce(['users'])
+    mockGetTableData
+      .mockResolvedValueOnce(makeTableData({ total: 30 }))
+      .mockResolvedValueOnce(makeTableData({ total: 30, page: 2 }))
+      .mockResolvedValueOnce(makeTableData({ total: 30 }))
+    const wrapper = mount(SqlInspectorView)
+    await flushPromises()
+    await wrapper.find('select').setValue('')
+    await flushPromises()
+    expect(mockGetTableData).not.toHaveBeenCalled()
+
+    await wrapper.find('select').setValue('users')
+    await flushPromises()
+    await wrapper.findAll('nav button')[1]?.trigger('click')
+    await flushPromises()
+    await wrapper.findAll('nav button')[0]?.trigger('click')
+    await flushPromises()
+
+    expect(mockGetTableData).toHaveBeenLastCalledWith('users', 1, 25)
+  })
+
   it('shows the rows of the LAST table choice when an earlier answer arrives late', async () => {
     mockListTables.mockResolvedValueOnce(['users', 'roles'])
     let finishFirst: (value: TableData) => void = () => {}

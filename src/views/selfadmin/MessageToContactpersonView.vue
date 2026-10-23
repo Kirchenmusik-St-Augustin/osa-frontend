@@ -110,7 +110,7 @@ async function send(): Promise<void> {
             <span class="me-2">Rolle: {{ role.label }}</span>
           </div>
           <div class="card-body">
-            <div class="role-description">{{ role.description ?? '' }}</div>
+            <div class="role-description">{{ role.description }}</div>
           </div>
         </div>
       </div>

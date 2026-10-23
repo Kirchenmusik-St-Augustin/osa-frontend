@@ -65,6 +65,9 @@ beforeEach(() => {
   mockGetFormOptions.mockResolvedValue(emptyOptions)
 })
 
+const saveButton = (wrapper: ReturnType<typeof mount>) =>
+  wrapper.findAll('button').find((button) => button.text() === 'speichern')
+
 describe('UserFormView', () => {
   it('starts empty and creates a new user on save', async () => {
     mockCreate.mockResolvedValueOnce(makeUser({ id: '9' }))
@@ -254,6 +257,87 @@ describe('UserFormView', () => {
 
     expect((wrapper.find('input#user-administrator').element as HTMLInputElement).checked).toBe(
       true,
+    )
+  })
+
+  it('saves the chosen abilities, roles and flags of an edited account as ids', async () => {
+    mockIsAdministrator = true
+    mockGetFormOptions.mockResolvedValue({
+      instruments: [
+        { id: 'i1', name: 'Violine' },
+        { id: 'i2', name: 'Fagott' },
+      ],
+      voices: [{ id: 'v1', name: 'Sopran' }],
+      choirjobs: [{ id: 'c1', name: 'Solo' }],
+      roles: [{ id: 'r1', name: 'disponent', label: 'Disponent' }],
+    })
+    mockGet.mockResolvedValueOnce(
+      makeUser({
+        id: '5',
+        email: 'margot@example.test',
+        phone: '0664 1234567',
+        auth_locked: true,
+        administrator: true,
+        instruments: [{ id: 'i1', name: 'Violine' }],
+        voices: [{ id: 'v1', name: 'Sopran' }],
+        choirjobs: [{ id: 'c1', name: 'Solo' }],
+        roles: [{ id: 'r1', name: 'disponent', label: 'Disponent' }],
+      }),
+    )
+    mockUpdate.mockResolvedValueOnce(makeUser({ id: '5' }))
+    const wrapper = mount(UserFormView, { props: { id: '5' } })
+    await flushPromises()
+
+    await saveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith('5', {
+      givenname: 'Margot',
+      surname: 'SCHINDLER',
+      email: 'margot@example.test',
+      phone: '0664 1234567',
+      auth_locked: true,
+      instruments: ['i1'],
+      voices: ['v1'],
+      choirjobs: ['c1'],
+      roles: ['r1'],
+      administrator: true,
+    })
+    expect(mockPush).toHaveBeenCalledWith({ name: 'system-users-show', params: { id: '5' } })
+  })
+
+  it('adds an ability picked in a selection to the saved ids', async () => {
+    mockIsAdministrator = true
+    mockGetFormOptions.mockResolvedValue({
+      instruments: [{ id: 'i1', name: 'Violine' }],
+      voices: [{ id: 'v1', name: 'Sopran' }],
+      choirjobs: [{ id: 'c1', name: 'Solo' }],
+      roles: [{ id: 'r1', name: 'disponent', label: 'Disponent' }],
+    })
+    mockCreate.mockResolvedValueOnce(makeUser({ id: '9' }))
+    const wrapper = mount(UserFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('input#user-givenname').setValue('Margot')
+    await wrapper.find('input#user-surname').setValue('Schindler')
+    await wrapper.find('input#user-phone').setValue('0664 1234567')
+    for (const add of wrapper
+      .findAll('button')
+      .filter((button) => button.text() === 'hinzufügen')) {
+      await add.trigger('click')
+    }
+    await wrapper.find('input#user-auth-locked').setValue(true)
+    await saveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        auth_locked: true,
+        instruments: ['i1'],
+        voices: ['v1'],
+        choirjobs: ['c1'],
+        roles: ['r1'],
+      }),
     )
   })
 

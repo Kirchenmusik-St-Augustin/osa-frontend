@@ -467,6 +467,125 @@ describe('PerformanceFormView -- edit mode', () => {
     expect(mockUpdate).toHaveBeenCalledWith('1', expect.objectContaining({ location_id: '1' }))
   })
 
+  it('saves every part of the performance with ids and numbers only, trimming empty texts to null', async () => {
+    mockGetFormData.mockResolvedValueOnce(
+      makeFormData({
+        artist_id: '9',
+        description: 'Festmesse',
+        extracost_amount: 25,
+        extracost_description: '',
+        setup: {
+          instruments: [{ id: '10', name: 'Fagott', quantity: 2, active: true }],
+          voices: [{ id: '20', name: 'Sopran', quantity: 4, active: true }],
+          choirjobs: [{ id: '30', name: 'Kantor', quantity: 1, active: true }],
+        },
+        proprium: [
+          {
+            propriumelement_id: '40',
+            propriumelement_name: 'Introitus',
+            propriumwork_id: '50',
+            propriumwork_name: 'Gregorianik I',
+            artist_name: 'HAYDN, Joseph',
+            description: null,
+            demanding: false,
+          },
+        ],
+        rehearsals: [
+          { schedule: '2026-07-30T19:00:00', comment: 'GP' },
+          { schedule: '2026-07-31T19:00:00', comment: '' },
+        ],
+      }),
+    )
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith('1', {
+      schedule: '2026-08-02T11:00:00',
+      location_id: '1',
+      ordinariumwork_id: '5',
+      artist_id: '9',
+      description: 'Festmesse',
+      choirjob_defaultfee: 35,
+      instrument_defaultfee: 60,
+      voice_defaultfee: 110,
+      extracost_amount: 25,
+      extracost_description: null,
+      setup: {
+        instruments: [{ id: '10', quantity: 2 }],
+        voices: [{ id: '20', quantity: 4 }],
+        choirjobs: [{ id: '30', quantity: 1 }],
+      },
+      proprium: [{ propriumelement_id: '40', propriumwork_id: '50' }],
+      rehearsals: [
+        { schedule: '2026-07-30T19:00:00', comment: 'GP' },
+        { schedule: '2026-07-31T19:00:00', comment: null },
+      ],
+    })
+    expect(mockPush).toHaveBeenCalledWith({ name: 'home', query: { year: 2026, month: 8 } })
+  })
+
+  it('sends no extra cost for a performance that has none', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData({ extracost_amount: null }))
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ extracost_amount: null }),
+    )
+  })
+
+  it('leaves the extra cost empty when its field was cleared', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData({ extracost_amount: 25 }))
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Verrechnungsdetails'))
+      ?.trigger('click')
+
+    const extracost = wrapper.findAll('input[type="number"]').at(-1)
+    await extracost?.setValue('')
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ extracost_amount: null }),
+    )
+  })
+
+  it('goes back to the calendar with a message when the performance cannot be loaded', async () => {
+    mockGetFormData.mockRejectedValueOnce(new Error('network'))
+    mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein Fehler ist aufgetreten.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'home' })
+  })
+
+  it('keeps the page and tells the user when removing the performance fails', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData({ deletable: true }))
+    mockRemove.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findDeleteButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein Fehler ist aufgetreten.', true)
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
   it('resetting after switching Ordinariumwork mid-edit still targets the persisted setup', async () => {
     mockGetFormData.mockResolvedValueOnce(
       makeFormData({

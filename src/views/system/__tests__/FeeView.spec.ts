@@ -281,6 +281,38 @@ describe('FeeView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('Element gelöscht')
   })
 
+  it('tells the user when deleting fails without a reason of its own', async () => {
+    mockItems.value = [makeFee({ id: testId(3) })]
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(FeeView)
+    await flushPromises()
+
+    await wrapper.find('button[title="löschen"]').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
+  it('sorts by amount descending on a second click and keeps equal entries in their order', async () => {
+    mockItems.value = [
+      makeFee({ id: testId(1), name: 'Erster', amount: 60 }),
+      makeFee({ id: testId(2), name: 'Zweiter', amount: 60 }),
+      makeFee({ id: testId(3), name: 'Dritter', amount: 130 }),
+    ]
+    const wrapper = mount(FeeView)
+    await flushPromises()
+    const amountHeader = wrapper.findAll('th')[1]!
+    const names = () => rows(wrapper).map((row) => row.findAll('td')[0]?.text())
+
+    await amountHeader.trigger('click')
+    expect(names()).toEqual(['Erster', 'Zweiter', 'Dritter'])
+
+    await amountHeader.trigger('click')
+    expect(names()).toEqual(['Dritter', 'Erster', 'Zweiter'])
+    expect(amountHeader.find('.fa-caret-down').exists()).toBe(true)
+  })
+
   it('does not delete when the user cancels the confirmation', async () => {
     mockItems.value = [makeFee({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(false)

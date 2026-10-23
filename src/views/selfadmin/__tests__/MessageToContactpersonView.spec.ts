@@ -21,9 +21,12 @@ vi.mock('@/services/notifications', () => ({
 }))
 
 let mockKillSwitchActive = false
+let mockUserLoaded = true
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
-    user: { email_kill_switch: { active: mockKillSwitchActive, period_days: 30, threshold: 100 } },
+    user: mockUserLoaded
+      ? { email_kill_switch: { active: mockKillSwitchActive, period_days: 30, threshold: 100 } }
+      : null,
   }),
 }))
 
@@ -53,6 +56,7 @@ beforeEach(() => {
   vi.resetAllMocks()
   mockConfirmAction.mockResolvedValue(true)
   mockKillSwitchActive = false
+  mockUserLoaded = true
 })
 
 describe('MessageToContactpersonView', () => {
@@ -194,6 +198,50 @@ describe('MessageToContactpersonView', () => {
     await flushPromises()
 
     expect(wrapper.find('textarea').element.value).toBe('Bitte um Rückruf.')
+  })
+
+  const fieldOnlyError = {
+    response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+  }
+
+  it('falls back to fixed texts when loading or sending fails with a field-only answer', async () => {
+    mockGetContactpersons.mockRejectedValueOnce(fieldOnlyError)
+    mount(MessageToContactpersonView)
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith(
+      'Die Ansprechpersonen konnten nicht geladen werden.',
+      true,
+    )
+
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    mockSendMessageToContactperson.mockRejectedValueOnce(fieldOnlyError)
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+    await wrapper.find('select').setValue(testId(5))
+    await wrapper.find('textarea').setValue('Bitte um Rückruf.')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'senden')
+      ?.trigger('click')
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith('Nachricht konnte nicht versandt werden.', true)
+  })
+
+  it('still offers the message form while the profile is not loaded yet', async () => {
+    mockUserLoaded = false
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+
+    expect(wrapper.find('textarea').exists()).toBe(true)
+  })
+
+  it('shows an empty description for a role that has none', async () => {
+    mockGetContactpersons.mockResolvedValueOnce([{ ...makeRoles()[0]!, description: null }])
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+
+    expect(wrapper.find('.role-description').text()).toBe('')
   })
 
   it('tells the member when the contact persons cannot be loaded', async () => {

@@ -22,10 +22,13 @@ vi.mock('@/services/notifications', () => ({
 }))
 
 let mockKillSwitchActive = false
+let mockUserLoaded = true
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
     hasPermission: () => false,
-    user: { email_kill_switch: { active: mockKillSwitchActive, period_days: 30, threshold: 100 } },
+    user: mockUserLoaded
+      ? { email_kill_switch: { active: mockKillSwitchActive, period_days: 30, threshold: 100 } }
+      : null,
   }),
 }))
 
@@ -74,6 +77,7 @@ beforeEach(() => {
   vi.resetAllMocks()
   mockConfirmAction.mockResolvedValue(true)
   mockKillSwitchActive = false
+  mockUserLoaded = true
 })
 
 describe('MessageToCastView', () => {
@@ -393,6 +397,72 @@ describe('MessageToCastView', () => {
     await flushPromises()
 
     expect(mockShowToast).toHaveBeenCalledWith('Server nicht erreichbar.', true)
+  })
+
+  const fieldOnlyError = {
+    response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+  }
+
+  it('falls back to a fixed text when the page cannot be loaded and the answer names only a field', async () => {
+    mockGetMessageToCastPage.mockRejectedValueOnce(fieldOnlyError)
+    mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Die Seite konnte nicht geladen werden.', true)
+  })
+
+  it('falls back to a fixed text when the recipients cannot be loaded and the answer names only a field', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockRejectedValueOnce(fieldOnlyError)
+    mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Die Empfänger konnten nicht geladen werden.', true)
+  })
+
+  it('falls back to a fixed text when sending fails and the answer names only a field', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    mockSendMessageToCast.mockRejectedValueOnce(fieldOnlyError)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+    await rowCheckbox(wrapper, 0).setValue(true)
+    await wrapper.find('textarea').setValue('Test')
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Senden')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nachricht konnte nicht versandt werden.', true)
+  })
+
+  it('deselects a single recipient again and clears everything when the "alle" switch is turned off', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    await rowCheckbox(wrapper, 0).setValue(true)
+    expect((rowCheckbox(wrapper, 0).element as HTMLInputElement).checked).toBe(true)
+    await rowCheckbox(wrapper, 0).setValue(false)
+    expect((rowCheckbox(wrapper, 0).element as HTMLInputElement).checked).toBe(false)
+
+    await wrapper.find('#message-to-cast-check-all').setValue(true)
+    expect((rowCheckbox(wrapper, 0).element as HTMLInputElement).checked).toBe(true)
+    await wrapper.find('#message-to-cast-check-all').setValue(false)
+    expect((rowCheckbox(wrapper, 0).element as HTMLInputElement).checked).toBe(false)
+  })
+
+  it('still offers the message form while the profile is not loaded yet', async () => {
+    mockUserLoaded = false
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(wrapper.find('textarea').exists()).toBe(true)
   })
 
   it('replaces the message-textarea+Senden block with the kill-switch card while active, keeping the recipient table visible', async () => {

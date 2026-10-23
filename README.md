@@ -113,6 +113,19 @@ that stage (`googleClientId()` in `src/runtimeConfig.ts`, checked by
 `LoginView.vue`'s `v-if`). No separate feature-flag variable needed; the
 client ID itself is the switch.
 
+## Reporting a vulnerability
+
+Please do not open a public issue for a security problem. Report it
+privately instead:
+
+- through GitHub's private vulnerability reporting: the "Security" tab of
+  this repository, then "Report a vulnerability", or
+- by e-mail to einteilung@hochamt.at.
+
+Please include the affected version or commit, the steps to reproduce and
+the impact you expect. We answer as soon as possible and keep you informed
+while the problem is fixed.
+
 ## Branching
 
 - `main` — protected, merge via PR only
@@ -260,6 +273,19 @@ Google-Sign-In-Button auf dieser Stage schlichtweg nicht
 (`googleClientId()` in `src/runtimeConfig.ts`, geprüft von `LoginView.vue`s
 `v-if`). Keine eigene Feature-Flag-Variable nötig — die Client-ID selbst
 ist der Schalter.
+
+## Sicherheitslücke melden
+
+Bitte kein öffentliches Issue für ein Sicherheitsproblem eröffnen, sondern
+es privat melden:
+
+- über die private Schwachstellenmeldung von GitHub: Reiter "Security"
+  dieses Repositorys, dann "Report a vulnerability", oder
+- per E-Mail an einteilung@hochamt.at.
+
+Bitte die betroffene Version oder den Commit, die Schritte zur
+Reproduktion und die erwartete Auswirkung angeben. Wir antworten so
+schnell wie möglich und halten dich über die Behebung auf dem Laufenden.
 
 ## Branching
 

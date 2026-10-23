@@ -28,12 +28,12 @@ export default mergeConfig(
         // Granular quality gates instead of a global threshold
         thresholds: {
           // Global baseline for all unmapped files. Set a few points under the
-          // measured values (96 / 93 / 92 / 97) so a real drop fails the
+          // measured values (97 / 95 / 95 / 98) so a real drop fails the
           // pipeline instead of passing unnoticed.
-          statements: 90,
-          branches: 85,
-          functions: 88,
-          lines: 90,
+          statements: 94,
+          branches: 92,
+          functions: 92,
+          lines: 95,
 
           // Core logic (stores/composables): strict coverage required
           'src/stores/**': {

@@ -383,6 +383,39 @@ describe('UserAdministrationShowView', () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
+  it('shows a fixed text and stays on the page when purging fails without a reason of its own', async () => {
+    mockGet.mockResolvedValueOnce(
+      makeResult({ deleted_at: '2026-01-01T00:00:00+00:00', purgeable: true }),
+    )
+    mockPurge.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(UserAdministrationShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'dauerhaft löschen')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Das Benutzerkonto konnte nicht dauerhaft gelöscht werden.',
+      true,
+    )
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('shows whether the e-mail address is still waiting for its confirmation', async () => {
+    mockGet.mockResolvedValueOnce(makeResult({ email_verified_at: null }))
+    const pending = mount(UserAdministrationShowView, { props: { id: '1' } })
+    await flushPromises()
+    expect(pending.text()).toContain('E-Mail-Bestätigung ausständig:ja')
+
+    mockGet.mockResolvedValueOnce(makeResult({ email_verified_at: '2026-01-01T00:00:00+00:00' }))
+    const confirmed = mount(UserAdministrationShowView, { props: { id: '1' } })
+    await flushPromises()
+    expect(confirmed.text()).toContain('E-Mail-Bestätigung ausständig:nein')
+  })
+
   it('shows the backend message and stays on the page when purging fails', async () => {
     mockGet.mockResolvedValueOnce(
       makeResult({ deleted_at: '2026-01-01T00:00:00+00:00', purgeable: true }),

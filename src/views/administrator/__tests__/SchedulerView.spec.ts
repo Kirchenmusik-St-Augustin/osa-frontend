@@ -186,6 +186,25 @@ describe('SchedulerView', () => {
     expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
   })
 
+  it('shows the server text, or a fixed text for a field-only answer, when loading jobs fails', async () => {
+    mockListScheduledJobs.mockRejectedValueOnce({
+      response: { data: { detail: 'Keine Berechtigung.' } },
+    })
+    mount(SchedulerView)
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith('Keine Berechtigung.', true)
+
+    mockListScheduledJobs.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(SchedulerView)
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith(
+      'Scheduler-Übersicht konnte nicht geladen werden.',
+      true,
+    )
+  })
+
   it('renders no "Historie" element regardless of stage (no history feature exists)', async () => {
     mockAppEnvironment = 'production'
     mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
@@ -236,6 +255,21 @@ describe('SchedulerView', () => {
     await flushPromises()
 
     expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
+  })
+
+  it('shows the fixed backup error text for a field-only answer', async () => {
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+    mockTriggerBackup.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Backup konnte nicht erstellt werden.', true)
   })
 
   it('disables the backup button while the request is in flight', async () => {
@@ -350,6 +384,21 @@ describe('SchedulerView', () => {
     expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
     expect(mockLogout).not.toHaveBeenCalled()
     expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('shows the fixed downsync error text for a field-only answer', async () => {
+    mockAppEnvironment = 'development'
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+    mockTriggerDownsync.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Downsync konnte nicht durchgeführt werden.', true)
   })
 
   it('disables the downsync button while the request is in flight', async () => {

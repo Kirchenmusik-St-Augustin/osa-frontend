@@ -206,6 +206,19 @@ describe('ShorturlView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('Element gelöscht')
   })
 
+  it('tells the user when deleting fails without a reason of its own', async () => {
+    mockItems.value = [makeShorturl({ id: testId(3) })]
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+
+    await wrapper.find('i[title="löschen"]').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
   it('does not delete when the user cancels the confirmation', async () => {
     mockItems.value = [makeShorturl({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(false)

@@ -270,6 +270,106 @@ describe('CastView', () => {
     expect(mockPush).toHaveBeenCalledWith({ name: 'home', query: { year: 2026, month: 8 } })
   })
 
+  function makeFullPage(): PerformanceCastPage {
+    return makePage({
+      setup: {
+        instruments: [{ id: '10', name: 'Fagott', quantity: 1, active: true }],
+        voices: [{ id: '20', name: 'Sopran', quantity: 2, active: true }],
+        choirjobs: [{ id: '30', name: 'Solo', quantity: 1, active: true }],
+      },
+      staff: {
+        instruments: [{ id: '10', name: 'Fagott', bookable: { requesting: [], other: [] } }],
+        voices: [{ id: '20', name: 'Sopran', bookable: { requesting: [], other: [] } }],
+        choirjobs: [{ id: '30', name: 'Solo', bookable: { requesting: [], other: [] } }],
+      },
+      form_data: {
+        cast: {
+          instruments: [
+            {
+              id: '10',
+              name: 'Fagott',
+              cast: [
+                { id: '5', name: 'HUBER, Franz', fee: 60 },
+                { id: '4', name: 'AUER, Alfred', fee: 65 },
+              ],
+            },
+          ],
+          voices: [
+            {
+              id: '20',
+              name: 'Sopran',
+              cast: [
+                { id: '6', name: 'ADLER, Anna', fee: 30 },
+                { id: '8', name: 'BERG, Berta', fee: 35 },
+              ],
+            },
+          ],
+          choirjobs: [
+            { id: '30', name: 'Solo', cast: [{ id: '9', name: 'CZERNY, Carl', fee: 40 }] },
+          ],
+        },
+        not_booked: [
+          { id: '99', name: 'ZURÜCK, Zita' },
+          { id: '98', name: 'ABGELEHNT, Alois' },
+        ],
+      },
+    })
+  }
+
+  it('saves every position type with ids and fees and the not_booked ids only', async () => {
+    mockGetCastPage.mockResolvedValueOnce(makeFullPage())
+    mockSaveCast.mockResolvedValueOnce(undefined)
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('.c-pointer').trigger('click') // expand the Fagott item
+    await wrapper.find('.fa-times').trigger('click') // remove HUBER, Franz
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'speichern')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockSaveCast).toHaveBeenCalledWith('1', {
+      cast: {
+        instruments: [{ id: '10', cast: [{ id: '4', fee: 65 }] }],
+        voices: [
+          {
+            id: '20',
+            cast: [
+              { id: '6', fee: 30 },
+              { id: '8', fee: 35 },
+            ],
+          },
+        ],
+        choirjobs: [{ id: '30', cast: [{ id: '9', fee: 40 }] }],
+      },
+      not_booked: [{ id: '99' }, { id: '98' }],
+    })
+  })
+
+  it('removes one entry from the not_booked list and saves the rest', async () => {
+    mockGetCastPage.mockResolvedValueOnce(makeFullPage())
+    mockSaveCast.mockResolvedValueOnce(undefined)
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+    const saveButton = () =>
+      wrapper.findAll('button').find((button) => button.text() === 'speichern')
+    expect(saveButton()?.attributes('disabled')).toBeDefined()
+
+    await wrapper.find('.c-pointer').trigger('click') // expand the Fagott item
+    const removeZita = wrapper
+      .findAll('small.text-danger')
+      .find((small) => small.text().includes('ZURÜCK, Zita'))
+      ?.find('button')
+    await removeZita?.trigger('click')
+
+    expect(saveButton()?.attributes('disabled')).toBeUndefined()
+    await saveButton()?.trigger('click')
+    await flushPromises()
+    expect(mockSaveCast.mock.calls[0]?.[1].not_booked).toEqual([{ id: '98' }])
+  })
+
   it('the "zurück" link goes to the calendar month of the performance, not its show page', async () => {
     mockGetCastPage.mockResolvedValueOnce(makePage())
     const wrapper = mount(CastView, { props: { id: '1' } })
