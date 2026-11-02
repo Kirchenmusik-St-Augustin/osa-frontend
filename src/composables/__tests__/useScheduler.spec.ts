@@ -40,10 +40,7 @@ describe('useScheduler', () => {
   })
 
   it('triggerBackup posts to the backup trigger endpoint', async () => {
-    const trigger = {
-      backup_name: 'production-2026-08-13_12-00-00-manual.tar.gz',
-      triggered_at: '2026-08-13T12:00:00+00:00',
-    }
+    const trigger = { job_id: 'backup_koofr', queued_at: '2026-08-13T12:00:00+00:00' }
     mockedApi.post.mockResolvedValueOnce({ data: trigger })
     const { triggerBackup } = useScheduler()
 
@@ -54,10 +51,7 @@ describe('useScheduler', () => {
   })
 
   it('triggerDownsync posts to the downsync trigger endpoint', async () => {
-    const trigger = {
-      restored_backup: 'production-2026-08-21_04-00-00.tar.gz',
-      triggered_at: '2026-08-21T04:00:00+00:00',
-    }
+    const trigger = { job_id: 'downsync', queued_at: '2026-08-21T04:00:00+00:00' }
     mockedApi.post.mockResolvedValueOnce({ data: trigger })
     const { triggerDownsync } = useScheduler()
 

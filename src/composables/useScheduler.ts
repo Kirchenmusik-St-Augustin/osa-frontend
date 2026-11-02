@@ -16,14 +16,11 @@ export interface ScheduledJob {
   last_run: JobRun | null
 }
 
-export interface BackupTrigger {
-  backup_name: string
-  triggered_at: string
-}
-
-export interface DownsyncTrigger {
-  restored_backup: string
-  triggered_at: string
+// Answer of both manual triggers: the job was handed to the worker, its
+// outcome shows up as the `last_run` of the scheduled job with this id.
+export interface JobQueued {
+  job_id: string
+  queued_at: string
 }
 
 // UI-independent API layer for the admin-only "Scheduler" overview
@@ -32,20 +29,20 @@ export interface DownsyncTrigger {
 // persisted piece of state (the most recent completed run per job, if
 // any) -- plus the manual Koofr-backup trigger (POST .../backup/trigger)
 // and its non-production counterpart, the manual downsync trigger
-// (POST .../downsync/trigger).
+// (POST .../downsync/trigger). Both only queue the job (202 Accepted).
 export function useScheduler() {
   async function listScheduledJobs(): Promise<ScheduledJob[]> {
     const response = await api.get<ScheduledJob[]>('/administrator/scheduler/jobs')
     return response.data
   }
 
-  async function triggerBackup(): Promise<BackupTrigger> {
-    const response = await api.post<BackupTrigger>('/administrator/scheduler/backup/trigger')
+  async function triggerBackup(): Promise<JobQueued> {
+    const response = await api.post<JobQueued>('/administrator/scheduler/backup/trigger')
     return response.data
   }
 
-  async function triggerDownsync(): Promise<DownsyncTrigger> {
-    const response = await api.post<DownsyncTrigger>('/administrator/scheduler/downsync/trigger')
+  async function triggerDownsync(): Promise<JobQueued> {
+    const response = await api.post<JobQueued>('/administrator/scheduler/downsync/trigger')
     return response.data
   }
 

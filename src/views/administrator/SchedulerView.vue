@@ -9,15 +9,19 @@
 // shows the trigger buttons. The downsync button is its
 // mirror image: only outside production, where the backend enforces the
 // same boundary as a real 409 (not just UI convenience -- see the backend
-// router's docstring).
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+// router's docstring). Both triggers only queue the job for the worker; the
+// outcome appears as the job's last run, so the list is reloaded after a
+// short delay.
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useScheduler, type JobRun, type ScheduledJob } from '@/composables/useScheduler'
 import { appEnvironment } from '@/runtimeConfig'
 import { extractApiErrors } from '@/services/apiErrors'
 import { formatUtcDateTime } from '@/services/dateFormat'
 import { confirmAction, showToast } from '@/services/notifications'
 import { useAuthStore } from '@/stores/auth'
+
+// Gives the worker time to pick up a queued job before the list is read again.
+const REFRESH_DELAY_MS = 5000
 
 // Plain lookup table, not a computed() -- there is nothing reactive to
 // derive here, just a static status->class mapping indexed per job card
@@ -31,7 +35,6 @@ const lastRunBadgeClassByStatus: Record<JobRun['status'], string> = {
 
 const { listScheduledJobs, triggerBackup, triggerDownsync } = useScheduler()
 const authStore = useAuthStore()
-const router = useRouter()
 
 const jobs = ref<ScheduledJob[]>([])
 const backupSubmitting = ref(false)
@@ -40,7 +43,9 @@ const downsyncSubmitting = ref(false)
 const isProduction = computed(() => appEnvironment() === 'production')
 const canTrigger = computed(() => authStore.hasPermission('schedulerTrigger'))
 
-onMounted(async () => {
+let refreshTimer: ReturnType<typeof setTimeout> | undefined
+
+async function loadJobs(): Promise<void> {
   try {
     jobs.value = await listScheduledJobs()
   } catch (error) {
@@ -49,31 +54,40 @@ onMounted(async () => {
       true,
     )
   }
-})
+}
+
+onMounted(loadJobs)
+onBeforeUnmount(() => clearTimeout(refreshTimer))
 
 async function onTriggerBackup(): Promise<void> {
   backupSubmitting.value = true
   try {
-    const result = await triggerBackup()
-    showToast(`Backup erstellt: ${result.backup_name}`)
+    await triggerBackup()
   } catch (error) {
     showToast(extractApiErrors(error).generalError ?? 'Backup konnte nicht erstellt werden.', true)
+    return
   } finally {
     backupSubmitting.value = false
   }
+
+  showToast(
+    'Backup wurde gestartet. Das Ergebnis steht unter „Letzter Lauf“ der Task backup_koofr.',
+  )
+  await loadJobs()
+  clearTimeout(refreshTimer)
+  refreshTimer = setTimeout(() => void loadJobs(), REFRESH_DELAY_MS)
 }
 
 async function onTriggerDownsync(): Promise<void> {
   const confirmed = await confirmAction(
     'Downsync ersetzt die lokale Datenbank dieser Stage mit dem aktuellen ' +
-      'Produktivstand. Du wirst danach automatisch abgemeldet. Fortfahren?',
+      'Produktivstand. Danach musst du dich neu anmelden. Fortfahren?',
   )
   if (!confirmed) return
 
   downsyncSubmitting.value = true
-  let restoredBackup: string
   try {
-    restoredBackup = (await triggerDownsync()).restored_backup
+    await triggerDownsync()
   } catch (error) {
     showToast(
       extractApiErrors(error).generalError ?? 'Downsync konnte nicht durchgeführt werden.',
@@ -84,14 +98,13 @@ async function onTriggerDownsync(): Promise<void> {
     downsyncSubmitting.value = false
   }
 
-  showToast(`Downsync abgeschlossen: ${restoredBackup}`)
-  // The restore replaces the personal_access_tokens table too, so this
-  // stage's own session may already be invalid -- log out proactively
-  // instead of letting the next request surface a confusing 401. The local
-  // state is cleared even when the logout request fails, and a failing
-  // logout must not turn the finished downsync into an error message.
-  await authStore.logout().catch(() => undefined)
-  await router.push({ name: 'login' })
+  // The restore replaces the session tables too, so this session ends on its
+  // own once the worker is done; the list is not reloaded here, the next
+  // request after the restore leads to the sign-in page.
+  showToast(
+    'Downsync wurde gestartet. Das Ergebnis steht unter „Letzter Lauf“ der Task downsync. ' +
+      'Danach musst du dich neu anmelden.',
+  )
 }
 </script>
 
@@ -131,8 +144,7 @@ async function onTriggerDownsync(): Promise<void> {
         </p>
         <p class="text-muted small mb-0">
           Ersetzt die lokale Datenbank dieser Stage sofort durch das letzte Production-Backup –
-          unabhängig vom nächtlichen automatischen Downsync. Meldet dich anschließend automatisch
-          ab.
+          unabhängig vom nächtlichen automatischen Downsync. Danach musst du dich neu anmelden.
         </p>
       </div>
 

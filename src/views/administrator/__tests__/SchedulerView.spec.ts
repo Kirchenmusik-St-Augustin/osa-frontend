@@ -1,13 +1,7 @@
-import type * as VueRouter from 'vue-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import SchedulerView from '../SchedulerView.vue'
-import type {
-  BackupTrigger,
-  DownsyncTrigger,
-  JobRun,
-  ScheduledJob,
-} from '@/composables/useScheduler'
+import type { JobQueued, JobRun, ScheduledJob } from '@/composables/useScheduler'
 
 const mockListScheduledJobs = vi.fn()
 const mockTriggerBackup = vi.fn()
@@ -32,19 +26,9 @@ vi.mock('@/services/notifications', () => ({
   confirmAction: (...args: unknown[]) => mockConfirmAction(...args),
 }))
 
-// vi.mock(...) factories are hoisted above plain const declarations --
-// referencing mock functions inside them requires vi.hoisted().
-const { mockPush } = vi.hoisted(() => ({ mockPush: vi.fn().mockResolvedValue(undefined) }))
-vi.mock('vue-router', async (importOriginal) => ({
-  ...(await importOriginal<typeof VueRouter>()),
-  useRouter: () => ({ push: mockPush }),
-}))
-
-const mockLogout = vi.fn()
 let mockCanTrigger: boolean
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
-    logout: mockLogout,
     hasPermission: (permission: string) => permission === 'schedulerTrigger' && mockCanTrigger,
   }),
 }))
@@ -71,20 +55,12 @@ function makeJobRun(overrides: Partial<JobRun> = {}): JobRun {
   }
 }
 
-function makeBackupTrigger(overrides: Partial<BackupTrigger> = {}): BackupTrigger {
-  return {
-    backup_name: 'production-2026-08-13_12-00-00-manual.tar.gz',
-    triggered_at: '2026-08-13T12:00:00+00:00',
-    ...overrides,
-  }
+function makeBackupTrigger(overrides: Partial<JobQueued> = {}): JobQueued {
+  return { job_id: 'backup_koofr', queued_at: '2026-08-13T12:00:00+00:00', ...overrides }
 }
 
-function makeDownsyncTrigger(overrides: Partial<DownsyncTrigger> = {}): DownsyncTrigger {
-  return {
-    restored_backup: 'production-2026-08-21_04-00-00.tar.gz',
-    triggered_at: '2026-08-21T04:00:00+00:00',
-    ...overrides,
-  }
+function makeDownsyncTrigger(overrides: Partial<JobQueued> = {}): JobQueued {
+  return { job_id: 'downsync', queued_at: '2026-08-21T04:00:00+00:00', ...overrides }
 }
 
 beforeEach(() => {
@@ -92,7 +68,10 @@ beforeEach(() => {
   mockAppEnvironment = undefined
   mockCanTrigger = true
   mockConfirmAction.mockResolvedValue(true)
-  mockLogout.mockResolvedValue(undefined)
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('SchedulerView', () => {
@@ -228,9 +207,9 @@ describe('SchedulerView', () => {
     expect(wrapper.text()).not.toContain('Downsync jetzt durchführen')
   })
 
-  it('triggers a backup and shows a success toast with the backup name', async () => {
+  it('queues a backup and says where the result will show up', async () => {
     mockAppEnvironment = 'production'
-    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+    mockListScheduledJobs.mockResolvedValue([makeJob()])
     mockTriggerBackup.mockResolvedValueOnce(makeBackupTrigger())
 
     const wrapper = mount(SchedulerView)
@@ -240,8 +219,90 @@ describe('SchedulerView', () => {
 
     expect(mockTriggerBackup).toHaveBeenCalledOnce()
     expect(mockShowToast).toHaveBeenCalledWith(
-      expect.stringContaining('production-2026-08-13_12-00-00-manual.tar.gz'),
+      'Backup wurde gestartet. Das Ergebnis steht unter „Letzter Lauf“ der Task backup_koofr.',
     )
+  })
+
+  it('reloads the job list right after queueing a backup and once more after a delay', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs.mockResolvedValue([makeJob()])
+    mockTriggerBackup.mockResolvedValueOnce(makeBackupTrigger())
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    expect(mockListScheduledJobs).toHaveBeenCalledTimes(1)
+
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(mockListScheduledJobs).toHaveBeenCalledTimes(2)
+
+    await vi.advanceTimersByTimeAsync(4999)
+    expect(mockListScheduledJobs).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(mockListScheduledJobs).toHaveBeenCalledTimes(3)
+  })
+
+  it('shows the new last run of the backup job after the delayed reload', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs
+      .mockResolvedValueOnce([makeJob({ id: 'backup_koofr', last_run: null })])
+      .mockResolvedValueOnce([makeJob({ id: 'backup_koofr', last_run: null })])
+      .mockResolvedValueOnce([
+        makeJob({
+          id: 'backup_koofr',
+          last_run: makeJobRun({ status: 'failure', output: 'Koofr upload failed' }),
+        }),
+      ])
+    mockTriggerBackup.mockResolvedValueOnce(makeBackupTrigger())
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.badge.text-bg-danger').exists()).toBe(false)
+
+    await vi.advanceTimersByTimeAsync(5000)
+
+    expect(wrapper.find('.badge.text-bg-danger').attributes('title')).toBe('Koofr upload failed')
+  })
+
+  it('does not reload the list after the view is gone', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs.mockResolvedValue([makeJob()])
+    mockTriggerBackup.mockResolvedValueOnce(makeBackupTrigger())
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    wrapper.unmount()
+
+    await vi.advanceTimersByTimeAsync(10000)
+
+    expect(mockListScheduledJobs).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps a single delayed reload when the backup is queued twice in a row', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    mockAppEnvironment = 'production'
+    mockListScheduledJobs.mockResolvedValue([makeJob()])
+    mockTriggerBackup.mockResolvedValue(makeBackupTrigger())
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(2000)
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(mockListScheduledJobs).toHaveBeenCalledTimes(3)
+
+    await vi.advanceTimersByTimeAsync(10000)
+
+    expect(mockListScheduledJobs).toHaveBeenCalledTimes(4)
   })
 
   it('shows an error toast when triggering a backup fails', async () => {
@@ -255,6 +316,8 @@ describe('SchedulerView', () => {
     await flushPromises()
 
     expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
+    expect(mockShowToast).not.toHaveBeenCalledWith(expect.stringContaining('gestartet'))
+    expect(mockListScheduledJobs).toHaveBeenCalledTimes(1)
   })
 
   it('shows the fixed backup error text for a field-only answer', async () => {
@@ -275,9 +338,9 @@ describe('SchedulerView', () => {
   it('disables the backup button while the request is in flight', async () => {
     mockAppEnvironment = 'production'
     mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
-    let resolveTrigger: (value: BackupTrigger) => void = () => {}
+    let resolveTrigger: (value: JobQueued) => void = () => {}
     mockTriggerBackup.mockReturnValueOnce(
-      new Promise<BackupTrigger>((resolve) => {
+      new Promise<JobQueued>((resolve) => {
         resolveTrigger = resolve
       }),
     )
@@ -335,12 +398,28 @@ describe('SchedulerView', () => {
     await flushPromises()
 
     expect(mockTriggerDownsync).not.toHaveBeenCalled()
-    expect(mockLogout).not.toHaveBeenCalled()
+    expect(mockShowToast).not.toHaveBeenCalled()
   })
 
-  it('triggers a downsync, shows a success toast, logs out and redirects to login', async () => {
+  it('warns in the confirm dialog that the user has to sign in again afterwards', async () => {
     mockAppEnvironment = 'development'
     mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+    mockTriggerDownsync.mockResolvedValueOnce(makeDownsyncTrigger())
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    expect(mockConfirmAction).toHaveBeenCalledWith(
+      'Downsync ersetzt die lokale Datenbank dieser Stage mit dem aktuellen Produktivstand. ' +
+        'Danach musst du dich neu anmelden. Fortfahren?',
+    )
+  })
+
+  it('queues a downsync and says where the result will show up and that a new sign-in follows', async () => {
+    mockAppEnvironment = 'development'
+    mockListScheduledJobs.mockResolvedValue([makeJob()])
     mockTriggerDownsync.mockResolvedValueOnce(makeDownsyncTrigger())
 
     const wrapper = mount(SchedulerView)
@@ -350,28 +429,38 @@ describe('SchedulerView', () => {
 
     expect(mockTriggerDownsync).toHaveBeenCalledOnce()
     expect(mockShowToast).toHaveBeenCalledWith(
-      expect.stringContaining('production-2026-08-21_04-00-00.tar.gz'),
+      'Downsync wurde gestartet. Das Ergebnis steht unter „Letzter Lauf“ der Task downsync. ' +
+        'Danach musst du dich neu anmelden.',
     )
-    expect(mockLogout).toHaveBeenCalledOnce()
-    expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
   })
 
-  it('still redirects to login, without an error toast, when only the logout request fails', async () => {
+  it('does not reload the list after queueing a downsync, the session ends with the restore', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     mockAppEnvironment = 'development'
-    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+    mockListScheduledJobs.mockResolvedValue([makeJob()])
     mockTriggerDownsync.mockResolvedValueOnce(makeDownsyncTrigger())
-    mockLogout.mockRejectedValueOnce(new Error('session already gone'))
 
     const wrapper = mount(SchedulerView)
     await flushPromises()
     await wrapper.find('button').trigger('click')
     await flushPromises()
+    await vi.advanceTimersByTimeAsync(10000)
 
-    expect(mockShowToast).not.toHaveBeenCalledWith(expect.any(String), true)
-    expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
+    expect(mockListScheduledJobs).toHaveBeenCalledTimes(1)
   })
 
-  it('shows an error toast without logging out when triggering a downsync fails', async () => {
+  it('tells the user on the downsync card that a new sign-in is needed afterwards', async () => {
+    mockAppEnvironment = 'development'
+    mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
+
+    const wrapper = mount(SchedulerView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Danach musst du dich neu anmelden.')
+    expect(wrapper.text()).not.toContain('automatisch ab')
+  })
+
+  it('shows an error toast and no success text when triggering a downsync fails', async () => {
     mockAppEnvironment = 'development'
     mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
     mockTriggerDownsync.mockRejectedValueOnce(new Error('restore failed'))
@@ -382,8 +471,7 @@ describe('SchedulerView', () => {
     await flushPromises()
 
     expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
-    expect(mockLogout).not.toHaveBeenCalled()
-    expect(mockPush).not.toHaveBeenCalled()
+    expect(mockShowToast).not.toHaveBeenCalledWith(expect.stringContaining('gestartet'))
   })
 
   it('shows the fixed downsync error text for a field-only answer', async () => {
@@ -404,9 +492,9 @@ describe('SchedulerView', () => {
   it('disables the downsync button while the request is in flight', async () => {
     mockAppEnvironment = 'development'
     mockListScheduledJobs.mockResolvedValueOnce([makeJob()])
-    let resolveTrigger: (value: DownsyncTrigger) => void = () => {}
+    let resolveTrigger: (value: JobQueued) => void = () => {}
     mockTriggerDownsync.mockReturnValueOnce(
-      new Promise<DownsyncTrigger>((resolve) => {
+      new Promise<JobQueued>((resolve) => {
         resolveTrigger = resolve
       }),
     )
