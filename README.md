@@ -118,8 +118,8 @@ client ID itself is the switch.
 Please do not open a public issue for a security problem. Report it
 privately instead:
 
-- through GitHub's private vulnerability reporting: the "Security" tab of
-  this repository, then "Report a vulnerability", or
+- through GitHub's private vulnerability reporting: the "Security and
+  quality" tab of this repository, then "Report a vulnerability", or
 - by e-mail to einteilung@hochamt.at.
 
 Please include the affected version or commit, the steps to reproduce and
@@ -279,8 +279,8 @@ ist der Schalter.
 Bitte kein öffentliches Issue für ein Sicherheitsproblem eröffnen, sondern
 es privat melden:
 
-- über die private Schwachstellenmeldung von GitHub: Reiter "Security"
-  dieses Repositorys, dann "Report a vulnerability", oder
+- über die private Schwachstellenmeldung von GitHub: Reiter "Security and
+  quality" dieses Repositorys, dann "Report a vulnerability", oder
 - per E-Mail an einteilung@hochamt.at.
 
 Bitte die betroffene Version oder den Commit, die Schritte zur
