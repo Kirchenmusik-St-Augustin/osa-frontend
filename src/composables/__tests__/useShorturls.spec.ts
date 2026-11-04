@@ -15,6 +15,13 @@ beforeEach(() => {
 })
 
 describe('useShorturls', () => {
+  it('starts with an empty list and no url prefix before anything was fetched', () => {
+    const { items, urlprefix } = useShorturls()
+
+    expect(items.value).toEqual([])
+    expect(urlprefix.value).toBe('')
+  })
+
   it('fetchList populates items and urlprefix from the shorturls endpoint', async () => {
     const body = {
       urlprefix: 'https://go.example.test/',

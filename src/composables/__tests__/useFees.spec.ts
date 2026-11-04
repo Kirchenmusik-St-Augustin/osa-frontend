@@ -16,6 +16,12 @@ beforeEach(() => {
 })
 
 describe('useFees', () => {
+  it('starts with an empty list before anything was fetched', () => {
+    const { items } = useFees()
+
+    expect(items.value).toEqual([])
+  })
+
   it('fetchList populates items from the fees endpoint', async () => {
     const fees = [{ id: 1, name: 'Instrumentalist', amount: 80 }]
     mockedApi.get.mockResolvedValueOnce({ data: pageOf(fees) })

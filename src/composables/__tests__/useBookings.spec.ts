@@ -22,6 +22,7 @@ describe('nextActionFor', () => {
     [3, 'cancel'],
     [4, 'cancel'],
     [5, 'cancel'],
+    [6, null],
   ] as const)('status %i maps to %s', (status, expected) => {
     expect(nextActionFor(status)).toBe(expected)
   })

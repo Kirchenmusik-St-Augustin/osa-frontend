@@ -6,7 +6,7 @@ import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
 import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
-  default: { get: vi.fn(), post: vi.fn() },
+  default: { get: vi.fn(), post: vi.fn(), delete: vi.fn() },
 }))
 
 const mockedApi = vi.mocked(api)
@@ -87,5 +87,15 @@ describe('useUserAdministration', () => {
 
     expect(mockedApi.post).toHaveBeenCalledWith(`/administrator/users/${testId(1)}/set-password`)
     expect(result.newpw).toBe('aB3xY9kLmQ')
+  })
+
+  it('purge deletes the user permanently by id', async () => {
+    mockedApi.delete.mockResolvedValueOnce({ data: null })
+    const { purge } = useUserAdministration()
+
+    await purge(testId(1))
+
+    expect(mockedApi.delete).toHaveBeenCalledOnce()
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/administrator/users/${testId(1)}`)
   })
 })

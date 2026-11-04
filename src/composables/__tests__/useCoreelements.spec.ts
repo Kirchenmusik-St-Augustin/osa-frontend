@@ -28,6 +28,12 @@ beforeEach(() => {
 })
 
 describe('useCoreelements', () => {
+  it('starts with an empty list before anything was fetched', () => {
+    const { items } = useCoreelements('instrument')
+
+    expect(items.value).toEqual([])
+  })
+
   it('fetchList requests the type-scoped list endpoint', async () => {
     mockedApi.get.mockResolvedValueOnce({ data: pageOf([sampleItem]) })
     const { items, fetchList } = useCoreelements('instrument')

@@ -49,6 +49,9 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(true)
     expect(store.accessToken).toBe('token-123')
     expect(store.user?.surname).toBe('MUSTER')
+    expect(mockedApi.get).toHaveBeenCalledWith('/auth/me')
+    const body = mockedApi.post.mock.calls[0]?.[1] as URLSearchParams
+    expect(Object.fromEntries(body)).toEqual({ username: 'a@example.test', password: 'secret' })
     expect(mockedApi.post).toHaveBeenCalledWith(
       '/auth/login',
       expect.any(URLSearchParams),
@@ -106,6 +109,18 @@ describe('useAuthStore', () => {
     expect(useAuthStore().hasPermission('userMaintain')).toBe(false)
   })
 
+  it('logout posts to the logout endpoint and clears the auth state', async () => {
+    const store = useAuthStore()
+    store.$patch({ accessToken: 'token', user: profile() })
+    mockedApi.post.mockResolvedValueOnce({ data: null })
+
+    await store.logout()
+
+    expect(mockedApi.post).toHaveBeenCalledWith('/auth/logout')
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.user).toBeNull()
+  })
+
   it('logout clears auth state even if the API call itself fails', async () => {
     const store = useAuthStore()
     store.$patch({ accessToken: 'token', user: profile() })
@@ -125,6 +140,19 @@ describe('useAuthStore', () => {
 
     expect(store.isAuthenticated).toBe(false)
     expect(mockedApi.get).not.toHaveBeenCalled()
+  })
+
+  it('restoreSession drops the refreshed token when the profile cannot be loaded', async () => {
+    mockedApi.post.mockResolvedValueOnce({
+      data: { access_token: 'restored-token', token_type: 'bearer' },
+    })
+    mockedApi.get.mockRejectedValueOnce(new Error('500'))
+    const store = useAuthStore()
+
+    await store.restoreSession()
+
+    expect(store.accessToken).toBeNull()
+    expect(store.user).toBeNull()
   })
 
   it('restoreSession restores the token and profile when a session exists', async () => {
