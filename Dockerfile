@@ -1,4 +1,4 @@
-FROM docker.io/library/node:24-slim@sha256:6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d AS builder
+FROM docker.io/library/node:26-slim@sha256:5adad64f9a1fca2d51972caa65983634c8a774eb300d72b20f7f2a0f60368072 AS builder
 WORKDIR /build
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
