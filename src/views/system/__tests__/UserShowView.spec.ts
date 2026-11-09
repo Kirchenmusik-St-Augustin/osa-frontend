@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import UserShowView from '../UserShowView.vue'
 import type { User } from '@/composables/useUsers'
+import { linkTarget } from '@/__tests__/linkTarget'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
 vi.mock('vue-router', async (importOriginal) => ({
@@ -152,7 +153,7 @@ describe('UserShowView', () => {
 
     const links = wrapper.findAllComponents(RouterLinkStub)
     const requestsLink = links.find(
-      (link) => link.props('to')?.name === 'system-users-requests-and-bookings',
+      (link) => linkTarget(link)?.name === 'system-users-requests-and-bookings',
     )
     expect(requestsLink).toBeDefined()
     expect(requestsLink?.props('to')).toEqual({
@@ -160,6 +161,58 @@ describe('UserShowView', () => {
       params: { id: '1' },
     })
     expect(requestsLink?.text()).toBe('Anfragen und Buchungen für dieses Konto einsehen')
+  })
+
+  it('tells the administrator when the account cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    mount(UserShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGet.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(UserShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Das Benutzerkonto konnte nicht geladen werden.',
+      true,
+    )
+  })
+
+  it('uses its own text when the delete error carries no message of its own', async () => {
+    mockGet.mockResolvedValueOnce(makeUser({ deletable: true }))
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    const wrapper = mount(UserShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('button.btn-danger').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Das Benutzerkonto konnte nicht gelöscht werden.',
+      true,
+    )
+  })
+
+  it('does not call a failed delete "in use" when the request itself failed', async () => {
+    mockGet.mockResolvedValueOnce(makeUser({ deletable: true }))
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(UserShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('button.btn-danger').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
   it('shows the in-use message when delete is blocked', async () => {

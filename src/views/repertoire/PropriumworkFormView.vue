@@ -6,7 +6,7 @@ import FormSelect from '@/components/common/FormSelect.vue'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'
 import { useArtists, type ArtistSearchResult } from '@/composables/useArtists'
 import { usePropriumworks } from '@/composables/usePropriumworks'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id?: string }>()
@@ -27,17 +27,24 @@ const submitting = ref(false)
 const ready = ref(false)
 
 onMounted(async () => {
-  artists.value = await listComposers()
+  try {
+    artists.value = await listComposers()
 
-  if (props.id) {
-    const work = await get(props.id)
-    form.name = work.name
-    form.description = work.description
-    form.artist_id = work.artist_id
-    form.duration = work.duration
-    form.demanding = work.demanding
+    if (props.id) {
+      const work = await get(props.id)
+      form.name = work.name
+      form.description = work.description
+      form.artist_id = work.artist_id
+      form.duration = work.duration
+      form.demanding = work.demanding
+    }
+    ready.value = true
+  } catch (error) {
+    // The form stays hidden (an empty form saved over an existing work would
+    // erase it); the user gets the reason and is taken back to the search.
+    showToast(unattachedErrorMessage(error) ?? 'Das Formular konnte nicht geladen werden.', true)
+    await router.push({ name: 'repertoire-propriumworks-search' })
   }
-  ready.value = true
 })
 
 function toNullableNumber(value: number | string | null): number | null {
@@ -65,6 +72,8 @@ async function save(): Promise<void> {
     await router.push({ name: 'repertoire-propriumworks-show', params: { id: work.id } })
   } catch (error) {
     fieldErrors.value = extractApiErrors(error).fieldErrors
+    const unattached = unattachedErrorMessage(error)
+    if (unattached) showToast(unattached, true)
   } finally {
     submitting.value = false
   }

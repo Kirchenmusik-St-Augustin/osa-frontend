@@ -100,13 +100,29 @@ describe('VerifyEmailNoticeView', () => {
     expect(wrapper.text()).toContain('Die Überprüfungs-E-Mail wurde erneut versandt!')
   })
 
-  it('logs out and navigates to login when "Log out" is clicked', async () => {
+  it('logs out and navigates to login when "Abmelden" is clicked', async () => {
     mockLogout.mockResolvedValueOnce(undefined)
     const wrapper = mount(VerifyEmailNoticeView)
 
-    await wrapper.find('.card-footer a').trigger('click')
+    await wrapper.find('.card-footer button').trigger('click')
 
     expect(mockLogout).toHaveBeenCalled()
+    expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
+  })
+
+  it('spells the hint text correctly', () => {
+    const wrapper = mount(VerifyEmailNoticeView)
+
+    expect(wrapper.text()).toContain('durch Klick auf den Button erneut versandt werden')
+  })
+
+  it('still continues to login when the logout request itself fails', async () => {
+    mockLogout.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(VerifyEmailNoticeView)
+
+    await wrapper.find('.card-footer button').trigger('click')
+    await flushPromises()
+
     expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
   })
 })

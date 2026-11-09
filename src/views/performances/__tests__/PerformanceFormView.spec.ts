@@ -1,6 +1,6 @@
 import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import PerformanceFormView from '../PerformanceFormView.vue'
 import SearchTypeahead from '@/components/common/SearchTypeahead.vue'
 import QuantityEditor from '@/components/common/QuantityEditor.vue'
@@ -110,15 +110,15 @@ function findDeleteButton(wrapper: ReturnType<typeof mount>) {
 
 function findSetupToggle(wrapper: ReturnType<typeof mount>) {
   return wrapper
-    .findAll('div.c-pointer')
-    .find((div) => div.text().includes('Positionskonfiguration'))
+    .findAll('button')
+    .find((button) => button.text().includes('Positionskonfiguration'))
 }
 
 // The Ordinarium selector lives in a dialog that only exists while it is open,
 // and picking a work closes it again -- so every pick is: open, choose.
 async function openOrdinariumworkModal(wrapper: ReturnType<typeof mount>): Promise<void> {
   const trigger = wrapper
-    .findAll('small')
+    .findAll('button')
     .find((element) => element.text() === 'Ordinarium-Komposition auswählen')
   await trigger!.trigger('click')
 }
@@ -145,6 +145,69 @@ describe('PerformanceFormView -- create mode', () => {
     expect(findSaveButton(wrapper)?.attributes('disabled')).toBeDefined()
   })
 
+  it('refuses to save a cleared fee field instead of storing EUR 0', async () => {
+    mockGetOrdinariumwork.mockResolvedValueOnce({
+      id: '5',
+      name: 'Krönungsmesse',
+      description: null,
+      artist_id: '2',
+      artist_name: 'MOZART, Wolfgang',
+      duration: 25,
+      demanding: false,
+    })
+    mockGetSetup.mockResolvedValueOnce({ instruments: [], voices: [] })
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+    await pickOrdinariumwork(wrapper, '5')
+    await wrapper.find('select#performance-location').setValue('1')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Verrechnungsdetails'))
+      ?.trigger('click')
+
+    await wrapper.find('input[type="number"]').setValue('')
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Bitte einen Betrag angeben.')
+  })
+
+  it('falls back to the current month for an empty year/month query', async () => {
+    mockQuery = { year: '', month: '' }
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    const now = new Date()
+    const backLink = wrapper.findAllComponents(RouterLinkStub).at(-1)
+    expect(backLink?.props('to')).toEqual({
+      name: 'home',
+      query: { year: now.getFullYear(), month: now.getMonth() + 1 },
+    })
+  })
+
+  it('goes back to the calendar with a message when the form data cannot be loaded', async () => {
+    mockGetAvailableData.mockReset()
+    mockGetAvailableData.mockRejectedValueOnce(new Error('network'))
+    mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'home' })
+  })
+
+  it('tells the user when the chosen Ordinarium work cannot be loaded and keeps the dialog open', async () => {
+    mockGetOrdinariumwork.mockRejectedValueOnce(new Error('network'))
+    mockGetSetup.mockResolvedValueOnce({ instruments: [], voices: [] })
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    await pickOrdinariumwork(wrapper, '5')
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.find('.modal').exists()).toBe(true)
+  })
+
   it('never shows a delete button when creating', async () => {
     const wrapper = mount(PerformanceFormView, { props: {} })
     await flushPromises()
@@ -163,8 +226,8 @@ describe('PerformanceFormView -- create mode', () => {
       demanding: false,
     }
     const setup: OrdinariumworkSetup = {
-      instruments: [{ id: '10', name: 'Fagott', quantity: 2 }],
-      voices: [{ id: '20', name: 'Sopran', quantity: 4 }],
+      instruments: [{ id: '10', name: 'Fagott', quantity: 2, active: true }],
+      voices: [{ id: '20', name: 'Sopran', quantity: 4, active: true }],
     }
     mockGetOrdinariumwork.mockResolvedValueOnce(work)
     mockGetSetup.mockResolvedValueOnce(setup)
@@ -174,6 +237,7 @@ describe('PerformanceFormView -- create mode', () => {
     expect(wrapper.find('.modal').exists()).toBe(false)
     await openOrdinariumworkModal(wrapper)
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Ordinarium-Komposition suchen')
     await pickOrdinariumwork(wrapper, '5')
 
     expect(mockGetOrdinariumwork).toHaveBeenCalledWith('5')
@@ -286,7 +350,10 @@ describe('PerformanceFormView -- create mode', () => {
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('6')
     expect(instrumentsEditor.text()).toContain('auf derz. Werte zurücksetzen')
 
-    await instrumentsEditor.find('small.text-black-50').trigger('click')
+    const resetButton = instrumentsEditor
+      .findAll('button')
+      .find((button) => button.text() === 'auf derz. Werte zurücksetzen')
+    await resetButton?.trigger('click')
 
     // Must land on 5 (Nelsonmesse's own setup), not 2 (Krönungsmesse's
     // stale baseline) and not 6 (the just-added increment).
@@ -400,6 +467,125 @@ describe('PerformanceFormView -- edit mode', () => {
     expect(mockUpdate).toHaveBeenCalledWith('1', expect.objectContaining({ location_id: '1' }))
   })
 
+  it('saves every part of the performance with ids and numbers only, trimming empty texts to null', async () => {
+    mockGetFormData.mockResolvedValueOnce(
+      makeFormData({
+        artist_id: '9',
+        description: 'Festmesse',
+        extracost_amount: 25,
+        extracost_description: '',
+        setup: {
+          instruments: [{ id: '10', name: 'Fagott', quantity: 2, active: true }],
+          voices: [{ id: '20', name: 'Sopran', quantity: 4, active: true }],
+          choirjobs: [{ id: '30', name: 'Kantor', quantity: 1, active: true }],
+        },
+        proprium: [
+          {
+            propriumelement_id: '40',
+            propriumelement_name: 'Introitus',
+            propriumwork_id: '50',
+            propriumwork_name: 'Gregorianik I',
+            artist_name: 'HAYDN, Joseph',
+            description: null,
+            demanding: false,
+          },
+        ],
+        rehearsals: [
+          { schedule: '2026-07-30T19:00:00', comment: 'GP' },
+          { schedule: '2026-07-31T19:00:00', comment: '' },
+        ],
+      }),
+    )
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith('1', {
+      schedule: '2026-08-02T11:00:00',
+      location_id: '1',
+      ordinariumwork_id: '5',
+      artist_id: '9',
+      description: 'Festmesse',
+      choirjob_defaultfee: 35,
+      instrument_defaultfee: 60,
+      voice_defaultfee: 110,
+      extracost_amount: 25,
+      extracost_description: null,
+      setup: {
+        instruments: [{ id: '10', quantity: 2 }],
+        voices: [{ id: '20', quantity: 4 }],
+        choirjobs: [{ id: '30', quantity: 1 }],
+      },
+      proprium: [{ propriumelement_id: '40', propriumwork_id: '50' }],
+      rehearsals: [
+        { schedule: '2026-07-30T19:00:00', comment: 'GP' },
+        { schedule: '2026-07-31T19:00:00', comment: null },
+      ],
+    })
+    expect(mockPush).toHaveBeenCalledWith({ name: 'home', query: { year: 2026, month: 8 } })
+  })
+
+  it('sends no extra cost for a performance that has none', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData({ extracost_amount: null }))
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ extracost_amount: null }),
+    )
+  })
+
+  it('leaves the extra cost empty when its field was cleared', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData({ extracost_amount: 25 }))
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Verrechnungsdetails'))
+      ?.trigger('click')
+
+    const extracost = wrapper.findAll('input[type="number"]').at(-1)
+    await extracost?.setValue('')
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ extracost_amount: null }),
+    )
+  })
+
+  it('goes back to the calendar with a message when the performance cannot be loaded', async () => {
+    mockGetFormData.mockRejectedValueOnce(new Error('network'))
+    mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein Fehler ist aufgetreten.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'home' })
+  })
+
+  it('keeps the page and tells the user when removing the performance fails', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData({ deletable: true }))
+    mockRemove.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findDeleteButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein Fehler ist aufgetreten.', true)
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
   it('resetting after switching Ordinariumwork mid-edit still targets the persisted setup', async () => {
     mockGetFormData.mockResolvedValueOnce(
       makeFormData({
@@ -436,7 +622,10 @@ describe('PerformanceFormView -- edit mode', () => {
     expect(instrumentsEditor.find('td.text-end span').text()).toBe('9')
     expect(instrumentsEditor.text()).toContain('auf derz. Werte zurücksetzen')
 
-    await instrumentsEditor.find('small.text-black-50').trigger('click')
+    const resetButton = instrumentsEditor
+      .findAll('button')
+      .find((button) => button.text() === 'auf derz. Werte zurücksetzen')
+    await resetButton?.trigger('click')
 
     // Must land back on the persisted value (3), not the just-selected
     // Nelsonmesse's setup (9).
@@ -489,6 +678,7 @@ describe('PerformanceFormView -- Proprium editor', () => {
 
     await wrapper.find('.fa-plus-circle').trigger('click')
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Proprium-Komposition hinzufügen')
     // Only the Proprium dialog is open, so this is its own SearchTypeahead.
     await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '7')
     await flushPromises()
@@ -502,6 +692,21 @@ describe('PerformanceFormView -- Proprium editor', () => {
 
     await wrapper.find('.fa-trash').trigger('click')
     expect(wrapper.text()).not.toContain('Gregorianik I')
+  })
+})
+
+describe('PerformanceFormView -- Proprium work lookup failure', () => {
+  it('tells the user when the chosen Proprium work cannot be loaded', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData())
+    mockGetPropriumwork.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('.fa-plus-circle').trigger('click')
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '7')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 })
 

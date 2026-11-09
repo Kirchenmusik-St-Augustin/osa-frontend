@@ -1,13 +1,6 @@
-import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import RegisterView from '../RegisterView.vue'
-
-const mockPush = vi.fn().mockResolvedValue(undefined)
-vi.mock('vue-router', async (importOriginal) => ({
-  ...(await importOriginal<typeof VueRouter>()),
-  useRouter: () => ({ push: mockPush }),
-}))
 
 const mockRegister = vi.fn()
 vi.mock('@/stores/auth', () => ({
@@ -54,12 +47,21 @@ describe('RegisterView', () => {
     )
   })
 
-  it('registers and redirects home on success', async () => {
-    mockRegister.mockResolvedValueOnce(undefined)
+  it('gives browsers the autofill hints for the personal fields', () => {
+    const wrapper = mount(RegisterView)
+
+    expect(wrapper.find('input#givenname').attributes('autocomplete')).toBe('given-name')
+    expect(wrapper.find('input#surname').attributes('autocomplete')).toBe('family-name')
+    expect(wrapper.find('input#email').attributes('autocomplete')).toBe('username')
+    expect(wrapper.find('input#phone').attributes('autocomplete')).toBe('tel')
+  })
+
+  it('registers and replaces the form with the notice of the backend', async () => {
+    mockRegister.mockResolvedValueOnce('Bitte prüfe dein Postfach.')
     const wrapper = mount(RegisterView)
 
     await fillAndSubmit(wrapper)
-    await vi.waitFor(() => expect(mockPush).toHaveBeenCalled())
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Bitte prüfe dein Postfach.'))
 
     expect(mockRegister).toHaveBeenCalledWith({
       givenname: 'Max',
@@ -69,22 +71,18 @@ describe('RegisterView', () => {
       password: 'Passw0rd1',
       password_confirmation: 'Passw0rd1',
     })
-    expect(mockPush).toHaveBeenCalledWith({ name: 'home' })
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.find('[role="status"]').text()).toBe('Bitte prüfe dein Postfach.')
   })
 
-  it('shows per-field conflict errors on a 422', async () => {
+  it('shows per-field errors of a 422 and keeps the form', async () => {
     mockRegister.mockRejectedValueOnce({
       response: {
         data: {
           detail: [
             {
-              loc: ['body', 'givenname'],
-              msg: 'Die Kombination von Vor- und Nachname ist vergeben.',
-              type: 'value_error',
-            },
-            {
-              loc: ['body', 'surname'],
-              msg: 'Die Kombination von Vor- und Nachname ist vergeben.',
+              loc: ['body', 'phone'],
+              msg: 'Ungültige Telefonnummer',
               type: 'value_error',
             },
           ],
@@ -94,11 +92,10 @@ describe('RegisterView', () => {
     const wrapper = mount(RegisterView)
 
     await fillAndSubmit(wrapper)
-    await vi.waitFor(() =>
-      expect(wrapper.text()).toContain('Die Kombination von Vor- und Nachname ist vergeben.'),
-    )
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Ungültige Telefonnummer'))
 
-    expect(mockPush).not.toHaveBeenCalled()
+    expect(wrapper.find('form').exists()).toBe(true)
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
   })
 
   it('shows the password policy error returned by the backend', async () => {
@@ -108,7 +105,7 @@ describe('RegisterView', () => {
           detail: [
             {
               loc: ['body', 'password'],
-              msg: 'Das Passwort muss zwischen 8 und 16 Zeichen lang sein. Das Passwort muss mindestens eine Ziffer enthalten.',
+              msg: 'Das Passwort muss zwischen 10 und 64 Zeichen lang sein.',
               type: 'value_error',
             },
           ],
@@ -118,7 +115,6 @@ describe('RegisterView', () => {
     const wrapper = mount(RegisterView)
 
     await fillAndSubmit(wrapper)
-    await vi.waitFor(() => expect(wrapper.text()).toContain('zwischen 8 und 16 Zeichen'))
-    expect(wrapper.text()).toContain('mindestens eine Ziffer')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('zwischen 10 und 64 Zeichen'))
   })
 })

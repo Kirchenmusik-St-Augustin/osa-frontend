@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import FeeView from '../FeeView.vue'
 import type { Fee } from '@/composables/useFees'
+import { testId } from '@/__tests__/testId'
 
 const mockItems = ref<Fee[]>([])
 const mockFetchList = vi.fn(async () => {})
@@ -26,7 +27,7 @@ vi.mock('@/services/notifications', () => ({
 }))
 
 function makeFee(overrides: Partial<Fee> = {}): Fee {
-  return { id: 1, name: 'Chor', amount: 0, ...overrides }
+  return { id: testId(1), name: 'Chor', amount: 0, ...overrides }
 }
 
 beforeEach(() => {
@@ -42,8 +43,8 @@ describe('FeeView', () => {
   it('fetches and renders every fee as its own row, name and amount in separate cells', async () => {
     // The table cell is just the raw number, no "(amount,-)" wrapper.
     mockItems.value = [
-      makeFee({ id: 1, name: 'Chor', amount: 0 }),
-      makeFee({ id: 2, name: 'Instrumentalist', amount: 60 }),
+      makeFee({ id: testId(1), name: 'Chor', amount: 0 }),
+      makeFee({ id: testId(2), name: 'Instrumentalist', amount: 60 }),
     ]
     const wrapper = mount(FeeView)
     await flushPromises()
@@ -61,8 +62,8 @@ describe('FeeView', () => {
     // simply/robustly than trying to leave the arrival order untouched (see
     // FeeView.vue's docstring).
     mockItems.value = [
-      makeFee({ id: 1, name: 'Solist', amount: 130 }),
-      makeFee({ id: 2, name: 'Chor', amount: 0 }),
+      makeFee({ id: testId(1), name: 'Solist', amount: 130 }),
+      makeFee({ id: testId(2), name: 'Chor', amount: 0 }),
     ]
     const wrapper = mount(FeeView)
     await flushPromises()
@@ -72,9 +73,9 @@ describe('FeeView', () => {
 
   it('sorts ascending/descending by Name on repeated clicks, and resets to ascending when switching to Betrag', async () => {
     mockItems.value = [
-      makeFee({ id: 1, name: 'Solist', amount: 130 }),
-      makeFee({ id: 2, name: 'Chor', amount: 0 }),
-      makeFee({ id: 3, name: 'Instrumentalist', amount: 60 }),
+      makeFee({ id: testId(1), name: 'Solist', amount: 130 }),
+      makeFee({ id: testId(2), name: 'Chor', amount: 0 }),
+      makeFee({ id: testId(3), name: 'Instrumentalist', amount: 60 }),
     ]
     const wrapper = mount(FeeView)
     await flushPromises()
@@ -112,6 +113,7 @@ describe('FeeView', () => {
     expect(wrapper.find('.modal').exists()).toBe(false)
     await wrapper.find('button.btn-secondary.my-3').trigger('click')
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Bearbeiten')
 
     await wrapper.find('input#fee-name').setValue('Solist')
     await wrapper.find('input#fee-amount').setValue(80)
@@ -126,7 +128,7 @@ describe('FeeView', () => {
   })
 
   it('pre-fills the form and updates the existing fee when editing', async () => {
-    mockItems.value = [makeFee({ id: 7, name: 'Chor', amount: 0 })]
+    mockItems.value = [makeFee({ id: testId(7), name: 'Chor', amount: 0 })]
     mockSave.mockResolvedValueOnce(undefined)
     const wrapper = mount(FeeView)
     await flushPromises()
@@ -139,7 +141,7 @@ describe('FeeView', () => {
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(mockSave).toHaveBeenCalledWith(7, { name: 'Chor', amount: 15 })
+    expect(mockSave).toHaveBeenCalledWith(testId(7), { name: 'Chor', amount: 15 })
   })
 
   it('shows field-level validation errors under the matching input', async () => {
@@ -160,8 +162,109 @@ describe('FeeView', () => {
     expect(wrapper.find('.modal').exists()).toBe(true)
   })
 
+  it('offers the sort as a button in each header and announces the sort state', async () => {
+    mockItems.value = [
+      makeFee({ id: testId(1), name: 'Solist', amount: 130 }),
+      makeFee({ id: testId(2), name: 'Chor', amount: 0 }),
+    ]
+    const wrapper = mount(FeeView)
+    await flushPromises()
+
+    const headers = wrapper.findAll('th')
+    expect(headers[0]!.find('button').text()).toBe('Name')
+    expect(headers[1]!.find('button').text()).toBe('Betrag')
+    expect(headers[0]!.attributes('aria-sort')).toBe('ascending')
+    expect(headers[1]!.attributes('aria-sort')).toBe('none')
+
+    await headers[0]!.find('button').trigger('click')
+    expect(headers[0]!.attributes('aria-sort')).toBe('descending')
+    expect(rows(wrapper).map((row) => row.findAll('td')[0]?.text())).toEqual(['Solist', 'Chor'])
+
+    await headers[1]!.find('button').trigger('click')
+    expect(headers[0]!.attributes('aria-sort')).toBe('none')
+    expect(headers[1]!.attributes('aria-sort')).toBe('ascending')
+  })
+
+  it('tells the user when the fees cannot be loaded', async () => {
+    mockFetchList.mockRejectedValueOnce({ response: { data: { detail: 'Gesperrt.' } } })
+    mount(FeeView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Gesperrt.', true)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockFetchList.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(FeeView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Die Tarife konnten nicht geladen werden.', true)
+  })
+
+  it('tells the user when saving fails without a field-level reason', async () => {
+    mockSave.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(FeeView)
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+
+    await wrapper.find('input#fee-name').setValue('Chor')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.find('.modal').exists()).toBe(true)
+  })
+
+  it('raises no toast for an error that is shown under a field', async () => {
+    mockSave.mockRejectedValueOnce({
+      response: {
+        data: { detail: [{ loc: ['body', 'name'], msg: 'Der Name ist bereits vergeben.' }] },
+      },
+    })
+    const wrapper = mount(FeeView)
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+
+    await wrapper.find('input#fee-name').setValue('Chor')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).not.toHaveBeenCalled()
+  })
+
+  it('asks for an amount instead of sending an empty one', async () => {
+    const wrapper = mount(FeeView)
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+
+    await wrapper.find('input#fee-name').setValue('Solist')
+    await wrapper.find('input#fee-amount').setValue('')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockSave).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Bitte einen Betrag angeben.')
+    expect(wrapper.find('.modal').exists()).toBe(true)
+  })
+
+  it('accepts an amount of zero', async () => {
+    mockSave.mockResolvedValueOnce(undefined)
+    const wrapper = mount(FeeView)
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+
+    await wrapper.find('input#fee-name').setValue('Chor')
+    await wrapper.find('input#fee-amount').setValue(0)
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockSave).toHaveBeenCalledWith(null, { name: 'Chor', amount: 0 })
+  })
+
   it('deletes a fee after the user confirms, using the generic "Element" confirm/toast copy', async () => {
-    mockItems.value = [makeFee({ id: 3 })]
+    mockItems.value = [makeFee({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(true)
     mockRemove.mockResolvedValueOnce(undefined)
     const wrapper = mount(FeeView)
@@ -174,12 +277,44 @@ describe('FeeView', () => {
     // gelöscht" copy is used here, not "Honorar" -- same generic wording the
     // Coreelement pages already use.
     expect(mockConfirmAction).toHaveBeenCalledWith('Soll das Element wirklich gelöscht werden?')
-    expect(mockRemove).toHaveBeenCalledWith(3)
+    expect(mockRemove).toHaveBeenCalledWith(testId(3))
     expect(mockShowToast).toHaveBeenCalledWith('Element gelöscht')
   })
 
+  it('tells the user when deleting fails without a reason of its own', async () => {
+    mockItems.value = [makeFee({ id: testId(3) })]
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(FeeView)
+    await flushPromises()
+
+    await wrapper.find('button[title="löschen"]').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
+  it('sorts by amount descending on a second click and keeps equal entries in their order', async () => {
+    mockItems.value = [
+      makeFee({ id: testId(1), name: 'Erster', amount: 60 }),
+      makeFee({ id: testId(2), name: 'Zweiter', amount: 60 }),
+      makeFee({ id: testId(3), name: 'Dritter', amount: 130 }),
+    ]
+    const wrapper = mount(FeeView)
+    await flushPromises()
+    const amountHeader = wrapper.findAll('th')[1]!
+    const names = () => rows(wrapper).map((row) => row.findAll('td')[0]?.text())
+
+    await amountHeader.trigger('click')
+    expect(names()).toEqual(['Erster', 'Zweiter', 'Dritter'])
+
+    await amountHeader.trigger('click')
+    expect(names()).toEqual(['Dritter', 'Erster', 'Zweiter'])
+    expect(amountHeader.find('.fa-caret-down').exists()).toBe(true)
+  })
+
   it('does not delete when the user cancels the confirmation', async () => {
-    mockItems.value = [makeFee({ id: 3 })]
+    mockItems.value = [makeFee({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(false)
     const wrapper = mount(FeeView)
     await flushPromises()

@@ -25,14 +25,24 @@ const currentTarget = { year: now.getFullYear(), month: now.getMonth() + 1 }
   <div class="text-center mb-4">
     <div class="h4 mb-4">{{ formatMonthYear(year, month) }}</div>
     <div class="mb-3">
-      <RouterLink :to="{ name: routeName, query: previousTarget }"
-        ><i class="fas fa-arrow-left"></i
+      <RouterLink
+        :to="{ name: routeName, query: previousTarget }"
+        title="Vormonat"
+        aria-label="Vormonat"
+        ><i class="fas fa-arrow-left" aria-hidden="true"></i
       ></RouterLink>
-      <RouterLink :to="{ name: routeName, query: currentTarget }" class="px-4"
-        ><i class="fas fa-home"></i
+      <RouterLink
+        :to="{ name: routeName, query: currentTarget }"
+        class="px-4"
+        title="Aktueller Monat"
+        aria-label="Aktueller Monat"
+        ><i class="fas fa-home" aria-hidden="true"></i
       ></RouterLink>
-      <RouterLink :to="{ name: routeName, query: nextTarget }"
-        ><i class="fas fa-arrow-right"></i
+      <RouterLink
+        :to="{ name: routeName, query: nextTarget }"
+        title="Folgemonat"
+        aria-label="Folgemonat"
+        ><i class="fas fa-arrow-right" aria-hidden="true"></i
       ></RouterLink>
     </div>
   </div>

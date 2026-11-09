@@ -3,6 +3,11 @@ import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import RequestsAndBookingsView from '../RequestsAndBookingsView.vue'
 import type { PerformanceRequestsAndBookings } from '@/composables/useBookings'
 
+const mockShowToast = vi.fn()
+vi.mock('@/services/notifications', () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
+}))
+
 const mockGetRequestsAndBookings = vi.fn()
 vi.mock('@/composables/useBookings', () => ({
   useBookings: () => ({ getRequestsAndBookings: mockGetRequestsAndBookings }),
@@ -54,6 +59,15 @@ describe('RequestsAndBookingsView', () => {
     expect(wrapper.findAll('tbody tr')).toHaveLength(2)
   })
 
+  it('tells the user when the entries cannot be loaded instead of the "no entries" text', async () => {
+    mockGetRequestsAndBookings.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(RequestsAndBookingsView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.text()).not.toContain('Derzeit liegen keine Buchungen')
+  })
+
   it('shows a fallback message when there are no entries', async () => {
     mockGetRequestsAndBookings.mockResolvedValueOnce(makePage({ entries: [] }))
     const wrapper = mount(RequestsAndBookingsView, { props: { id: '1' } })
@@ -76,5 +90,18 @@ describe('RequestsAndBookingsView', () => {
     for (const link of backLinks) {
       expect(link.props('to')).toEqual({ name: 'home', query: { year: 2026, month: 8 } })
     }
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGetRequestsAndBookings.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(RequestsAndBookingsView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Die Anfragen und Buchungen konnten nicht geladen werden.',
+      true,
+    )
   })
 })

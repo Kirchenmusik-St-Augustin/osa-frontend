@@ -2,7 +2,9 @@
 import { computed, onMounted, ref } from 'vue'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 import { useBookings, type PerformanceBilling } from '@/composables/useBookings'
+import { extractApiErrors } from '@/services/apiErrors'
 import { parseWallClock } from '@/services/dateFormat'
+import { showToast } from '@/services/notifications'
 
 // No past-lock (see booking_service.get_billing's docstring), printable via
 // window.print().
@@ -12,7 +14,14 @@ const { getBilling } = useBookings()
 const performance = ref<PerformanceBilling | null>(null)
 
 onMounted(async () => {
-  performance.value = await getBilling(props.id)
+  try {
+    performance.value = await getBilling(props.id)
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Die Abrechnung konnte nicht geladen werden.',
+      true,
+    )
+  }
 })
 
 // "zurück" goes to the calendar month of the performance's own schedule,

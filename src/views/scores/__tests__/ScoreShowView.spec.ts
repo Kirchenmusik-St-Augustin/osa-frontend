@@ -4,6 +4,11 @@ import ScoreShowView from '../ScoreShowView.vue'
 import ScoreFieldsComponent from '@/components/scores/ScoreFieldsComponent.vue'
 import type { Score } from '@/composables/useScores'
 
+const mockShowToast = vi.fn()
+vi.mock('@/services/notifications', () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
+}))
+
 const mockGet = vi.fn()
 const mockGetFieldsConfig = vi.fn()
 vi.mock('@/composables/useScores', () => ({
@@ -36,6 +41,25 @@ describe('ScoreShowView', () => {
     const fieldsComponent = wrapper.findComponent(ScoreFieldsComponent)
     expect(fieldsComponent.props('readonly')).toBe(true)
     expect(fieldsComponent.props('modelValue')).toEqual({ werk: 'Requiem', kasten: 'A' })
+  })
+
+  it('tells the user when the score cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    const wrapper = mount(ScoreShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+    expect(wrapper.findComponent(ScoreFieldsComponent).exists()).toBe(false)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGet.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(ScoreShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Der Eintrag konnte nicht geladen werden.', true)
   })
 
   it('links "bearbeiten" to the edit route and "Zur Suche" to the search route', async () => {

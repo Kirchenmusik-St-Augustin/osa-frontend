@@ -11,7 +11,7 @@ import {
   type AvailablePositions,
   type PositionEntry,
 } from '@/composables/useOrdinariumworks'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id?: string }>()
@@ -41,24 +41,31 @@ const submitting = ref(false)
 const ready = ref(false)
 
 onMounted(async () => {
-  const [composerArtists, availablePositions] = await Promise.all([
-    listComposers(),
-    getAvailablePositions(),
-  ])
-  artists.value = composerArtists
-  available.value = availablePositions
+  try {
+    const [composerArtists, availablePositions] = await Promise.all([
+      listComposers(),
+      getAvailablePositions(),
+    ])
+    artists.value = composerArtists
+    available.value = availablePositions
 
-  if (props.id) {
-    const [work, setup] = await Promise.all([get(props.id), getSetup(props.id)])
-    form.name = work.name
-    form.description = work.description
-    form.artist_id = work.artist_id
-    form.duration = work.duration
-    form.demanding = work.demanding
-    form.setup.instruments = setup.instruments
-    form.setup.voices = setup.voices
+    if (props.id) {
+      const [work, setup] = await Promise.all([get(props.id), getSetup(props.id)])
+      form.name = work.name
+      form.description = work.description
+      form.artist_id = work.artist_id
+      form.duration = work.duration
+      form.demanding = work.demanding
+      form.setup.instruments = setup.instruments
+      form.setup.voices = setup.voices
+    }
+    ready.value = true
+  } catch (error) {
+    // The form stays hidden (an empty form saved over an existing work would
+    // erase it); the user gets the reason and is taken back to the search.
+    showToast(unattachedErrorMessage(error) ?? 'Das Formular konnte nicht geladen werden.', true)
+    await router.push({ name: 'repertoire-ordinariumworks-search' })
   }
-  ready.value = true
 })
 
 function toNullableNumber(value: number | string | null): number | null {
@@ -90,6 +97,8 @@ async function save(): Promise<void> {
     await router.push({ name: 'repertoire-ordinariumworks-show', params: { id: work.id } })
   } catch (error) {
     fieldErrors.value = extractApiErrors(error).fieldErrors
+    const unattached = unattachedErrorMessage(error)
+    if (unattached) showToast(unattached, true)
   } finally {
     submitting.value = false
   }

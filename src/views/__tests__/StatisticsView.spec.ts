@@ -66,6 +66,16 @@ describe('StatisticsView', () => {
     expect(wrapper.text()).toContain('214')
   })
 
+  it('omits the email-output row when the server withholds the mail volume', async () => {
+    mockGet.mockResolvedValueOnce(makeStats({ email: null }))
+    const wrapper = mount(StatisticsView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Benutzer')
+    expect(wrapper.text()).not.toContain('E-Mail-Output')
+    expect(wrapper.findAll('.badge')).toHaveLength(5)
+  })
+
   it('wraps every badge in an .h3 (larger badge text, not the default badge size)', async () => {
     mockGet.mockResolvedValueOnce(makeStats())
     const wrapper = mount(StatisticsView)

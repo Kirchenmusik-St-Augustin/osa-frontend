@@ -202,12 +202,12 @@ function restoreManualOrder(previous: CastMember[], current: CastMember[]): Cast
 // Turning auto-sort back OFF must restore the manual order it had right
 // before auto-sort was switched ON -- not just leave the list in whatever
 // auto-sorted order it last had (that was the original, wrong behavior:
-// confirmed live that toggling on/off a list with no assigned voices left
+// observed behaviour: toggling on/off a list with no assigned voices left
 // it fully alphabetized instead of reverting).
 //
 // This capture/restore deliberately does NOT live in a separate
 // watch(autoSort, ...) callback. Vue's watcher-flush ordering is an
-// implementation detail, not a stable contract -- live testing showed the
+// implementation detail, not a stable contract -- the
 // groupedCast-sync watcher above (which reactively emits the sorted array
 // and round-trips it back down as a new `cast` prop) can run and settle
 // BEFORE a sibling watcher on the same `autoSort` ref gets its turn,
@@ -274,22 +274,37 @@ function handleAutoSortToggle(value: boolean): void {
                 class="fas fa-grip-vertical drag-handle c-grab p-1 me-2"
                 title="ziehen zum Sortieren (am Handy: kurz gedrückt halten)"
               ></i>
-              <i class="fas fa-times c-pointer" title="entfernen" @click="remove(element.id)"></i>
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-reset"
+                title="entfernen"
+                aria-label="entfernen"
+                @click="remove(element.id)"
+              >
+                <i class="fas fa-times" aria-hidden="true"></i>
+              </button>
 
               <template v-if="canReorder">
-                <i
-                  v-if="index < cast.length - 1"
-                  class="fas fa-arrow-down mx-1 c-pointer"
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 mx-1 text-reset"
+                  title="nach unten"
+                  aria-label="nach unten"
+                  :disabled="index >= cast.length - 1"
                   @click="move(index, 'down')"
-                ></i>
-                <i v-else class="fas fa-arrow-down mx-1" style="color: #ccc"></i>
-
-                <i
-                  v-if="index > 0"
-                  class="fas fa-arrow-up c-pointer"
+                >
+                  <i class="fas fa-arrow-down" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 text-reset"
+                  title="nach oben"
+                  aria-label="nach oben"
+                  :disabled="index <= 0"
                   @click="move(index, 'up')"
-                ></i>
-                <i v-else class="fas fa-arrow-up" style="color: #ccc"></i>
+                >
+                  <i class="fas fa-arrow-up" aria-hidden="true"></i>
+                </button>
               </template>
             </span>
             <span>{{ element.name }} ({{ element.fee }})</span>
@@ -308,11 +323,15 @@ function handleAutoSortToggle(value: boolean): void {
         >
           <small :class="row.index < required ? ['text-success', 'fw-bold'] : ['text-info']">
             <span class="me-2">
-              <i
-                class="fas fa-times c-pointer"
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-reset"
                 title="entfernen"
+                aria-label="entfernen"
                 @click="remove(row.member.id)"
-              ></i>
+              >
+                <i class="fas fa-times" aria-hidden="true"></i>
+              </button>
             </span>
             <span>{{ row.member.name }} ({{ row.member.fee }})</span>
           </small>
@@ -325,11 +344,15 @@ function handleAutoSortToggle(value: boolean): void {
       <div v-for="item in notBooked" :key="`notBooked_${item.id}`">
         <small class="text-danger">
           <span class="me-2">
-            <i
-              class="fas fa-times c-pointer"
+            <button
+              type="button"
+              class="btn btn-link btn-sm p-0 text-reset"
               title="entfernen"
+              aria-label="entfernen"
               @click="removeNotBooked(item.id)"
-            ></i>
+            >
+              <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
           </span>
           <span>{{ item.name }}</span>
         </small>

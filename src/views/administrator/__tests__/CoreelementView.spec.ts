@@ -4,6 +4,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import CoreelementView from '../CoreelementView.vue'
 import type { Coreelement } from '@/composables/useCoreelements'
 import type { CoreelementType } from '@/constants/coreelementTypes'
+import { testId } from '@/__tests__/testId'
 
 const mockItems = ref<Coreelement[]>([])
 const mockFetchList = vi.fn(async () => {})
@@ -30,7 +31,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeItem(overrides: Partial<Coreelement> = {}): Coreelement {
   return {
-    id: 1,
+    id: testId(1),
     name: 'Fagott',
     order: 1,
     label: null,
@@ -81,7 +82,10 @@ describe('CoreelementView', () => {
   })
 
   it('renders every item name in the list', async () => {
-    mockItems.value = [makeItem({ id: 1, name: 'Fagott' }), makeItem({ id: 2, name: 'Oboe' })]
+    mockItems.value = [
+      makeItem({ id: testId(1), name: 'Fagott' }),
+      makeItem({ id: testId(2), name: 'Oboe' }),
+    ]
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
     await flushPromises()
 
@@ -91,8 +95,8 @@ describe('CoreelementView', () => {
 
   it('marks an archived item with a badge, but not an active one', async () => {
     mockItems.value = [
-      makeItem({ id: 1, name: 'Fagott', active: true }),
-      makeItem({ id: 2, name: 'Serpent', active: false }),
+      makeItem({ id: testId(1), name: 'Fagott', active: true }),
+      makeItem({ id: testId(2), name: 'Serpent', active: false }),
     ]
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
     await flushPromises()
@@ -152,6 +156,7 @@ describe('CoreelementView', () => {
     expect(wrapper.find('.modal').exists()).toBe(false)
     await wrapper.find('button.btn-secondary.my-3').trigger('click')
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Bearbeiten')
     await wrapper.find('input#coreelement-name').setValue('Fagott')
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
@@ -178,8 +183,53 @@ describe('CoreelementView', () => {
     })
   })
 
+  it('treats an existing instrument without a stored active flag as active', async () => {
+    mockItems.value = [makeItem({ id: testId(7), name: 'Fagott', active: null })]
+    mockSave.mockResolvedValueOnce(undefined)
+    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
+    await flushPromises()
+
+    await wrapper.find('button[title="bearbeiten"]').trigger('click')
+    expect((wrapper.find('input#coreelement-active').element as HTMLInputElement).checked).toBe(
+      true,
+    )
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockSave).toHaveBeenCalledWith(testId(7), { name: 'Fagott', active: true })
+  })
+
+  it('tells the user when deleting fails without a reason of its own', async () => {
+    mockItems.value = [makeItem({ id: testId(3) })]
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(CoreelementView, { props: { type: 'role' } })
+    await flushPromises()
+
+    await wrapper.find('button[title="löschen"]').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
+  it('moves an item down when the down-arrow is clicked', async () => {
+    mockItems.value = [
+      makeItem({ id: testId(1), name: 'Erstes' }),
+      makeItem({ id: testId(2), name: 'Zweites' }),
+    ]
+    mockMove.mockResolvedValueOnce(undefined)
+    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
+    await flushPromises()
+
+    const rows = wrapper.findAll('.list-group-item')
+    await rows[0]?.find('button[title="nach unten bewegen"]').trigger('click')
+    await flushPromises()
+
+    expect(mockMove).toHaveBeenCalledWith(testId(1), 'down')
+  })
+
   it('unchecking "Aktiv" archives an existing instrument on save', async () => {
-    mockItems.value = [makeItem({ id: 7, name: 'Fagott', active: true })]
+    mockItems.value = [makeItem({ id: testId(7), name: 'Fagott', active: true })]
     mockSave.mockResolvedValueOnce(undefined)
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
     await flushPromises()
@@ -191,11 +241,11 @@ describe('CoreelementView', () => {
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(mockSave).toHaveBeenCalledWith(7, { name: 'Fagott', active: false })
+    expect(mockSave).toHaveBeenCalledWith(testId(7), { name: 'Fagott', active: false })
   })
 
   it('pre-fills the form and updates the existing item when editing', async () => {
-    mockItems.value = [makeItem({ id: 7, name: 'Fagott' })]
+    mockItems.value = [makeItem({ id: testId(7), name: 'Fagott' })]
     mockSave.mockResolvedValueOnce(undefined)
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
     await flushPromises()
@@ -209,7 +259,7 @@ describe('CoreelementView', () => {
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(mockSave).toHaveBeenCalledWith(7, { name: 'Kontrafagott', active: true })
+    expect(mockSave).toHaveBeenCalledWith(testId(7), { name: 'Kontrafagott', active: true })
   })
 
   it('shows field-level validation errors under the matching input', async () => {
@@ -228,8 +278,50 @@ describe('CoreelementView', () => {
     expect(wrapper.find('.modal').exists()).toBe(true)
   })
 
+  it('tells the user when saving fails without a field-level error', async () => {
+    mockSave.mockRejectedValueOnce({ response: { status: 500, data: {} } })
+    const wrapper = await mountWithCreateModalOpen('instrument')
+
+    await wrapper.find('input#coreelement-name').setValue('Fagott')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.find('.modal').exists()).toBe(true)
+  })
+
+  it('tells the user about an error for the whole request, which has no input of its own', async () => {
+    mockSave.mockRejectedValueOnce({
+      response: {
+        data: { detail: [{ loc: ['body', 'general'], msg: 'Speichern nicht möglich.' }] },
+      },
+    })
+    const wrapper = await mountWithCreateModalOpen('instrument')
+
+    await wrapper.find('input#coreelement-name').setValue('Fagott')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Speichern nicht möglich.', true)
+  })
+
+  it('does not add a toast when the error is shown under a field', async () => {
+    mockSave.mockRejectedValueOnce({
+      response: {
+        data: { detail: [{ loc: ['body', 'name'], msg: 'Der Name ist bereits vergeben.' }] },
+      },
+    })
+    const wrapper = await mountWithCreateModalOpen('instrument')
+
+    await wrapper.find('input#coreelement-name').setValue('Fagott')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).not.toHaveBeenCalled()
+  })
+
   it('deletes an item after the user confirms', async () => {
-    mockItems.value = [makeItem({ id: 3, name: 'Fagott' })]
+    mockItems.value = [makeItem({ id: testId(3), name: 'Fagott' })]
     mockConfirmAction.mockResolvedValueOnce(true)
     mockRemove.mockResolvedValueOnce(undefined)
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
@@ -238,12 +330,12 @@ describe('CoreelementView', () => {
     await wrapper.find('button[title="löschen"]').trigger('click')
     await flushPromises()
 
-    expect(mockRemove).toHaveBeenCalledWith(3)
+    expect(mockRemove).toHaveBeenCalledWith(testId(3))
     expect(mockShowToast).toHaveBeenCalledWith('Element gelöscht')
   })
 
   it('does not delete when the user cancels the confirmation', async () => {
-    mockItems.value = [makeItem({ id: 3 })]
+    mockItems.value = [makeItem({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(false)
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
     await flushPromises()
@@ -255,7 +347,7 @@ describe('CoreelementView', () => {
   })
 
   it('shows the backend\'s "in use" message as an error toast', async () => {
-    mockItems.value = [makeItem({ id: 3 })]
+    mockItems.value = [makeItem({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(true)
     mockRemove.mockRejectedValueOnce({
       response: {
@@ -282,7 +374,10 @@ describe('CoreelementView', () => {
   })
 
   it('disables the up-arrow for the first item and the down-arrow for the last', async () => {
-    mockItems.value = [makeItem({ id: 1, name: 'Erstes' }), makeItem({ id: 2, name: 'Letztes' })]
+    mockItems.value = [
+      makeItem({ id: testId(1), name: 'Erstes' }),
+      makeItem({ id: testId(2), name: 'Letztes' }),
+    ]
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
     await flushPromises()
 
@@ -295,7 +390,10 @@ describe('CoreelementView', () => {
   })
 
   it('moves an item up when the up-arrow is clicked', async () => {
-    mockItems.value = [makeItem({ id: 1, name: 'Erstes' }), makeItem({ id: 2, name: 'Zweites' })]
+    mockItems.value = [
+      makeItem({ id: testId(1), name: 'Erstes' }),
+      makeItem({ id: testId(2), name: 'Zweites' }),
+    ]
     mockMove.mockResolvedValueOnce(undefined)
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
     await flushPromises()
@@ -304,11 +402,11 @@ describe('CoreelementView', () => {
     await rows[1]?.find('button[title="nach oben bewegen"]').trigger('click')
     await flushPromises()
 
-    expect(mockMove).toHaveBeenCalledWith(2, 'up')
+    expect(mockMove).toHaveBeenCalledWith(testId(2), 'up')
   })
 
   it('shows an error toast when move fails', async () => {
-    mockItems.value = [makeItem({ id: 1 }), makeItem({ id: 2 })]
+    mockItems.value = [makeItem({ id: testId(1) }), makeItem({ id: testId(2) })]
     mockMove.mockRejectedValueOnce(new Error('boom'))
     const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
     await flushPromises()

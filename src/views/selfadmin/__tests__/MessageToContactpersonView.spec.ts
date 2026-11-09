@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import MessageToContactpersonView from '../MessageToContactpersonView.vue'
 import type { RoleWithContacts } from '@/composables/useSupport'
+import { testId } from '@/__tests__/testId'
 
 const mockGetContactpersons = vi.fn()
 const mockSendMessageToContactperson = vi.fn()
@@ -20,26 +21,29 @@ vi.mock('@/services/notifications', () => ({
 }))
 
 let mockKillSwitchActive = false
+let mockUserLoaded = true
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
-    user: { email_kill_switch: { active: mockKillSwitchActive, period_days: 30, threshold: 100 } },
+    user: mockUserLoaded
+      ? { email_kill_switch: { active: mockKillSwitchActive, period_days: 30, threshold: 100 } }
+      : null,
   }),
 }))
 
 function makeRoles(): RoleWithContacts[] {
   return [
     {
-      id: 1,
+      id: testId(1),
       name: 'planner',
       label: 'Planung',
       description: 'Plant den Dienstplan.',
       users: [
-        { id: 5, givenname: 'Franz', surname: 'HUBER', has_email: true },
-        { id: 6, givenname: 'Anna', surname: 'MAYER', has_email: false },
+        { id: testId(5), givenname: 'Franz', surname: 'HUBER', has_email: true },
+        { id: testId(6), givenname: 'Anna', surname: 'MAYER', has_email: false },
       ],
     },
     {
-      id: 2,
+      id: testId(2),
       name: 'billing',
       label: 'Abrechnung',
       description: 'Erstellt die Gagenabrechnung.',
@@ -52,6 +56,7 @@ beforeEach(() => {
   vi.resetAllMocks()
   mockConfirmAction.mockResolvedValue(true)
   mockKillSwitchActive = false
+  mockUserLoaded = true
 })
 
 describe('MessageToContactpersonView', () => {
@@ -96,11 +101,38 @@ describe('MessageToContactpersonView', () => {
     const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
     expect(sendButton?.attributes('disabled')).toBeDefined()
 
-    await wrapper.find('select').setValue('5')
+    await wrapper.find('select').setValue(testId(5))
     await wrapper.find('textarea').setValue('Hi')
     expect(sendButton?.attributes('disabled')).toBeDefined()
 
     await wrapper.find('textarea').setValue('Hallo!')
+    expect(sendButton?.attributes('disabled')).toBeUndefined()
+  })
+
+  it.each(['   ', '  ab  ', '\n\n\n'])(
+    'keeps send disabled for the blank or too short message %j',
+    async (text) => {
+      mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+      const wrapper = mount(MessageToContactpersonView)
+      await flushPromises()
+
+      await wrapper.find('select').setValue(testId(5))
+      await wrapper.find('textarea').setValue(text)
+
+      const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
+      expect(sendButton?.attributes('disabled')).toBeDefined()
+    },
+  )
+
+  it('enables send for a message of three real characters between blanks', async () => {
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+
+    await wrapper.find('select').setValue(testId(5))
+    await wrapper.find('textarea').setValue('  abc  ')
+
+    const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
     expect(sendButton?.attributes('disabled')).toBeUndefined()
   })
 
@@ -110,13 +142,13 @@ describe('MessageToContactpersonView', () => {
     const wrapper = mount(MessageToContactpersonView)
     await flushPromises()
 
-    await wrapper.find('select').setValue('5')
+    await wrapper.find('select').setValue(testId(5))
     await wrapper.find('textarea').setValue('Bitte um Rückruf.')
     const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
     await sendButton?.trigger('click')
     await flushPromises()
 
-    expect(mockSendMessageToContactperson).toHaveBeenCalledWith(5, 'Bitte um Rückruf.')
+    expect(mockSendMessageToContactperson).toHaveBeenCalledWith(testId(5), 'Bitte um Rückruf.')
     expect(mockShowToast).toHaveBeenCalledWith('Nachricht versandt.')
     expect(wrapper.find('textarea').element.value).toBe('')
   })
@@ -127,7 +159,7 @@ describe('MessageToContactpersonView', () => {
     const wrapper = mount(MessageToContactpersonView)
     await flushPromises()
 
-    await wrapper.find('select').setValue('5')
+    await wrapper.find('select').setValue(testId(5))
     await wrapper.find('textarea').setValue('Bitte um Rückruf.')
     const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
     await sendButton?.trigger('click')
@@ -142,13 +174,82 @@ describe('MessageToContactpersonView', () => {
     const wrapper = mount(MessageToContactpersonView)
     await flushPromises()
 
-    await wrapper.find('select').setValue('5')
+    await wrapper.find('select').setValue(testId(5))
     await wrapper.find('textarea').setValue('Bitte um Rückruf.')
     const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
     await sendButton?.trigger('click')
     await flushPromises()
 
-    expect(mockShowToast).toHaveBeenCalledWith('Nachricht konnte nicht versandt werden.', true)
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
+  it('keeps the typed message after a failed send so it can be sent again', async () => {
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    mockSendMessageToContactperson.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+
+    await wrapper.find('select').setValue(testId(5))
+    await wrapper.find('textarea').setValue('Bitte um Rückruf.')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'senden')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('textarea').element.value).toBe('Bitte um Rückruf.')
+  })
+
+  const fieldOnlyError = {
+    response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+  }
+
+  it('falls back to fixed texts when loading or sending fails with a field-only answer', async () => {
+    mockGetContactpersons.mockRejectedValueOnce(fieldOnlyError)
+    mount(MessageToContactpersonView)
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith(
+      'Die Ansprechpersonen konnten nicht geladen werden.',
+      true,
+    )
+
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    mockSendMessageToContactperson.mockRejectedValueOnce(fieldOnlyError)
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+    await wrapper.find('select').setValue(testId(5))
+    await wrapper.find('textarea').setValue('Bitte um Rückruf.')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'senden')
+      ?.trigger('click')
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith('Nachricht konnte nicht versandt werden.', true)
+  })
+
+  it('still offers the message form while the profile is not loaded yet', async () => {
+    mockUserLoaded = false
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+
+    expect(wrapper.find('textarea').exists()).toBe(true)
+  })
+
+  it('shows an empty description for a role that has none', async () => {
+    mockGetContactpersons.mockResolvedValueOnce([{ ...makeRoles()[0]!, description: null }])
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+
+    expect(wrapper.find('.role-description').text()).toBe('')
+  })
+
+  it('tells the member when the contact persons cannot be loaded', async () => {
+    mockGetContactpersons.mockRejectedValueOnce({ response: { data: { detail: 'Gesperrt.' } } })
+    mount(MessageToContactpersonView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Gesperrt.', true)
   })
 
   it('replaces the message-textarea+senden block with the kill-switch card while active, keeping the dropdown and description cards visible', async () => {

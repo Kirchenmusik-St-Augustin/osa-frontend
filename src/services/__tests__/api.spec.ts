@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import type { InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 
@@ -41,6 +41,11 @@ beforeEach(() => {
   mockCurrentRoute.value = { name: 'home', fullPath: '/' }
 })
 
+// Also runs when an assertion fails, so a stubbed env never leaks into later tests.
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
+
 describe('api client', () => {
   it('is configured with the default same-origin base URL', async () => {
     // Isolated from the module-level `api` import above on purpose: this
@@ -55,12 +60,23 @@ describe('api client', () => {
     const { default: freshApi } = await import('../api')
 
     expect(freshApi.defaults.baseURL).toBe('/api')
-
-    vi.unstubAllEnvs()
   })
 
   it('sends credentials so same-origin auth cookies are included', () => {
     expect(api.defaults.withCredentials).toBe(true)
+  })
+
+  it('asks for JSON answers and labels request bodies as JSON', async () => {
+    let capturedConfig: InternalAxiosRequestConfig | undefined
+    api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      capturedConfig = config
+      return makeResponse(config)
+    })
+
+    await api.post('/ping', { name: 'value' })
+
+    expect(capturedConfig?.headers.get('Accept')).toBe('application/json')
+    expect(capturedConfig?.headers.get('Content-Type')).toBe('application/json')
   })
 })
 
@@ -115,6 +131,31 @@ describe('api (axios interceptors)', () => {
     expect(protectedCalls).toBe(2)
   })
 
+  it.each([403, 404, 422, 500])(
+    'keeps the new session when the retried request fails with %i after a successful refresh',
+    async (status) => {
+      const authStore = useAuthStore()
+      authStore.$patch({ accessToken: 'expired-token' })
+      let protectedCalls = 0
+
+      api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+        if (config.url === '/auth/refresh') {
+          return makeResponse(config, { access_token: 'new-token' })
+        }
+        protectedCalls++
+        if (protectedCalls === 1) throw makeError(config, 401, { detail: 'expired' })
+        throw makeError(config, status, { detail: 'not for you' })
+      })
+
+      await expect(api.get('/protected')).rejects.toMatchObject({
+        response: { status },
+      })
+
+      expect(authStore.accessToken).toBe('new-token')
+      expect(mockPush).not.toHaveBeenCalled()
+    },
+  )
+
   it('clears auth and redirects to login when the refresh call itself fails', async () => {
     const authStore = useAuthStore()
     authStore.$patch({ accessToken: 'expired-token' })
@@ -140,9 +181,39 @@ describe('api (axios interceptors)', () => {
       throw makeError(config, 401, { detail: 'no session' })
     })
 
-    await expect(api.post('/auth/refresh')).rejects.toBeTruthy()
+    // A refreshable URL on purpose: the auth endpoints are exempt from the
+    // refresh flow and would never reach the redirect decision.
+    await expect(api.get('/protected')).rejects.toBeTruthy()
 
+    expect(authStore.accessToken).toBeNull()
     expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('treats a request without a url as refreshable', async () => {
+    useAuthStore().$patch({ accessToken: 'expired-token' })
+    let requestCalls = 0
+
+    api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      if (config.url === '/auth/refresh') {
+        return makeResponse(config, { access_token: 'new-token' })
+      }
+      requestCalls++
+      if (requestCalls === 1) throw makeError(config, 401, { detail: 'expired' })
+      return makeResponse(config, { ok: true })
+    })
+
+    const response = await api.request({ method: 'get' })
+
+    expect(response.data).toEqual({ ok: true })
+    expect(requestCalls).toBe(2)
+  })
+
+  it('hands a failure without any response, such as a network error, to the caller unchanged', async () => {
+    api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      throw Object.assign(new Error('Network Error'), { config })
+    })
+
+    await expect(api.get('/ping')).rejects.toMatchObject({ message: 'Network Error' })
   })
 
   it.each([
@@ -197,12 +268,16 @@ describe('api (axios interceptors)', () => {
     authStore.$patch({ accessToken: 'expired-token' })
 
     let refreshResolve: () => void = () => {}
+    let refreshStarted = false
+    let refreshCalls = 0
     const refreshGate = new Promise<void>((resolve) => {
       refreshResolve = resolve
     })
 
     api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
       if (config.url === '/auth/refresh') {
+        refreshStarted = true
+        refreshCalls++
         await refreshGate
         return makeResponse(config, { access_token: 'new-token' })
       }
@@ -217,9 +292,8 @@ describe('api (axios interceptors)', () => {
     const requestA = api.get('/protected/a')
     const requestB = api.get('/protected/b')
 
-    // Let both initial 401s resolve and the refresh call start before completing it.
-    await Promise.resolve()
-    await Promise.resolve()
+    // Both initial 401s must have resolved and the refresh call started before completing it.
+    await vi.waitFor(() => expect(refreshStarted).toBe(true))
     refreshResolve()
 
     const [resA, resB] = await Promise.all([requestA, requestB])
@@ -227,6 +301,9 @@ describe('api (axios interceptors)', () => {
     expect(resA.data).toEqual({ url: '/protected/a' })
     expect(resB.data).toEqual({ url: '/protected/b' })
     expect(authStore.accessToken).toBe('new-token')
+    // The backend rotates the refresh secret on every use: a second refresh
+    // would fail with "Token reuse detected" and log the user out.
+    expect(refreshCalls).toBe(1)
   })
 
   it('rejects queued requests instead of hanging when the in-flight refresh fails', async () => {
@@ -234,16 +311,20 @@ describe('api (axios interceptors)', () => {
     authStore.$patch({ accessToken: 'expired-token' })
 
     let failRefresh: () => void = () => {}
+    let refreshStarted = false
+    let protectedCalls = 0
     const refreshGate = new Promise<void>((resolve) => {
       failRefresh = resolve
     })
 
     api.defaults.adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
       if (config.url === '/auth/refresh') {
+        refreshStarted = true
         await refreshGate
         throw makeError(config, 401, { detail: 'no session' })
       }
       if (config.url?.startsWith('/protected')) {
+        protectedCalls++
         throw makeError(config, 401, { detail: 'expired' })
       }
       throw new Error(`unexpected url ${String(config.url)}`)
@@ -252,13 +333,21 @@ describe('api (axios interceptors)', () => {
     const requestA = api.get('/protected/a')
     const requestB = api.get('/protected/b')
 
-    // Let both initial 401s resolve and the refresh call start before failing it.
-    await Promise.resolve()
-    await Promise.resolve()
+    // Both initial 401s must have resolved and the refresh call started before failing it.
+    await vi.waitFor(() => expect(refreshStarted).toBe(true))
     failRefresh()
 
-    await expect(requestA).rejects.toBeTruthy()
-    await expect(requestB).rejects.toBeTruthy()
+    const outcomes = await Promise.allSettled([requestA, requestB])
+
+    expect(outcomes.map((outcome) => outcome.status)).toEqual(['rejected', 'rejected'])
+    // One request ran the refresh and gets its failure, the other waited in the
+    // queue and gets the queue's own error.
+    const messages = outcomes.map((outcome) =>
+      outcome.status === 'rejected' ? (outcome.reason as Error).message : '',
+    )
+    expect(messages.sort()).toEqual(['Request failed with status 401', 'Session refresh failed'])
+    // Neither request is replayed without a new token.
+    expect(protectedCalls).toBe(2)
     expect(authStore.accessToken).toBeNull()
   })
 })

@@ -102,6 +102,47 @@ describe('ArtistFormView', () => {
     expect(mockCreate).not.toHaveBeenCalled()
   })
 
+  it('tells the user when saving fails without a field-level reason', async () => {
+    mockCreate.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(ArtistFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('keeps the form hidden and returns to the search when the artist to edit cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    const wrapper = mount(ArtistFormView, { props: { id: '5' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'repertoire-artists-search' })
+    expect(wrapper.find('input#artist-surname').exists()).toBe(false)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGet.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(ArtistFormView, { props: { id: '5' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Der Eintrag konnte nicht geladen werden.', true)
+  })
+
+  it('shows the form once the artist to edit has been loaded', async () => {
+    mockGet.mockResolvedValueOnce(makeArtist({ id: '5', surname: 'HAYDN' }))
+    const wrapper = mount(ArtistFormView, { props: { id: '5' } })
+    await flushPromises()
+
+    expect((wrapper.find('input#artist-surname').element as HTMLInputElement).value).toBe('HAYDN')
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
   it('shows field-level validation errors under the matching input', async () => {
     mockCreate.mockRejectedValueOnce({
       response: {
@@ -117,6 +158,7 @@ describe('ArtistFormView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Muss zwischen 3 und 32 Zeichen lang sein.')
+    expect(mockShowToast).not.toHaveBeenCalled()
     expect(mockPush).not.toHaveBeenCalled()
   })
 })

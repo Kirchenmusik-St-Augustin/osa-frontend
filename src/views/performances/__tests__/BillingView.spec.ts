@@ -3,6 +3,11 @@ import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import BillingView from '../BillingView.vue'
 import type { PerformanceBilling } from '@/composables/useBookings'
 
+const mockShowToast = vi.fn()
+vi.mock('@/services/notifications', () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
+}))
+
 const mockGetBilling = vi.fn()
 vi.mock('@/composables/useBookings', () => ({
   useBookings: () => ({ getBilling: mockGetBilling }),
@@ -62,6 +67,15 @@ describe('BillingView', () => {
     expect(wrapper.text()).toContain('Fagott')
     expect(wrapper.text()).toContain('HUBER, Franz')
     expect(wrapper.text()).toContain('90')
+  })
+
+  it('tells the user when the billing cannot be loaded instead of staying blank', async () => {
+    mockGetBilling.mockRejectedValueOnce({ response: { data: { detail: 'Keine Berechtigung.' } } })
+    const wrapper = mount(BillingView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Keine Berechtigung.', true)
+    expect(wrapper.text()).not.toContain('Summe')
   })
 
   it('renders a N.N. position in grey when a slot is unfilled', async () => {
@@ -194,5 +208,15 @@ describe('BillingView', () => {
     expect(subtitle?.classes()).toContain('text-center')
     const summary = wrapper.findAll('.h4').find((el) => el.text() === 'Zusammenfassung')
     expect(summary?.classes()).toContain('text-center')
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGetBilling.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(BillingView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Die Abrechnung konnte nicht geladen werden.', true)
   })
 })

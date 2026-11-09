@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SelectionSetup from '../SelectionSetup.vue'
+import { testId } from '@/__tests__/testId'
 
 const available = [
-  { id: 1, name: 'Konzertmeister' },
-  { id: 2, name: 'Violine 1' },
-  { id: 3, name: 'Violine 2' },
+  { id: testId(1), name: 'Konzertmeister' },
+  { id: testId(2), name: 'Violine 1' },
+  { id: testId(3), name: 'Violine 2' },
 ]
 
 describe('SelectionSetup', () => {
@@ -20,6 +21,17 @@ describe('SelectionSetup', () => {
     const trashIcons = wrapper.findAll('i.fa-trash')
     expect(trashIcons).toHaveLength(1)
     expect(wrapper.text()).toContain('Konzertmeister')
+  })
+
+  it('renders each removal as a named button', () => {
+    const wrapper = mount(SelectionSetup, {
+      props: { available, modelValue: [available[0]!] },
+    })
+
+    const remove = wrapper.find('button[aria-label="entfernen"]')
+    expect(remove.exists()).toBe(true)
+    expect(remove.attributes('type')).toBe('button')
+    expect(remove.find('i').attributes('aria-hidden')).toBe('true')
   })
 
   it('shows the title only when given', () => {
@@ -59,7 +71,7 @@ describe('SelectionSetup', () => {
     expect(wrapper.find('select').exists()).toBe(false)
     expect(wrapper.find('button.btn-primary').exists()).toBe(false)
     // The reset link stays visible regardless.
-    expect(wrapper.text()).toContain('Auf derz. gesp. Werte zurücksetzen')
+    expect(wrapper.text()).toContain('auf derz. Werte zurücksetzen')
   })
 
   it('still renders and allows removing an assigned item missing from available', async () => {
@@ -68,7 +80,7 @@ describe('SelectionSetup', () => {
     // `available` is filtered to active-only server-side). Before the fix,
     // the left column iterated `available` only, so a since-archived
     // assignment became invisible and unremovable.
-    const archivedButAssigned = { id: 99, name: 'Serpent' }
+    const archivedButAssigned = { id: testId(99), name: 'Serpent' }
     const wrapper = mount(SelectionSetup, {
       props: { available, modelValue: [available[0]!, archivedButAssigned] },
     })
@@ -99,7 +111,7 @@ describe('SelectionSetup', () => {
     await wrapper.find('i.fa-trash').trigger('click')
     expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([])
 
-    await wrapper.find('small.c-pointer').trigger('click')
+    await wrapper.find('button.c-pointer').trigger('click')
     expect(wrapper.emitted('update:modelValue')?.[1]?.[0]).toEqual([available[0]])
   })
 })

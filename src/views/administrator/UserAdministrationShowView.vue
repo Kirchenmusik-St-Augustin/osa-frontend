@@ -1,12 +1,12 @@
 <script setup lang="ts">
 // Administration detail of one user (restore/unlock/set password/purge).
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   useUserAdministration,
   type UserAdministrationDetail,
 } from '@/composables/useUserAdministration'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { formatUtcDateTime } from '@/services/dateFormat'
 import { confirmAction, showToast } from '@/services/notifications'
 
@@ -19,6 +19,21 @@ const user = ref<UserAdministrationDetail | null>(null)
 // backend (`newpw` lives only in that one action response, GET/Show never
 // returns it).
 const newPassword = ref<string | null>(null)
+// The plaintext password is a credential: it disappears from the screen
+// after this time and when the page is left, so it cannot linger on an
+// unattended administrator workstation.
+const NEW_PASSWORD_VISIBLE_MS = 60_000
+let hidePasswordTimer: ReturnType<typeof setTimeout> | undefined
+
+function showNewPassword(password: string): void {
+  newPassword.value = password
+  clearTimeout(hidePasswordTimer)
+  hidePasswordTimer = setTimeout(() => {
+    newPassword.value = null
+  }, NEW_PASSWORD_VISIBLE_MS)
+}
+
+onBeforeUnmount(() => clearTimeout(hidePasswordTimer))
 
 // Login is email-based, so an account without an email cannot sign in.
 const hasNoEmail = computed(() => !user.value?.email)
@@ -28,8 +43,15 @@ const lastActivityLabel = computed(() =>
 )
 
 onMounted(async () => {
-  const result = await get(props.id)
-  user.value = result.user
+  try {
+    const result = await get(props.id)
+    user.value = result.user
+  } catch (error) {
+    showToast(
+      unattachedErrorMessage(error) ?? 'Das Benutzerkonto konnte nicht geladen werden.',
+      true,
+    )
+  }
 })
 
 async function purgePermanently(): Promise<void> {
@@ -72,7 +94,7 @@ async function doAction(action: ActionName): Promise<void> {
     const result = await ACTIONS[action](props.id)
     user.value = result.user
     showToast('Aktion durchgeführt')
-    if (result.newpw) newPassword.value = result.newpw
+    if (result.newpw) showNewPassword(result.newpw)
   } catch {
     showToast(`Bei Durchführung von "${ACTION_LABELS[action]}" ist ein Fehler aufgetreten.`, true)
   }

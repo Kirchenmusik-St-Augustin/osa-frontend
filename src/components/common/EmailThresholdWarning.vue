@@ -22,11 +22,13 @@ const active = computed(() => status.value?.active ?? false)
   <i
     v-if="props.variant === 'icon' && active"
     class="fas fa-fw fa-triangle-exclamation fa-fade text-warning ms-1"
+    role="img"
+    title="Email-Versand deaktiviert"
+    aria-label="Email-Versand deaktiviert"
   ></i>
   <div
     v-else-if="props.variant === 'card' && active && status"
-    class="card mx-auto mb-3"
-    style="max-width: 30rem"
+    class="card threshold-card mx-auto mb-3"
   >
     <div class="card-header text-bg-warning">
       <i class="fas fa-fw fa-triangle-exclamation fa-fade text-danger me-2"></i>
@@ -42,3 +44,9 @@ const active = computed(() => status.value?.active ?? false)
     </div>
   </div>
 </template>
+
+<style scoped>
+.threshold-card {
+  max-width: 30rem;
+}
+</style>

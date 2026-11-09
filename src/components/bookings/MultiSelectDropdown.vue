@@ -51,10 +51,16 @@ watch(
 
 <template>
   <div ref="rootElement">
-    <span class="border rounded p-1 m-1 c-pointer bg-white" @click="isOpen = !isOpen">
+    <button
+      type="button"
+      class="border rounded p-1 m-1 c-pointer bg-white"
+      aria-haspopup="true"
+      :aria-expanded="isOpen"
+      @click="isOpen = !isOpen"
+    >
       <span class="ms-2">{{ model.length }} ausgewählt</span>
-      <i class="fas fa-caret-down px-1 text-primary"></i>
-    </span>
+      <i class="fas fa-caret-down px-1 text-primary" aria-hidden="true"></i>
+    </button>
     <!--
       A real block-level div (not a span) -- .multiselect has no explicit
       width, so it fills the containing column and gives the panel's
@@ -108,11 +114,8 @@ watch(
   bottom: 100%;
   margin-bottom: 1.8em;
   z-index: 99;
-  overflow: hidden;
-  min-width: 140%;
   width: 140%;
-  max-width: 140%;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 .itemgroup {

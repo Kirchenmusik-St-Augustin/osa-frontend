@@ -3,6 +3,7 @@
 // a backend-provided list, validated again server-side against a live
 // schema allowlist.
 import { computed, onMounted, ref, watch } from 'vue'
+import { useLatestResult } from '@/composables/useLatestResult'
 import { useSqlInspector, type TableData } from '@/composables/useSqlInspector'
 import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
 import { extractApiErrors } from '@/services/apiErrors'
@@ -11,6 +12,8 @@ import { showToast } from '@/services/notifications'
 const PAGE_SIZE = 25
 
 const { listTables, getTableData } = useSqlInspector()
+
+const applyLatest = useLatestResult()
 
 const tables = ref<string[]>([])
 const selectedTable = ref<string | null>(null)
@@ -25,9 +28,15 @@ const canGoToPreviousPage = computed(() => page.value > 1)
 const canGoToNextPage = computed(() => page.value < totalPages.value)
 
 async function loadTableData(): Promise<void> {
-  if (!selectedTable.value) return
+  const table = selectedTable.value
+  if (!table) return
   try {
-    tableData.value = await getTableData(selectedTable.value, page.value, PAGE_SIZE)
+    await applyLatest(
+      () => getTableData(table, page.value, PAGE_SIZE),
+      (data) => {
+        tableData.value = data
+      },
+    )
   } catch (error) {
     showToast(
       extractApiErrors(error).generalError ?? 'Tabellendaten konnten nicht geladen werden.',

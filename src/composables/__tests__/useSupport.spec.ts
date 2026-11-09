@@ -1,6 +1,9 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSupport } from '../useSupport'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn() },
@@ -30,17 +33,17 @@ const sampleRole = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useSupport', () => {
   it('getMyRequestsAndBookings requests the support endpoint', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [samplePerformance] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([samplePerformance]) })
     const { getMyRequestsAndBookings } = useSupport()
 
     const performances = await getMyRequestsAndBookings()
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/support/requests-and-bookings')
+    expect(mockedApi.get).toHaveBeenCalledWith('/support/requests-and-bookings', firstPageRequest())
     expect(performances).toEqual([samplePerformance])
   })
 
@@ -60,10 +63,10 @@ describe('useSupport', () => {
     })
     const { sendMessageToContactperson } = useSupport()
 
-    await sendMessageToContactperson(5, 'Bitte um Rückruf.')
+    await sendMessageToContactperson(testId(5), 'Bitte um Rückruf.')
 
     expect(mockedApi.post).toHaveBeenCalledWith('/support/message-to-contactperson', {
-      recipient_id: 5,
+      recipient_id: testId(5),
       message: 'Bitte um Rückruf.',
     })
   })

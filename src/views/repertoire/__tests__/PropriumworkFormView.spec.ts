@@ -43,9 +43,9 @@ function makeWork(overrides: Partial<Propriumwork> = {}): Propriumwork {
 }
 
 beforeEach(() => {
-  // See feedback_frontend_gotchas: resetAllMocks avoids a queued
-  // mockXOnce() value from one test leaking into a later test's call
-  // when several async composable mocks are chained per test.
+  // resetAllMocks avoids a queued mockXOnce() value from one test leaking
+  // into a later test's call when several async composable mocks are
+  // chained per test.
   vi.resetAllMocks()
   mockConfirmAction.mockResolvedValue(true)
   mockListComposers.mockResolvedValue([{ id: '2', label: 'HAYDN, Joseph' }])
@@ -102,6 +102,37 @@ describe('PropriumworkFormView', () => {
     await flushPromises()
 
     expect(mockUpdate).toHaveBeenCalledWith('1', expect.objectContaining({ name: 'Introitus' }))
+  })
+
+  it('keeps the form hidden and returns to the search when the existing work cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    const wrapper = mount(PropriumworkFormView, { props: { id: '5' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'repertoire-propriumworks-search' })
+    expect(wrapper.find('input#propriumwork-name').exists()).toBe(false)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockListComposers.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(PropriumworkFormView, { props: {} })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Das Formular konnte nicht geladen werden.', true)
+  })
+
+  it('tells the user when saving fails without a field-level reason', async () => {
+    mockCreate.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PropriumworkFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
   it('shows field-level validation errors under the matching input', async () => {

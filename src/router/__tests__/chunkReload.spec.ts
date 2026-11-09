@@ -75,6 +75,51 @@ describe('registerChunkReload', () => {
     expect(window.location.href).toBe('https://example.test/current')
   })
 
+  it('does not reload, and does not throw, when session storage is unavailable', () => {
+    const { router, triggerError } = makeRouterStub()
+    registerChunkReload(router)
+    const blocked = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError')
+    })
+
+    expect(() =>
+      triggerError(new Error('Failed to fetch dynamically imported module: /x.js')),
+    ).not.toThrow()
+    expect(window.location.href).toBe('https://example.test/current')
+    blocked.mockRestore()
+  })
+
+  it('does not reload when the flag cannot be persisted (writes silently dropped)', () => {
+    const { router, triggerError } = makeRouterStub()
+    registerChunkReload(router)
+    const dropped = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {})
+
+    triggerError(new Error('Failed to fetch dynamically imported module: /x.js'))
+
+    expect(window.location.href).toBe('https://example.test/current')
+    dropped.mockRestore()
+  })
+
+  it('does not throw when the guard cannot be cleared because storage is unavailable', () => {
+    const { router } = makeRouterStub()
+    registerChunkReload(router)
+    const blocked = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError')
+    })
+    const afterEachHandler = vi.mocked(router.afterEach).mock.calls[0]?.[0]
+
+    expect(() =>
+      afterEachHandler?.(
+        // @ts-expect-error -- only the reset side effect is under test, the
+        // handler itself never reads its arguments.
+        undefined,
+        undefined,
+        () => {},
+      ),
+    ).not.toThrow()
+    blocked.mockRestore()
+  })
+
   it('clears the guard on the next successful navigation', () => {
     const { router } = makeRouterStub()
     registerChunkReload(router)

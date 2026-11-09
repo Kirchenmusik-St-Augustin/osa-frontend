@@ -95,7 +95,7 @@ describe('SqlInspectorView', () => {
     await flushPromises()
     await wrapper.find('select').setValue('users')
     await flushPromises()
-    await wrapper.findAll('button').at(1)?.trigger('click') // "Weiter" -> page 2
+    await wrapper.findAll('nav button').at(1)?.trigger('click') // "Weiter" -> page 2
     await flushPromises()
 
     await wrapper.find('select').setValue('roles')
@@ -115,7 +115,7 @@ describe('SqlInspectorView', () => {
     await wrapper.find('select').setValue('users')
     await flushPromises()
 
-    const buttonsPage1 = wrapper.findAll('button')
+    const buttonsPage1 = wrapper.findAll('nav button')
     expect(buttonsPage1[0]?.attributes('disabled')).toBeDefined() // "Zurück" at page 1
     expect(buttonsPage1[1]?.attributes('disabled')).toBeUndefined() // "Weiter" enabled
 
@@ -123,7 +123,7 @@ describe('SqlInspectorView', () => {
     await flushPromises()
 
     expect(mockGetTableData).toHaveBeenLastCalledWith('users', 2, 25)
-    const buttonsPage2 = wrapper.findAll('button')
+    const buttonsPage2 = wrapper.findAll('nav button')
     expect(buttonsPage2[1]?.attributes('disabled')).toBeDefined() // "Weiter" at last page
   })
 
@@ -146,5 +146,76 @@ describe('SqlInspectorView', () => {
     await flushPromises()
 
     expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
+  })
+
+  it('shows the fixed texts when the table list or the table data fail with a field-only answer', async () => {
+    mockListTables.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(SqlInspectorView)
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith(
+      'Tabellenliste konnte nicht geladen werden.',
+      true,
+    )
+
+    mockListTables.mockResolvedValueOnce(['users'])
+    mockGetTableData.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    const wrapper = mount(SqlInspectorView)
+    await flushPromises()
+    await wrapper.find('select').setValue('users')
+    await flushPromises()
+    expect(mockShowToast).toHaveBeenLastCalledWith(
+      'Tabellendaten konnten nicht geladen werden.',
+      true,
+    )
+  })
+
+  it('goes back one page with "Zurück" and shows nothing for an empty selection', async () => {
+    mockListTables.mockResolvedValueOnce(['users'])
+    mockGetTableData
+      .mockResolvedValueOnce(makeTableData({ total: 30 }))
+      .mockResolvedValueOnce(makeTableData({ total: 30, page: 2 }))
+      .mockResolvedValueOnce(makeTableData({ total: 30 }))
+    const wrapper = mount(SqlInspectorView)
+    await flushPromises()
+    await wrapper.find('select').setValue('')
+    await flushPromises()
+    expect(mockGetTableData).not.toHaveBeenCalled()
+
+    await wrapper.find('select').setValue('users')
+    await flushPromises()
+    await wrapper.findAll('nav button')[1]?.trigger('click')
+    await flushPromises()
+    await wrapper.findAll('nav button')[0]?.trigger('click')
+    await flushPromises()
+
+    expect(mockGetTableData).toHaveBeenLastCalledWith('users', 1, 25)
+  })
+
+  it('shows the rows of the LAST table choice when an earlier answer arrives late', async () => {
+    mockListTables.mockResolvedValueOnce(['users', 'roles'])
+    let finishFirst: (value: TableData) => void = () => {}
+    mockGetTableData.mockReturnValueOnce(
+      new Promise<TableData>((resolve) => {
+        finishFirst = resolve
+      }),
+    )
+    mockGetTableData.mockResolvedValueOnce(
+      makeTableData({ table_name: 'roles', rows: [{ id: '2', phone: 'ZEILE-ROLLEN' }] }),
+    )
+    const wrapper = mount(SqlInspectorView)
+    await flushPromises()
+    await wrapper.find('select').setValue('users')
+    await wrapper.find('select').setValue('roles')
+    await flushPromises()
+
+    finishFirst(makeTableData({ rows: [{ id: '1', phone: 'ZEILE-BENUTZER' }] }))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('ZEILE-ROLLEN')
+    expect(wrapper.text()).not.toContain('ZEILE-BENUTZER')
   })
 })

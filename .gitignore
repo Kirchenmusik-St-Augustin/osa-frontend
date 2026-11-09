@@ -37,3 +37,7 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Stray output of shell redirects at the repository root
+/vue-tsc
+/osa-frontend@*

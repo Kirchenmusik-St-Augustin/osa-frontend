@@ -3,16 +3,17 @@ import { mount } from '@vue/test-utils'
 import CastItem from '../CastItem.vue'
 import SingleCastList from '../SingleCastList.vue'
 import type { BookableGroup, CastMember, Fee } from '@/composables/useBookings'
+import { testId } from '@/__tests__/testId'
 
-const bookable: BookableGroup = { requesting: [], other: [{ id: 5, name: 'Candidate' }] }
-const fees: Fee[] = [{ id: 3, name: 'Instrumentalist', amount: 80 }]
+const bookable: BookableGroup = { requesting: [], other: [{ id: testId(5), name: 'Candidate' }] }
+const fees: Fee[] = [{ id: testId(3), name: 'Instrumentalist', amount: 80 }]
 
 function mountItem(cast: CastMember[], quantity: number, extra: Record<string, unknown> = {}) {
   return mount(CastItem, {
     ...extra,
     props: {
       type: 'instruments',
-      item: { id: 1, name: 'Violine', quantity },
+      item: { id: testId(1), name: 'Violine', quantity },
       cast,
       bookable,
       allBooked: [],
@@ -24,7 +25,7 @@ function mountItem(cast: CastMember[], quantity: number, extra: Record<string, u
 
 describe('CastItem', () => {
   it('shows a green badge when cast count exactly matches quantity', () => {
-    const wrapper = mountItem([{ id: 1, name: 'A', fee: 80 }], 1)
+    const wrapper = mountItem([{ id: testId(1), name: 'A', fee: 80 }], 1)
     expect(wrapper.find('.badge').classes()).toContain('text-bg-success')
     expect(wrapper.text()).toContain('1 / 1')
   })
@@ -37,8 +38,8 @@ describe('CastItem', () => {
   it('shows a blue badge when overstaffed', () => {
     const wrapper = mountItem(
       [
-        { id: 1, name: 'A', fee: 80 },
-        { id: 2, name: 'B', fee: 80 },
+        { id: testId(1), name: 'A', fee: 80 },
+        { id: testId(2), name: 'B', fee: 80 },
       ],
       1,
     )
@@ -58,35 +59,49 @@ describe('CastItem', () => {
     wrapper.unmount()
   })
 
+  it('renders the header as a button that reports whether the position is expanded', async () => {
+    const wrapper = mountItem([], 1)
+    const header = wrapper.find('button.c-pointer')
+    expect(header.attributes('type')).toBe('button')
+    expect(header.attributes('aria-expanded')).toBe('false')
+
+    await header.trigger('click')
+    expect(header.attributes('aria-expanded')).toBe('true')
+
+    await header.trigger('click')
+    expect(header.attributes('aria-expanded')).toBe('false')
+  })
+
   it('only visually hides the reset link until the cast changed, keeping its line height reserved', async () => {
     // The wrapping line is always kept in the layout to avoid the page
     // jumping when the link appears/disappears -- via Bootstrap's
     // `.invisible` (visibility:hidden, space kept) instead of removing the
     // row from the DOM (v-if would collapse it).
-    const wrapper = mountItem([{ id: 1, name: 'A', fee: 80 }], 1)
+    const wrapper = mountItem([{ id: testId(1), name: 'A', fee: 80 }], 1)
     await wrapper.find('.d-flex.justify-content-between.c-pointer').trigger('click')
     expect(wrapper.find('.mt-3.small.text-end').classes()).toContain('invisible')
 
     await wrapper.setProps({ cast: [] })
     expect(wrapper.find('.mt-3.small.text-end').classes()).not.toContain('invisible')
 
-    const resetLink = wrapper
-      .findAll('small')
-      .find((small) => small.text() === 'auf derz. Werte zurücksetzen')
-    await resetLink?.trigger('click')
+    const resetButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'auf derz. Werte zurücksetzen')
+    expect(resetButton?.attributes('type')).toBe('button')
+    await resetButton?.trigger('click')
     expect(wrapper.emitted('cast-changed')?.slice(-1)[0]?.[1]).toEqual([
-      { id: 1, name: 'A', fee: 80 },
+      { id: testId(1), name: 'A', fee: 80 },
     ])
   })
 
   it('renders its notBooked prop inside SingleCastList and bubbles remove-not-booked up', async () => {
     const wrapper = mountItem([], 1, { attachTo: document.body })
-    await wrapper.setProps({ notBooked: [{ id: 9, name: 'REJECTED, Kandidat' }] })
+    await wrapper.setProps({ notBooked: [{ id: testId(9), name: 'REJECTED, Kandidat' }] })
     await wrapper.find('.c-pointer').trigger('click') // expand
     expect(wrapper.text()).toContain('REJECTED, Kandidat')
 
     await wrapper.find('.fa-times').trigger('click')
-    expect(wrapper.emitted('remove-not-booked')?.[0]).toEqual([9])
+    expect(wrapper.emitted('remove-not-booked')?.[0]).toEqual([testId(9)])
     wrapper.unmount()
   })
 
@@ -94,8 +109,8 @@ describe('CastItem', () => {
     const wrapper = mount(CastItem, {
       props: {
         type: 'choirjobs',
-        item: { id: 1, name: 'Chorist', quantity: 1 },
-        cast: [{ id: 1, name: 'A', fee: 80 }],
+        item: { id: testId(1), name: 'Chorist', quantity: 1 },
+        cast: [{ id: testId(1), name: 'A', fee: 80 }],
         bookable,
         allBooked: [],
         notBooked: [],
@@ -120,7 +135,7 @@ describe('CastItem', () => {
     const choirjobsWrapper = mount(CastItem, {
       props: {
         type: 'choirjobs',
-        item: { id: 1, name: 'Chorist', quantity: 1 },
+        item: { id: testId(1), name: 'Chorist', quantity: 1 },
         cast: [],
         bookable,
         allBooked: [],

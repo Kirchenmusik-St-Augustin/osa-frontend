@@ -39,6 +39,36 @@ describe('ForgotPasswordView', () => {
     expect(wrapper.find('input#email').exists()).toBe(false)
   })
 
+  it('shows the server message when the request is throttled, keeping the form', async () => {
+    mockForgotPassword.mockRejectedValueOnce({
+      response: {
+        status: 429,
+        data: { detail: 'Zu viele Anfragen. Bitte später erneut versuchen.' },
+      },
+    })
+    const wrapper = mount(ForgotPasswordView)
+
+    await wrapper.find('input#email').setValue('a@example.com')
+    await wrapper.find('form').trigger('submit.prevent')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Zu viele Anfragen'))
+
+    expect(wrapper.find('input#email').exists()).toBe(true)
+  })
+
+  it('shows the generic message when the request fails without an answer body, keeping the form', async () => {
+    mockForgotPassword.mockRejectedValueOnce(new Error('Network Error'))
+    const wrapper = mount(ForgotPasswordView)
+
+    await wrapper.find('input#email').setValue('a@example.com')
+    await wrapper.find('form').trigger('submit.prevent')
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain('Ein unerwarteter Fehler ist aufgetreten.'),
+    )
+
+    expect(wrapper.find('input#email').exists()).toBe(true)
+    expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeUndefined()
+  })
+
   it('shows a field error on malformed input instead of the confirmation', async () => {
     mockForgotPassword.mockRejectedValueOnce({
       response: {

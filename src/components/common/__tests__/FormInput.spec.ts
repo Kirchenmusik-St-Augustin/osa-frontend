@@ -42,6 +42,25 @@ describe('FormInput', () => {
     expect(wrapper.find('small.text-danger').exists()).toBe(true)
   })
 
+  it.each([
+    ['text', 'input'],
+    ['number', 'input'],
+    ['textarea', 'textarea'],
+  ] as const)(
+    'links the error line to the %s control and flags it invalid only while an error is set',
+    (type, tag) => {
+      const clean = mount(FormInput, { props: { id: 'name', title: 'Name', modelValue: '', type } })
+      expect(clean.find(tag).attributes('aria-invalid')).toBeUndefined()
+      expect(clean.find(tag).attributes('aria-describedby')).toBe('name-error')
+
+      const failing = mount(FormInput, {
+        props: { id: 'name', title: 'Name', modelValue: '', type, error: 'Pflichtfeld.' },
+      })
+      expect(failing.find(tag).attributes('aria-invalid')).toBe('true')
+      expect(failing.find('#name-error').text()).toContain('Pflichtfeld.')
+    },
+  )
+
   it('shows the given error message', () => {
     const wrapper = mount(FormInput, {
       props: { id: 'name', title: 'Name', modelValue: '', error: 'Der Name ist bereits vergeben.' },

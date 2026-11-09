@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import FormSelect from '../FormSelect.vue'
+import { testId } from '@/__tests__/testId'
 
 const options = [
-  { id: 1, label: 'Mozart' },
-  { id: 2, label: 'Haydn' },
+  { id: testId(1), label: 'Mozart' },
+  { id: testId(2), label: 'Haydn' },
 ]
 
 describe('FormSelect', () => {
@@ -16,8 +17,8 @@ describe('FormSelect', () => {
     const optionElements = wrapper.findAll('option')
     expect(optionElements.map((option) => option.text())).toEqual(['Mozart', 'Haydn'])
 
-    await wrapper.find('select').setValue('2')
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([2])
+    await wrapper.find('select').setValue(testId(2))
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([testId(2)])
   })
 
   it('marks the select as required when requested', () => {
@@ -34,6 +35,20 @@ describe('FormSelect', () => {
     })
 
     expect(wrapper.find('small.text-danger').exists()).toBe(true)
+  })
+
+  it('links the error line to the select and flags it invalid only while an error is set', () => {
+    const clean = mount(FormSelect, {
+      props: { id: 'artist', title: 'Komponist', modelValue: null, options },
+    })
+    expect(clean.find('select').attributes('aria-invalid')).toBeUndefined()
+    expect(clean.find('select').attributes('aria-describedby')).toBe('artist-error')
+
+    const failing = mount(FormSelect, {
+      props: { id: 'artist', title: 'Komponist', modelValue: null, options, error: 'Pflicht.' },
+    })
+    expect(failing.find('select').attributes('aria-invalid')).toBe('true')
+    expect(failing.find('#artist-error').text()).toContain('Pflicht.')
   })
 
   it('shows the given error message', () => {

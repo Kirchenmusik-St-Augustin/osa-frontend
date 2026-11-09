@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import {
   formatDateOnly,
@@ -28,9 +29,16 @@ describe('parseWallClock', () => {
     expect(parseWallClock('2026-08-02 11:00:00').getHours()).toBe(11)
   })
 
-  it('throws on an unparseable value', () => {
-    expect(() => parseWallClock('not-a-date')).toThrow()
+  it('reads two-digit seconds in full', () => {
+    expect(parseWallClock('2026-08-02T11:00:45').getSeconds()).toBe(45)
   })
+
+  it.each(['not-a-date', 'x2026-08-02T11:00:00', '2026-08-02T11:00:5'])(
+    'throws a descriptive error for %s',
+    (value) => {
+      expect(() => parseWallClock(value)).toThrow(`Unparseable schedule value: ${value}`)
+    },
+  )
 })
 
 describe('toWallClockString', () => {
@@ -57,9 +65,38 @@ describe('formatDateTime', () => {
   it('zero-pads single-digit hours and minutes', () => {
     expect(formatDateTime('2026-01-05T09:05:00')).toBe('5. Jan. 2026, 09:05')
   })
+
+  it.each([
+    ['01', 'Jan.'],
+    ['02', 'Feb.'],
+    ['03', 'März'],
+    ['04', 'Apr.'],
+    ['05', 'Mai'],
+    ['06', 'Juni'],
+    ['07', 'Juli'],
+    ['08', 'Aug.'],
+    ['09', 'Sep.'],
+    ['10', 'Okt.'],
+    ['11', 'Nov.'],
+    ['12', 'Dez.'],
+  ])('writes month %s as "%s"', (month, name) => {
+    expect(formatDateTime(`2026-${month}-15T10:30:00`)).toBe(`15. ${name} 2026, 10:30`)
+  })
 })
 
 describe('formatDateTimeWithWeekday', () => {
+  it.each([
+    ['2026-08-02', 'So'],
+    ['2026-08-03', 'Mo'],
+    ['2026-08-04', 'Di'],
+    ['2026-08-05', 'Mi'],
+    ['2026-08-06', 'Do'],
+    ['2026-08-07', 'Fr'],
+    ['2026-08-08', 'Sa'],
+  ])('writes %s as weekday "%s"', (day, weekday) => {
+    expect(formatDateTimeWithWeekday(`${day}T11:00:00`).startsWith(`${weekday}, `)).toBe(true)
+  })
+
   it('renders weekday, day, full month, year and time', () => {
     // 2026-08-02 is a Sunday.
     expect(formatDateTimeWithWeekday('2026-08-02T11:00:00')).toBe('So, 2. August 2026, 11:00')
@@ -134,6 +171,23 @@ describe('formatMonthYear', () => {
   it('maps month 1 to January', () => {
     expect(formatMonthYear(2026, 1)).toBe('Januar 2026')
   })
+
+  it.each([
+    [1, 'Januar'],
+    [2, 'Februar'],
+    [3, 'März'],
+    [4, 'April'],
+    [5, 'Mai'],
+    [6, 'Juni'],
+    [7, 'Juli'],
+    [8, 'August'],
+    [9, 'September'],
+    [10, 'Oktober'],
+    [11, 'November'],
+    [12, 'Dezember'],
+  ])('writes month %i as "%s"', (month, name) => {
+    expect(formatMonthYear(2026, month)).toBe(`${name} 2026`)
+  })
 })
 
 describe('formatDayMonthYear', () => {
@@ -159,7 +213,10 @@ describe('parseCalendarDate', () => {
     expect(parseCalendarDate('2026-01-01').day).toBe(1)
   })
 
-  it('throws on an unparseable value', () => {
-    expect(() => parseCalendarDate('not-a-date')).toThrow()
-  })
+  it.each(['not-a-date', '2026-05', '2026-xx-01', '2026-05-xx', ''])(
+    'throws a descriptive error for "%s"',
+    (value) => {
+      expect(() => parseCalendarDate(value)).toThrow(`Unparseable calendar date: ${value}`)
+    },
+  )
 })

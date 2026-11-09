@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import FormInput from '@/components/common/FormInput.vue'
 import FormCheckbox from '@/components/common/FormCheckbox.vue'
 import { useArtists } from '@/composables/useArtists'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id?: string }>()
@@ -22,17 +22,26 @@ const form = reactive({
 })
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
+// An existing artist is edited only after it was loaded: an empty form saved
+// over it would erase it.
+const ready = ref(!props.id)
 
 onMounted(async () => {
   if (!props.id) return
-  const artist = await get(props.id)
-  form.givenname = artist.givenname
-  form.surname = artist.surname
-  form.description = artist.description
-  form.birthyear = artist.birthyear
-  form.deathyear = artist.deathyear
-  form.composer = artist.composer
-  form.conductor = artist.conductor
+  try {
+    const artist = await get(props.id)
+    form.givenname = artist.givenname
+    form.surname = artist.surname
+    form.description = artist.description
+    form.birthyear = artist.birthyear
+    form.deathyear = artist.deathyear
+    form.composer = artist.composer
+    form.conductor = artist.conductor
+    ready.value = true
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Der Eintrag konnte nicht geladen werden.', true)
+    await router.push({ name: 'repertoire-artists-search' })
+  }
 })
 
 function toNullableNumber(value: number | string | null): number | null {
@@ -62,6 +71,10 @@ async function save(): Promise<void> {
     await router.push({ name: 'repertoire-artists-show', params: { id: artist.id } })
   } catch (error) {
     fieldErrors.value = extractApiErrors(error).fieldErrors
+    // Without a field to show the reason under (server error, lost
+    // connection) the form would just stay silent.
+    const unattached = unattachedErrorMessage(error)
+    if (unattached) showToast(unattached, true)
   } finally {
     submitting.value = false
   }
@@ -71,7 +84,7 @@ async function save(): Promise<void> {
 <template>
   <h2 class="h2 text-center mb-4">Komponist/Dirigent bearbeiten</h2>
 
-  <div class="row justify-content-center mt-4">
+  <div v-if="ready" class="row justify-content-center mt-4">
     <div class="col-md-7">
       <div class="card p-4 text-left">
         <FormInput

@@ -4,10 +4,11 @@ import { mount } from '@vue/test-utils'
 import ResetPasswordView from '../ResetPasswordView.vue'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
+const mockReplace = vi.fn().mockResolvedValue(undefined)
 const mockRoute = { query: {} as Record<string, string> }
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof VueRouter>()),
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   useRoute: () => mockRoute,
 }))
 
@@ -26,6 +27,18 @@ describe('ResetPasswordView', () => {
     const wrapper = mount(ResetPasswordView)
 
     expect((wrapper.find('input#email').element as HTMLInputElement).value).toBe('a@example.com')
+  })
+
+  it('removes the one-time token from the address bar once it has been read', () => {
+    mount(ResetPasswordView)
+
+    expect(mockReplace).toHaveBeenCalledWith({ name: 'reset-password' })
+  })
+
+  it('requires the new password field like its confirmation', () => {
+    const wrapper = mount(ResetPasswordView)
+
+    expect(wrapper.find('input#password').attributes('required')).toBeDefined()
   })
 
   it('lets password managers propose a new password for both password fields', () => {
@@ -53,6 +66,27 @@ describe('ResetPasswordView', () => {
       password_confirmation: 'Passw0rd1',
     })
     expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
+  })
+
+  it('still sends the token and address after the address bar has been emptied', async () => {
+    mockReplace.mockImplementationOnce(async () => {
+      mockRoute.query = {}
+    })
+    mockResetPassword.mockResolvedValueOnce(undefined)
+    const wrapper = mount(ResetPasswordView)
+
+    await vi.waitFor(() => expect(mockReplace).toHaveBeenCalled())
+    await wrapper.find('input#password').setValue('Passw0rd1')
+    await wrapper.find('input#password_confirmation').setValue('Passw0rd1')
+    await wrapper.find('form').trigger('submit.prevent')
+    await vi.waitFor(() => expect(mockResetPassword).toHaveBeenCalled())
+
+    expect(mockResetPassword).toHaveBeenCalledWith({
+      email: 'a@example.com',
+      token: 'reset-token-abc',
+      password: 'Passw0rd1',
+      password_confirmation: 'Passw0rd1',
+    })
   })
 
   it('shows the invalid-token error message under the email field', async () => {

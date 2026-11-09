@@ -85,10 +85,15 @@ function handleRemoveNotBooked(id: string): void {
 
 <template>
   <div class="list-group-item">
-    <div class="d-flex justify-content-between c-pointer" @click="open = !open">
+    <button
+      type="button"
+      class="btn p-0 border-0 w-100 d-flex justify-content-between text-start c-pointer"
+      :aria-expanded="open"
+      @click="open = !open"
+    >
       <span>{{ item.name }}</span>
       <span class="badge" :class="badgeClass">{{ cast.length }} / {{ item.quantity }}</span>
-    </div>
+    </button>
     <div v-show="open" class="card bg-info-subtle p-2 mt-2">
       <div class="row">
         <div class="col-sm-7 mt-1">
@@ -114,7 +119,9 @@ function handleRemoveNotBooked(id: string): void {
         </div>
       </div>
       <div class="mt-3 small text-end c-pointer" :class="{ invisible: !showReset }">
-        <small class="text-black-50" @click="reset">auf derz. Werte zurücksetzen</small>
+        <button type="button" class="btn btn-link p-0 text-reset c-pointer" @click="reset">
+          <small class="text-black-50">auf derz. Werte zurücksetzen</small>
+        </button>
       </div>
     </div>
   </div>

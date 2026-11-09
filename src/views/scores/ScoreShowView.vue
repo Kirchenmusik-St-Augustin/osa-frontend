@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Read-only Show page of one score.
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import ScoreDataComponent from '@/components/scores/ScoreDataComponent.vue'
 import ScoreFieldsComponent from '@/components/scores/ScoreFieldsComponent.vue'
 import {
@@ -9,19 +9,25 @@ import {
   type ScoreFieldConfig,
   type ScoreFieldsPayload,
 } from '@/composables/useScores'
+import { unattachedErrorMessage } from '@/services/apiErrors'
+import { showToast } from '@/services/notifications'
 
 const props = defineProps<{ id: string }>()
 const { get, getFieldsConfig } = useScores()
 
 const score = ref<Score | null>(null)
-const fields = reactive<ScoreFieldsPayload>({})
+const fields = ref<ScoreFieldsPayload>({})
 const fieldsConfig = ref<Record<string, ScoreFieldConfig>>({})
 
 onMounted(async () => {
-  const [scoreData, config] = await Promise.all([get(props.id), getFieldsConfig()])
-  score.value = scoreData
-  Object.assign(fields, scoreData.fields)
-  fieldsConfig.value = config
+  try {
+    const [scoreData, config] = await Promise.all([get(props.id), getFieldsConfig()])
+    score.value = scoreData
+    fields.value = scoreData.fields
+    fieldsConfig.value = config
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Der Eintrag konnte nicht geladen werden.', true)
+  }
 })
 </script>
 

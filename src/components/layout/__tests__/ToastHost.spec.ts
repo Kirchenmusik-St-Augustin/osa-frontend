@@ -63,6 +63,16 @@ describe('ToastHost', () => {
     )
   })
 
+  it('shows no countdown bar on an error toast, which stays until closed', async () => {
+    const wrapper = mount(ToastHost)
+
+    useNotificationStore().showToast('Fehler', true)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.toast').exists()).toBe(true)
+    expect(wrapper.find('.toast-progress').exists()).toBe(false)
+  })
+
   it('removes a toast when its close button is clicked', async () => {
     const wrapper = mount(ToastHost)
     useNotificationStore().showToast('gespeichert')

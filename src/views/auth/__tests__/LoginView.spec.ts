@@ -192,6 +192,55 @@ describe('LoginView', () => {
     expect(mockPush).toHaveBeenCalledWith({ name: 'home' })
   })
 
+  it('sends the link request only once and disables the button while it is in flight', async () => {
+    mockLoginWithGoogleCredential.mockRejectedValueOnce({
+      response: { status: 404, data: { detail: 'ACCOUNT_NOT_LINKED' } },
+    })
+    let finishLink: () => void = () => {}
+    mockLinkGoogleAccount.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishLink = resolve
+      }),
+    )
+    const wrapper = mountLoginView()
+    await triggerGoogleCallback(wrapper, 'google-credential-token')
+    await wrapper.vm.$nextTick()
+    await wrapper.find('input#link-email').setValue('a@example.test')
+    await wrapper.find('input#link-password').setValue('secret')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await wrapper.find('form').trigger('submit.prevent')
+
+    expect(mockLinkGoogleAccount).toHaveBeenCalledOnce()
+    expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeDefined()
+    finishLink()
+    await vi.waitFor(() => expect(mockPush).toHaveBeenCalled())
+  })
+
+  it('allows another attempt after the link request has failed', async () => {
+    mockLoginWithGoogleCredential.mockRejectedValueOnce({
+      response: { status: 404, data: { detail: 'ACCOUNT_NOT_LINKED' } },
+    })
+    mockLinkGoogleAccount
+      .mockRejectedValueOnce({ response: { data: { detail: 'Anmeldedaten falsch.' } } })
+      .mockResolvedValueOnce(undefined)
+    const wrapper = mountLoginView()
+    await triggerGoogleCallback(wrapper, 'google-credential-token')
+    await wrapper.vm.$nextTick()
+    await wrapper.find('input#link-email').setValue('a@example.test')
+    await wrapper.find('input#link-password').setValue('wrong')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Anmeldedaten falsch.'))
+    expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('input#link-password').setValue('secret')
+    await wrapper.find('form').trigger('submit.prevent')
+    await vi.waitFor(() => expect(mockPush).toHaveBeenCalled())
+
+    expect(mockLinkGoogleAccount).toHaveBeenCalledTimes(2)
+  })
+
   it('links the Google account with local credentials and redirects home', async () => {
     mockLoginWithGoogleCredential.mockRejectedValueOnce({
       response: { status: 404, data: { detail: 'ACCOUNT_NOT_LINKED' } },

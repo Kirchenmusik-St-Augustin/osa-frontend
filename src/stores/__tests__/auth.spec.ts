@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '../auth'
@@ -48,6 +49,9 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(true)
     expect(store.accessToken).toBe('token-123')
     expect(store.user?.surname).toBe('MUSTER')
+    expect(mockedApi.get).toHaveBeenCalledWith('/auth/me')
+    const body = mockedApi.post.mock.calls[0]?.[1] as URLSearchParams
+    expect(Object.fromEntries(body)).toEqual({ username: 'a@example.test', password: 'secret' })
     expect(mockedApi.post).toHaveBeenCalledWith(
       '/auth/login',
       expect.any(URLSearchParams),
@@ -65,6 +69,30 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
   })
 
+  it.each([
+    ['login', (store: ReturnType<typeof useAuthStore>) => store.login('a@example.test', 's')],
+    ['verifyEmail', (store: ReturnType<typeof useAuthStore>) => store.verifyEmail('t')],
+    [
+      'loginWithGoogleCredential',
+      (store: ReturnType<typeof useAuthStore>) => store.loginWithGoogleCredential('c'),
+    ],
+    [
+      'linkGoogleAccount',
+      (store: ReturnType<typeof useAuthStore>) =>
+        store.linkGoogleAccount('c', 'a@example.test', 's'),
+    ],
+  ])('%s drops the token again when the profile cannot be loaded', async (_name, run) => {
+    mockedApi.post.mockResolvedValueOnce({ data: { access_token: 'token', token_type: 'bearer' } })
+    mockedApi.get.mockRejectedValueOnce(new Error('profile unavailable'))
+    const store = useAuthStore()
+
+    await expect(run(store)).rejects.toThrow('profile unavailable')
+
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.accessToken).toBeNull()
+    expect(store.user).toBeNull()
+  })
+
   it('hasPermission reflects the fetched profile', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { access_token: 't', token_type: 'bearer' } })
     mockedApi.get.mockResolvedValueOnce({
@@ -79,6 +107,18 @@ describe('useAuthStore', () => {
 
   it('hasPermission is false when logged out', () => {
     expect(useAuthStore().hasPermission('userMaintain')).toBe(false)
+  })
+
+  it('logout posts to the logout endpoint and clears the auth state', async () => {
+    const store = useAuthStore()
+    store.$patch({ accessToken: 'token', user: profile() })
+    mockedApi.post.mockResolvedValueOnce({ data: null })
+
+    await store.logout()
+
+    expect(mockedApi.post).toHaveBeenCalledWith('/auth/logout')
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.user).toBeNull()
   })
 
   it('logout clears auth state even if the API call itself fails', async () => {
@@ -100,6 +140,19 @@ describe('useAuthStore', () => {
 
     expect(store.isAuthenticated).toBe(false)
     expect(mockedApi.get).not.toHaveBeenCalled()
+  })
+
+  it('restoreSession drops the refreshed token when the profile cannot be loaded', async () => {
+    mockedApi.post.mockResolvedValueOnce({
+      data: { access_token: 'restored-token', token_type: 'bearer' },
+    })
+    mockedApi.get.mockRejectedValueOnce(new Error('500'))
+    const store = useAuthStore()
+
+    await store.restoreSession()
+
+    expect(store.accessToken).toBeNull()
+    expect(store.user).toBeNull()
   })
 
   it('restoreSession restores the token and profile when a session exists', async () => {
@@ -143,12 +196,11 @@ describe('useAuthStore', () => {
     expect(mockedApi.get).not.toHaveBeenCalled()
   })
 
-  it('register sends the payload, sets the token, and fetches the profile', async () => {
-    mockedApi.post.mockResolvedValueOnce({ data: { access_token: 'token', token_type: 'bearer' } })
-    mockedApi.get.mockResolvedValueOnce({ data: profile({ id: '3' }) })
+  it('register sends the payload and returns the notice without starting a session', async () => {
+    mockedApi.post.mockResolvedValueOnce({ data: { status: 'ok', message: 'Bitte prüfe.' } })
     const store = useAuthStore()
 
-    await store.register({
+    const notice = await store.register({
       surname: 'c',
       givenname: 'z',
       email: 'c@example.test',
@@ -157,7 +209,9 @@ describe('useAuthStore', () => {
       password_confirmation: 'Passw0rd1',
     })
 
-    expect(store.isAuthenticated).toBe(true)
+    expect(notice).toBe('Bitte prüfe.')
+    expect(store.isAuthenticated).toBe(false)
+    expect(mockedApi.get).not.toHaveBeenCalled()
     expect(mockedApi.post).toHaveBeenCalledWith(
       '/auth/register',
       expect.objectContaining({ email: 'c@example.test' }),

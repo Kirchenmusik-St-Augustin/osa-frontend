@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { extractApiErrors } from '@/services/apiErrors'
 import { useAuthStore } from '@/stores/auth'
@@ -10,6 +10,9 @@ const route = useRoute()
 const router = useRouter()
 
 const token = typeof route.query['token'] === 'string' ? route.query['token'] : ''
+// The one-time token was read above; remove it from the address bar and the
+// browser history entry so it is not left lying around.
+onMounted(() => router.replace({ name: 'reset-password' }))
 const email = ref(typeof route.query['email'] === 'string' ? route.query['email'] : '')
 const password = ref('')
 const passwordConfirmation = ref('')
@@ -67,6 +70,7 @@ async function submit(): Promise<void> {
                 v-model="password"
                 type="password"
                 class="form-control"
+                required
                 autocomplete="new-password"
               />
               <small class="text-danger">{{ fieldErrors['password'] }}</small>

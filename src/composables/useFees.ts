@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 
 export interface Fee {
   id: string
@@ -20,8 +21,7 @@ export function useFees() {
   const items = ref<Fee[]>([])
 
   async function fetchList(): Promise<void> {
-    const response = await api.get<Fee[]>('/fees')
-    items.value = response.data
+    items.value = await fetchAllPages<Fee>('/fees')
   }
 
   async function save(id: string | null, payload: FeePayload): Promise<void> {

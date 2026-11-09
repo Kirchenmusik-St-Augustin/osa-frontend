@@ -24,10 +24,13 @@ verbatim into `dist/` by the build, and the container's own
 a real `config.js` **at container start**, from actual runtime env vars
 (`API_BASE_URL`, `APP_ENVIRONMENT`, optionally `GOOGLE_CLIENT_ID` — no
 `VITE_` prefix, these are read by the running container, not baked into
-the bundle). `src/runtimeConfig.ts` is what actually reads `window.config`
-at app startup. The script fails loudly (non-zero exit, clear stderr
-message) if `API_BASE_URL` or `APP_ENVIRONMENT` is missing — the container
-refuses to start nginx rather than silently serving a broken config.
+the bundle). `src/runtimeConfig.ts` is what actually reads
+`window.__APP_CONFIG__` at app startup. The script fails loudly (non-zero
+exit, clear stderr message) if `API_BASE_URL` or `APP_ENVIRONMENT` is
+missing or unsafe (`API_BASE_URL` must start with `/` or `https://`,
+`APP_ENVIRONMENT` must be one of `development`, `test`, `qa`, `production`).
+The container then refuses to start nginx rather than silently serving a
+broken config.
 
 This is what makes the SAME image deployable to dev, QA, and production
 without a rebuild — only the container's env vars change.
@@ -92,7 +95,9 @@ Two separate mechanisms, not to be confused (see
 
 - **`VITE_*`** (`.env`, this file) — build/dev-time only, used by
   `npm run dev`/`npm run build`. Never put secrets here — they end up in
-  the public browser bundle.
+  the public browser bundle. `VITE_DEV_ALLOWED_HOSTS` lists, comma-separated,
+  the host names the dev server answers to besides localhost (the public
+  dev domain behind the reverse proxy); without it Vite refuses that domain.
 - **Non-`VITE_`** (`API_BASE_URL`, `APP_ENVIRONMENT`, `GOOGLE_CLIENT_ID`)
   — runtime-only, read by the running prod container, set via
   [`osa-deploy`](https://github.com/Kirchenmusik-St-Augustin/osa-deploy)'s `secrets/<stage>/osa-frontend.env.j2`,
@@ -107,6 +112,19 @@ be) configured, and the Google Sign-In button simply doesn't render on
 that stage (`googleClientId()` in `src/runtimeConfig.ts`, checked by
 `LoginView.vue`'s `v-if`). No separate feature-flag variable needed; the
 client ID itself is the switch.
+
+## Reporting a vulnerability
+
+Please do not open a public issue for a security problem. Report it
+privately instead:
+
+- through GitHub's private vulnerability reporting: the "Security and
+  quality" tab of this repository, then "Report a vulnerability", or
+- by e-mail to einteilung@hochamt.at.
+
+Please include the affected version or commit, the steps to reproduce and
+the impact you expect. We answer as soon as possible and keep you informed
+while the problem is fixed.
 
 ## Branching
 
@@ -123,8 +141,8 @@ on manual dispatch:
 2. **Typecheck & Test** — `npm run type-check` (`vue-tsc --build`) +
    `npm run test:coverage`
 3. **CodeQL Security Scan**
-4. **Build & Push Image** — only on `push`/`workflow_dispatch` (never on
-   PRs or the scheduled run), pushes
+4. **Build & Push Image** — only on `push`/`workflow_dispatch` started on
+   `main` (never on PRs, other branches or the scheduled run), pushes
    `ghcr.io/kirchenmusik-st-augustin/osa-frontend:latest` and
    `:${{ github.sha }}`
 
@@ -163,11 +181,13 @@ Containerstart** eine echte `config.js` — aus den tatsächlichen
 Runtime-Env-Vars (`API_BASE_URL`, `APP_ENVIRONMENT`, optional
 `GOOGLE_CLIENT_ID` — ohne `VITE_`-Präfix, diese werden vom laufenden
 Container gelesen, nicht ins Bundle gebacken). `src/runtimeConfig.ts`
-liest beim App-Start tatsächlich `window.config`. Das Skript schlägt laut
-fehl (Exit-Code ungleich Null, klare Fehlermeldung auf stderr), wenn
-`API_BASE_URL` oder `APP_ENVIRONMENT` fehlt — der Container verweigert
-dann den nginx-Start, statt still eine kaputte Konfiguration
-auszuliefern.
+liest beim App-Start tatsächlich `window.__APP_CONFIG__`. Das Skript
+schlägt laut fehl (Exit-Code ungleich Null, klare Fehlermeldung auf
+stderr), wenn `API_BASE_URL` oder `APP_ENVIRONMENT` fehlt oder unsicher
+ist (`API_BASE_URL` muss mit `/` oder `https://` beginnen,
+`APP_ENVIRONMENT` einer von `development`, `test`, `qa`, `production`
+sein). Der Container verweigert dann den nginx-Start, statt still eine
+kaputte Konfiguration auszuliefern.
 
 Genau das macht dasselbe Image für Dev, QA und Produktion einsetzbar,
 ohne Neubau — nur die Env-Vars des Containers ändern sich.
@@ -234,7 +254,10 @@ Zwei getrennte Mechanismen, nicht zu verwechseln (siehe
 
 - **`VITE_*`** (`.env`, diese Datei) — nur Build-/Dev-Zeit, genutzt von
   `npm run dev`/`npm run build`. Niemals Secrets hier eintragen — sie
-  landen im öffentlichen Browser-Bundle.
+  landen im öffentlichen Browser-Bundle. `VITE_DEV_ALLOWED_HOSTS` nennt,
+  kommagetrennt, die Hostnamen, auf die der Dev-Server neben localhost
+  antwortet (die öffentliche Dev-Domain hinter dem Reverse-Proxy); ohne den
+  Wert verweigert Vite diese Domain.
 - **Ohne `VITE_`-Präfix** (`API_BASE_URL`, `APP_ENVIRONMENT`,
   `GOOGLE_CLIENT_ID`) — nur zur Laufzeit, gelesen vom laufenden
   Prod-Container, gesetzt über [`osa-deploy`](https://github.com/Kirchenmusik-St-Augustin/osa-deploy)s
@@ -251,6 +274,19 @@ Google-Sign-In-Button auf dieser Stage schlichtweg nicht
 `v-if`). Keine eigene Feature-Flag-Variable nötig — die Client-ID selbst
 ist der Schalter.
 
+## Sicherheitslücke melden
+
+Bitte kein öffentliches Issue für ein Sicherheitsproblem eröffnen, sondern
+es privat melden:
+
+- über die private Schwachstellenmeldung von GitHub: Reiter "Security and
+  quality" dieses Repositorys, dann "Report a vulnerability", oder
+- per E-Mail an einteilung@hochamt.at.
+
+Bitte die betroffene Version oder den Commit, die Schritte zur
+Reproduktion und die erwartete Auswirkung angeben. Wir antworten so
+schnell wie möglich und halten dich über die Behebung auf dem Laufenden.
+
 ## Branching
 
 - `main` — geschützt, nur per PR mergen
@@ -266,8 +302,9 @@ CodeQL-Refresh) und bei manuellem Dispatch:
 2. **Typecheck & Test** — `npm run type-check` (`vue-tsc --build`) +
    `npm run test:coverage`
 3. **CodeQL Security Scan**
-4. **Build & Push Image** — nur bei `push`/`workflow_dispatch` (nie bei
-   PRs oder dem geplanten Lauf), pusht
+4. **Build & Push Image** — nur bei `push`/`workflow_dispatch`, die auf
+   `main` gestartet wurden (nie bei PRs, anderen Branches oder dem
+   geplanten Lauf), pusht
    `ghcr.io/kirchenmusik-st-augustin/osa-frontend:latest` und
    `:${{ github.sha }}`
 

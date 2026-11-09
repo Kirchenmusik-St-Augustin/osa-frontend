@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSqlInspector } from '../useSqlInspector'
 import api from '@/services/api'
@@ -9,7 +10,7 @@ vi.mock('@/services/api', () => ({
 const mockedApi = vi.mocked(api)
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useSqlInspector', () => {
@@ -41,5 +42,17 @@ describe('useSqlInspector', () => {
       params: { page: 2, page_size: 25 },
     })
     expect(result).toEqual(tableData)
+  })
+
+  it('encodes the table name, which does not come from a UUID-constrained route', async () => {
+    mockedApi.get.mockResolvedValueOnce({ data: {} })
+    const { getTableData } = useSqlInspector()
+
+    await getTableData('../users?x=1', 1, 25)
+
+    expect(mockedApi.get).toHaveBeenCalledWith(
+      '/administrator/sql-inspector/tables/..%2Fusers%3Fx%3D1',
+      { params: { page: 1, page_size: 25 } },
+    )
   })
 })

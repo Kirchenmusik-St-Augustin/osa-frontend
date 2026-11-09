@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { h } from 'vue'
+import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import SearchTypeahead from '../SearchTypeahead.vue'
 
 beforeEach(() => {
@@ -10,7 +11,113 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+async function showResults(wrapper: VueWrapper): Promise<void> {
+  await wrapper.find('input').setValue('Mozart')
+  await vi.advanceTimersByTimeAsync(300)
+  await flushPromises()
+}
+
 describe('SearchTypeahead', () => {
+  it('gives the search field an accessible name', () => {
+    const wrapper = mount(SearchTypeahead, { props: { search: vi.fn() } })
+
+    expect(wrapper.find('input').attributes('aria-label')).toBe('Suchen')
+  })
+
+  describe('dismissing the result list', () => {
+    const hit = [{ id: 5, label: 'MOZART, Wolfgang' }]
+
+    it('closes the list on Escape without letting the key reach an enclosing dialog', async () => {
+      const outerKeydown = vi.fn()
+      const wrapper = mount(
+        {
+          render: () =>
+            h('div', { onKeydown: outerKeydown }, [
+              h(SearchTypeahead, { search: vi.fn().mockResolvedValue(hit) }),
+            ]),
+        },
+        { attachTo: document.body },
+      )
+      await showResults(wrapper)
+      expect(wrapper.find('.list-group-item').exists()).toBe(true)
+
+      await wrapper.find('input').trigger('keydown', { key: 'Escape' })
+
+      expect(wrapper.find('.list-group-item').exists()).toBe(false)
+      expect(outerKeydown).not.toHaveBeenCalled()
+      wrapper.unmount()
+    })
+
+    it('lets Escape reach an enclosing dialog while no list is shown', async () => {
+      const outerKeydown = vi.fn()
+      const wrapper = mount(
+        {
+          render: () =>
+            h('div', { onKeydown: outerKeydown }, [h(SearchTypeahead, { search: vi.fn() })]),
+        },
+        { attachTo: document.body },
+      )
+
+      await wrapper.find('input').trigger('keydown', { key: 'Escape' })
+
+      expect(outerKeydown).toHaveBeenCalledOnce()
+      wrapper.unmount()
+    })
+
+    it('closes the list on a click outside the widget but not on a click inside it', async () => {
+      const wrapper = mount(SearchTypeahead, {
+        props: { search: vi.fn().mockResolvedValue(hit) },
+        attachTo: document.body,
+      })
+      await showResults(wrapper)
+
+      await wrapper.find('input').trigger('click')
+      expect(wrapper.find('.list-group-item').exists()).toBe(true)
+
+      document.body.click()
+      await flushPromises()
+      expect(wrapper.find('.list-group-item').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('does not reopen the list from an answer that lands after it was dismissed', async () => {
+      let resolveSearch: (found: typeof hit) => void = () => {}
+      const search = vi.fn().mockReturnValue(
+        new Promise<typeof hit>((resolve) => {
+          resolveSearch = resolve
+        }),
+      )
+      const wrapper = mount(SearchTypeahead, { props: { search }, attachTo: document.body })
+      await wrapper.find('input').setValue('Mozart')
+      await vi.advanceTimersByTimeAsync(300)
+
+      document.body.click()
+      resolveSearch(hit)
+      await flushPromises()
+
+      expect(wrapper.find('.list-group-item').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('does not run a debounced search that was still waiting when the list was dismissed', async () => {
+      const search = vi.fn().mockResolvedValue(hit)
+      const wrapper = mount(SearchTypeahead, { props: { search }, attachTo: document.body })
+      await wrapper.find('input').setValue('Mozart')
+
+      document.body.click()
+      await vi.advanceTimersByTimeAsync(300)
+
+      expect(search).not.toHaveBeenCalled()
+      wrapper.unmount()
+    })
+  })
+
+  it('limits the input to the longest search term the API accepts', () => {
+    const wrapper = mount(SearchTypeahead, { props: { search: vi.fn() } })
+
+    expect(wrapper.find('input').attributes('maxlength')).toBe('64')
+  })
+
   it('does not search for an empty/whitespace-only query', async () => {
     const search = vi.fn()
     const wrapper = mount(SearchTypeahead, { props: { search } })
@@ -60,6 +167,75 @@ describe('SearchTypeahead', () => {
 
     expect(wrapper.emitted('select')?.[0]).toEqual([5])
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('ignores a slow answer to an older query that arrives after the answer to the newer one', async () => {
+    const resolvers: Record<string, (hits: { id: string; label: string }[]) => void> = {}
+    const search = vi.fn(
+      (query: string) =>
+        new Promise<{ id: string; label: string }[]>((resolve) => {
+          resolvers[query] = resolve
+        }),
+    )
+    const wrapper = mount(SearchTypeahead, { props: { search } })
+
+    await wrapper.find('input').setValue('Moz')
+    await vi.advanceTimersByTimeAsync(300)
+    await wrapper.find('input').setValue('Mozart')
+    await vi.advanceTimersByTimeAsync(300)
+
+    resolvers['Mozart']?.([{ id: 'new', label: 'MOZART, Wolfgang' }])
+    await flushPromises()
+    resolvers['Moz']?.([{ id: 'old', label: 'MOZZI, Old' }])
+    await flushPromises()
+
+    expect(wrapper.findAll('.list-group-item').map((item) => item.text())).toEqual([
+      'MOZART, Wolfgang',
+    ])
+  })
+
+  it('does not repopulate the list from a response that lands after the field was cleared', async () => {
+    let resolveSearch: (hits: { id: string; label: string }[]) => void = () => undefined
+    const search = vi.fn(
+      () =>
+        new Promise<{ id: string; label: string }[]>((resolve) => {
+          resolveSearch = resolve
+        }),
+    )
+    const wrapper = mount(SearchTypeahead, { props: { search } })
+
+    await wrapper.find('input').setValue('Mozart')
+    await vi.advanceTimersByTimeAsync(300)
+    await wrapper.find('input').setValue('')
+    resolveSearch([{ id: 'late', label: 'MOZART, Wolfgang' }])
+    await flushPromises()
+
+    expect(wrapper.find('.list-group').exists()).toBe(false)
+  })
+
+  it('does not reopen the list from a response that lands after a hit was selected', async () => {
+    const resolvers: Record<string, (hits: { id: string; label: string }[]) => void> = {}
+    const search = vi.fn(
+      (query: string) =>
+        new Promise<{ id: string; label: string }[]>((resolve) => {
+          resolvers[query] = resolve
+        }),
+    )
+    const wrapper = mount(SearchTypeahead, { props: { search } })
+
+    await wrapper.find('input').setValue('Moz')
+    await vi.advanceTimersByTimeAsync(300)
+    resolvers['Moz']?.([{ id: 'first', label: 'MOZART, Wolfgang' }])
+    await flushPromises()
+    await wrapper.find('input').setValue('Mozart')
+    await vi.advanceTimersByTimeAsync(300)
+
+    await wrapper.find('.list-group-item').trigger('click')
+    resolvers['Mozart']?.([{ id: 'late', label: 'MOZART, Leopold' }])
+    await flushPromises()
+
+    expect(wrapper.emitted('select')?.[0]).toEqual(['first'])
+    expect(wrapper.find('.list-group').exists()).toBe(false)
   })
 
   it('renders the results list as a floating overlay, not pushing the page down', async () => {

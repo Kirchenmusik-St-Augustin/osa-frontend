@@ -1,6 +1,9 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSentEmails } from '../useSentEmails'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn() },
@@ -9,20 +12,21 @@ vi.mock('@/services/api', () => ({
 const mockedApi = vi.mocked(api)
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useSentEmails', () => {
   it('listForMonth requests the month-scoped endpoint', async () => {
     const entries = [{ id: 1, datetime: '2026-08-01T10:00:00Z', to: 'a@b.test', subject: 'X' }]
-    mockedApi.get.mockResolvedValueOnce({ data: entries })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf(entries) })
     const { listForMonth } = useSentEmails()
 
     const result = await listForMonth(2026, 8)
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/sent-emails', {
-      params: { year: 2026, month: 8 },
-    })
+    expect(mockedApi.get).toHaveBeenCalledWith(
+      '/administrator/sent-emails',
+      firstPageRequest({ year: 2026, month: 8 }),
+    )
     expect(result).toEqual(entries)
   })
 
@@ -41,9 +45,9 @@ describe('useSentEmails', () => {
     mockedApi.get.mockResolvedValueOnce({ data: email })
     const { get } = useSentEmails()
 
-    const result = await get(1)
+    const result = await get(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/sent-emails/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/administrator/sent-emails/${testId(1)}`)
     expect(result).toEqual(email)
   })
 })

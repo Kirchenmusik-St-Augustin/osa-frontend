@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type * as VueRouter from 'vue-router'
 import { describe, expect, it, vi } from 'vitest'
 import { useMonthQuery } from '../useMonthQuery'
@@ -41,5 +42,25 @@ describe('useMonthQuery', () => {
 
     expect(year.value).toBe(2025)
     expect(month.value).toBe(3)
+  })
+
+  it.each([[''], [null], [' '], ['0'], ['13'], ['-1'], ['1e3'], ['0x10'], ['2.5'], ['99999']])(
+    'falls back to the current month for the unusable value %j',
+    (value) => {
+      mockQuery = { year: value, month: value }
+      const { year, month } = useMonthQuery()
+
+      const now = new Date()
+      expect(year.value).toBe(now.getFullYear())
+      expect(month.value).toBe(now.getMonth() + 1)
+    },
+  )
+
+  it('accepts the boundaries of the valid month range', () => {
+    mockQuery = { year: '2026', month: '12' }
+    expect(useMonthQuery().month.value).toBe(12)
+
+    mockQuery = { year: '2026', month: '1' }
+    expect(useMonthQuery().month.value).toBe(1)
   })
 })

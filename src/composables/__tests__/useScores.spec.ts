@@ -1,6 +1,8 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useScores } from '../useScores'
 import api from '@/services/api'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn() },
@@ -9,7 +11,7 @@ vi.mock('@/services/api', () => ({
 const mockedApi = vi.mocked(api)
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useScores', () => {
@@ -53,9 +55,9 @@ describe('useScores', () => {
     mockedApi.get.mockResolvedValueOnce({ data: score })
     const { get } = useScores()
 
-    const result = await get(7)
+    const result = await get(testId(7))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/scores/7')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/scores/${testId(7)}`)
     expect(result).toEqual(score)
   })
 
@@ -77,9 +79,9 @@ describe('useScores', () => {
     mockedApi.put.mockResolvedValueOnce({ data: updated })
     const { update } = useScores()
 
-    const result = await update(1, payload)
+    const result = await update(testId(1), payload)
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/scores/1', payload)
+    expect(mockedApi.put).toHaveBeenCalledWith(`/scores/${testId(1)}`, payload)
     expect(result).toEqual(updated)
   })
 })

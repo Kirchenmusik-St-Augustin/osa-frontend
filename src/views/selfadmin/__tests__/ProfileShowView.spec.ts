@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import ProfileShowView from '../ProfileShowView.vue'
 import type { User } from '@/composables/useUsers'
+import { testId } from '@/__tests__/testId'
 
 const mockGet = vi.fn()
 const mockDisconnectOauth2 = vi.fn()
@@ -28,7 +29,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: 1,
+    id: testId(1),
     surname: 'SCHINDLER',
     givenname: 'Margot',
     email: 'margot@example.com',
@@ -55,6 +56,25 @@ beforeEach(() => {
 })
 
 describe('ProfileShowView', () => {
+  it('tells the member when the profile cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(ProfileShowView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.text()).not.toContain('SCHINDLER')
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGet.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(ProfileShowView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Das Profil konnte nicht geladen werden.', true)
+  })
+
   it('loads and renders the own profile data', async () => {
     mockGet.mockResolvedValueOnce(makeUser())
     const wrapper = mount(ProfileShowView)
@@ -76,7 +96,7 @@ describe('ProfileShowView', () => {
   it('lists connected accounts with their capitalized provider name', async () => {
     mockGet.mockResolvedValueOnce(
       makeUser({
-        oauth2_bindings: [{ id: 9, provider: 'google', remote_name: 'Margot S.' }],
+        oauth2_bindings: [{ id: testId(9), provider: 'google', remote_name: 'Margot S.' }],
       }),
     )
     const wrapper = mount(ProfileShowView)
@@ -89,7 +109,7 @@ describe('ProfileShowView', () => {
   it('removes a binding after confirmation, updating the list locally', async () => {
     mockGet.mockResolvedValueOnce(
       makeUser({
-        oauth2_bindings: [{ id: 9, provider: 'google', remote_name: 'Margot S.' }],
+        oauth2_bindings: [{ id: testId(9), provider: 'google', remote_name: 'Margot S.' }],
       }),
     )
     mockDisconnectOauth2.mockResolvedValueOnce(undefined)
@@ -99,15 +119,36 @@ describe('ProfileShowView', () => {
     await wrapper.find('.fa-trash-alt').trigger('click')
     await flushPromises()
 
-    expect(mockDisconnectOauth2).toHaveBeenCalledWith(9)
+    expect(mockDisconnectOauth2).toHaveBeenCalledWith(testId(9))
     expect(mockShowToast).toHaveBeenCalledWith('Bindung entfernt')
     expect(wrapper.text()).not.toContain('Verbundene Konten')
+  })
+
+  it('offers the removal as a labelled button and asks for the binding by its right name', async () => {
+    mockGet.mockResolvedValueOnce(
+      makeUser({
+        oauth2_bindings: [{ id: testId(9), provider: 'google', remote_name: 'Margot S.' }],
+      }),
+    )
+    mockDisconnectOauth2.mockResolvedValueOnce(undefined)
+    const wrapper = mount(ProfileShowView)
+    await flushPromises()
+
+    const button = wrapper.find('button[aria-label="Google-Bindung entfernen"]')
+    expect(button.exists()).toBe(true)
+    await button.trigger('click')
+    await flushPromises()
+
+    expect(mockConfirmAction).toHaveBeenCalledWith(
+      'Soll diese Bindung tatsächlich entfernt werden?',
+    )
+    expect(mockDisconnectOauth2).toHaveBeenCalledWith(testId(9))
   })
 
   it('does not remove a binding when the confirmation is declined', async () => {
     mockGet.mockResolvedValueOnce(
       makeUser({
-        oauth2_bindings: [{ id: 9, provider: 'google', remote_name: 'Margot S.' }],
+        oauth2_bindings: [{ id: testId(9), provider: 'google', remote_name: 'Margot S.' }],
       }),
     )
     mockConfirmAction.mockResolvedValueOnce(false)

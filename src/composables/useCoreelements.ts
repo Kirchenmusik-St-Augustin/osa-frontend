@@ -1,5 +1,6 @@
 import { ref, toValue, type MaybeRefOrGetter } from 'vue'
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 import type { CoreelementType } from '@/constants/coreelementTypes'
 
 export interface Coreelement {
@@ -10,8 +11,7 @@ export interface Coreelement {
   description: string | null
   address: string | null
   color: string | null
-  // null for types without the concept (location/role/propriumelement) --
-  // osa-only addition, outside the structural 1:1 transfer's scope.
+  // null for types without the concept (location/role/propriumelement).
   active: boolean | null
 }
 
@@ -39,8 +39,7 @@ export function useCoreelements(type: MaybeRefOrGetter<CoreelementType>) {
   }
 
   async function fetchList(): Promise<void> {
-    const response = await api.get<Coreelement[]>(basePath())
-    items.value = response.data
+    items.value = await fetchAllPages<Coreelement>(basePath())
   }
 
   async function save(id: string | null, payload: CoreelementPayload): Promise<void> {

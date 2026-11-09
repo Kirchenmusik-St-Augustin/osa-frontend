@@ -40,6 +40,11 @@ interface TokenResponse {
   token_type: string
 }
 
+interface RegisterResponse {
+  status: string
+  message: string
+}
+
 // Access token lives in memory only (this store), never localStorage --
 // the httponly refresh-token cookie is what survives a page reload; see
 // restoreSession(), called once at app boot (router/guards.ts).
@@ -73,19 +78,31 @@ export const useAuthStore = defineStore('auth', () => {
     return response.data.access_token
   }
 
+  // Every sign-in flow ends here: the access token is only kept if the
+  // profile behind it could be loaded. A token without a user would count as
+  // "authenticated" while the router guard reads the missing profile as an
+  // unverified e-mail address.
+  async function startSession(token: string): Promise<void> {
+    accessToken.value = token
+    try {
+      await fetchProfile()
+    } catch (error) {
+      clearAuth()
+      throw error
+    }
+  }
+
   async function login(email: string, password: string): Promise<void> {
     const body = new URLSearchParams({ username: email, password })
     const response = await api.post<TokenResponse>('/auth/login', body, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     })
-    accessToken.value = response.data.access_token
-    await fetchProfile()
+    await startSession(response.data.access_token)
   }
 
   async function loginWithGoogleCredential(credential: string): Promise<void> {
     const response = await api.post<TokenResponse>('/auth/google/callback', { credential })
-    accessToken.value = response.data.access_token
-    await fetchProfile()
+    await startSession(response.data.access_token)
   }
 
   async function linkGoogleAccount(
@@ -98,20 +115,19 @@ export const useAuthStore = defineStore('auth', () => {
       email,
       password,
     })
-    accessToken.value = response.data.access_token
-    await fetchProfile()
+    await startSession(response.data.access_token)
   }
 
-  async function register(payload: RegisterPayload): Promise<void> {
-    const response = await api.post<TokenResponse>('/auth/register', payload)
-    accessToken.value = response.data.access_token
-    await fetchProfile()
+  // Registration issues no session: the verification link in the mail logs in.
+  // The answer is the same for every outcome, so the notice text is passed on.
+  async function register(payload: RegisterPayload): Promise<string> {
+    const response = await api.post<RegisterResponse>('/auth/register', payload)
+    return response.data.message
   }
 
   async function verifyEmail(token: string): Promise<void> {
     const response = await api.post<TokenResponse>('/auth/verify-email', { token })
-    accessToken.value = response.data.access_token
-    await fetchProfile()
+    await startSession(response.data.access_token)
   }
 
   async function resendVerificationEmail(): Promise<void> {

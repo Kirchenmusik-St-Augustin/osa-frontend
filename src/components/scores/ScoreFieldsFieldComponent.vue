@@ -1,16 +1,16 @@
 <script setup lang="ts">
 // Generic single-field renderer driven entirely by the backend-served field
-// config (see useScores.ts's ScoreFieldConfig). FormSelect.vue is
-// simplified to numeric {id,label} options for its lookup-style call sites
-// (see its own docstring) and doesn't fit here, so "select" is rendered with
-// a small local <select> instead of forcing that contract to also cover raw
-// string values -- a deliberate tradeoff over a forced abstraction.
+// config (see useScores.ts's ScoreFieldConfig): text, number and textarea
+// fields render through FormInput, select fields through FormSelect (the
+// configured string values double as option ids and labels).
+import { computed } from 'vue'
 import FormInput from '@/components/common/FormInput.vue'
+import FormSelect from '@/components/common/FormSelect.vue'
 import type { ScoreFieldConfig } from '@/composables/useScores'
 
 const model = defineModel<string | number | null>({ required: true })
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     name: string
     config?: ScoreFieldConfig
@@ -19,6 +19,7 @@ withDefaults(
     titleSmall?: boolean
     error?: string
     readonly?: boolean
+    ariaLabel?: string
   }>(),
   {
     config: undefined,
@@ -27,7 +28,19 @@ withDefaults(
     titleSmall: false,
     error: '',
     readonly: false,
+    ariaLabel: undefined,
   },
+)
+
+// A select field only ever holds one of its configured strings.
+const selectModel = computed<string | null>({
+  get: () => (model.value === null ? null : String(model.value)),
+  set: (value) => {
+    model.value = value
+  },
+})
+const selectOptions = computed(() =>
+  (props.config?.values ?? []).map((value) => ({ id: value, label: value })),
 )
 </script>
 
@@ -41,6 +54,7 @@ withDefaults(
     :small="small"
     :title-small="titleSmall"
     :error="error"
+    :aria-label="ariaLabel"
     :required="config.required"
     :max="config.kind === 'number' ? 9999 : (config.length ?? undefined)"
     :type="config.kind === 'number' ? 'number' : 'text'"
@@ -54,43 +68,25 @@ withDefaults(
     :small="small"
     :title-small="titleSmall"
     :error="error"
+    :aria-label="ariaLabel"
     :required="config.required"
     :max="config.length ?? undefined"
     type="textarea"
   />
-  <div v-else-if="config?.kind === 'select'" class="form-group">
-    <label v-if="withTitle && config.label" class="form-label" :for="`score-field-${name}`">
-      <small v-if="titleSmall" class="text-black-50">{{ config.label }}</small>
-      <strong v-else>{{ config.label }}</strong>
-    </label>
-    <select
-      :id="`score-field-${name}`"
-      v-model="model"
-      class="form-select"
-      :disabled="readonly"
-      :class="small ? ['form-select-sm'] : []"
-    >
-      <option v-for="value in config.values ?? []" :key="value" :value="value">
-        {{ value }}
-      </option>
-    </select>
-    <small class="text-danger">{{ error }}&nbsp;</small>
-  </div>
+  <FormSelect
+    v-else-if="config?.kind === 'select'"
+    :id="`score-field-${name}`"
+    v-model="selectModel"
+    :title="withTitle ? (config.label ?? undefined) : undefined"
+    :options="selectOptions"
+    :readonly="readonly"
+    :small="small"
+    :title-small="titleSmall"
+    :error="error"
+    :aria-label="ariaLabel"
+  />
   <div v-else>
     <div class="fw-bold">Unknown type in config:</div>
     <pre>{{ config }}</pre>
   </div>
 </template>
-
-<style scoped>
-/* Same disabled styling as FormSelect.vue -- without this, a readonly
-   select (Show page) still renders its dropdown chevron even though it's
-   disabled. */
-select:disabled {
-  background-image: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  appearance: none !important;
-  background-color: #f5f5f5;
-}
-</style>

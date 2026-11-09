@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Serves both "anlegen" (no `id` prop) and "bearbeiten" (`id` set).
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ScoreDataComponent from '@/components/scores/ScoreDataComponent.vue'
 import ScoreFieldsComponent from '@/components/scores/ScoreFieldsComponent.vue'
@@ -10,7 +10,7 @@ import {
   type ScoreFieldConfig,
   type ScoreFieldsPayload,
 } from '@/composables/useScores'
-import { extractApiErrors } from '@/services/apiErrors'
+import { extractApiErrors, unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id?: string }>()
@@ -18,7 +18,7 @@ const router = useRouter()
 const { getFieldsConfig, getDefaults, get, create, update } = useScores()
 
 const score = ref<Score | null>(null)
-const fields = reactive<ScoreFieldsPayload>({})
+const fields = ref<ScoreFieldsPayload>({})
 const fieldsConfig = ref<Record<string, ScoreFieldConfig>>({})
 const fieldErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
@@ -31,10 +31,17 @@ async function loadInitialFields(): Promise<ScoreFieldsPayload> {
 }
 
 onMounted(async () => {
-  const [config, initialFields] = await Promise.all([getFieldsConfig(), loadInitialFields()])
-  fieldsConfig.value = config
-  Object.assign(fields, initialFields)
-  ready.value = true
+  try {
+    const [config, initialFields] = await Promise.all([getFieldsConfig(), loadInitialFields()])
+    fieldsConfig.value = config
+    fields.value = initialFields
+    ready.value = true
+  } catch (error) {
+    // The form stays hidden: an empty form saved over an existing score
+    // would erase it.
+    showToast(unattachedErrorMessage(error) ?? 'Das Formular konnte nicht geladen werden.', true)
+    await router.push({ name: 'repertoire-scores-search' })
+  }
 })
 
 async function save(): Promise<void> {
@@ -44,12 +51,13 @@ async function save(): Promise<void> {
   submitting.value = true
   fieldErrors.value = {}
   try {
-    const saved = props.id ? await update(props.id, fields) : await create(fields)
+    const saved = props.id ? await update(props.id, fields.value) : await create(fields.value)
     showToast('gespeichert.')
     await router.push({ name: 'repertoire-scores-show', params: { id: saved.id } })
   } catch (error) {
     fieldErrors.value = extractApiErrors(error).fieldErrors
-    showToast('Ein Fehler ist aufgetreten.', true)
+    // The server's reason when there is no field to show it under.
+    showToast(unattachedErrorMessage(error) ?? 'Ein Fehler ist aufgetreten.', true)
   } finally {
     submitting.value = false
   }

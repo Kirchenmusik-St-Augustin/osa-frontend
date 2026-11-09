@@ -4,9 +4,10 @@ import { mount, flushPromises } from '@vue/test-utils'
 import ShorturlView from '../ShorturlView.vue'
 import type { Shorturl } from '@/composables/useShorturls'
 import { formatUtcDateTime } from '@/services/dateFormat'
+import { testId } from '@/__tests__/testId'
 
 const mockItems = ref<Shorturl[]>([])
-const mockUrlprefix = ref('https://go.hochamt.at.dev.schimpl.cc/')
+const mockUrlprefix = ref('https://go.example.test/')
 const mockFetchList = vi.fn(async () => {})
 const mockSave = vi.fn(async () => {})
 const mockRemove = vi.fn(async () => {})
@@ -30,7 +31,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeShorturl(overrides: Partial<Shorturl> = {}): Shorturl {
   return {
-    id: 1,
+    id: testId(1),
     path: 'konzert',
     target: 'http://example.org',
     counter: 0,
@@ -42,7 +43,7 @@ function makeShorturl(overrides: Partial<Shorturl> = {}): Shorturl {
 beforeEach(() => {
   vi.clearAllMocks()
   mockItems.value = []
-  mockUrlprefix.value = 'https://go.hochamt.at.dev.schimpl.cc/'
+  mockUrlprefix.value = 'https://go.example.test/'
 })
 
 function rows(wrapper: ReturnType<typeof mount>) {
@@ -52,8 +53,13 @@ function rows(wrapper: ReturnType<typeof mount>) {
 describe('ShorturlView', () => {
   it('fetches and renders every shorturl as its own row', async () => {
     mockItems.value = [
-      makeShorturl({ id: 1, path: 'konzert', target: 'http://example.org', counter: 5 }),
-      makeShorturl({ id: 2, path: 'orgel', target: 'http://example.org/orgel', counter: 0 }),
+      makeShorturl({ id: testId(1), path: 'konzert', target: 'http://example.org', counter: 5 }),
+      makeShorturl({
+        id: testId(2),
+        path: 'orgel',
+        target: 'http://example.org/orgel',
+        counter: 0,
+      }),
     ]
     const wrapper = mount(ShorturlView)
     await flushPromises()
@@ -67,7 +73,7 @@ describe('ShorturlView', () => {
     const wrapper = mount(ShorturlView)
     await flushPromises()
 
-    const link = wrapper.find('a[href="https://go.hochamt.at.dev.schimpl.cc/konzert"]')
+    const link = wrapper.find('a[href="https://go.example.test/konzert"]')
     expect(link.exists()).toBe(true)
     expect(link.text()).toContain('konzert')
 
@@ -76,10 +82,44 @@ describe('ShorturlView', () => {
     expect(targetLink.text()).toBe('http://example.org/foo')
   })
 
+  it('does not link the short URL when the server prefix is not a web URL', async () => {
+    mockUrlprefix.value = 'javascript:alert(1)//'
+    mockItems.value = [makeShorturl({ path: 'konzert', target: 'https://example.org/a' })]
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+
+    const hrefs = wrapper.findAll('a[href]').map((link) => link.attributes('href'))
+    expect(hrefs).toEqual(['https://example.org/a'])
+  })
+
+  it('links a web target with noopener, and never links a script, data or vbscript target', async () => {
+    mockItems.value = [
+      makeShorturl({ id: testId(1), path: 'ok', target: 'https://example.org/a' }),
+      makeShorturl({ id: testId(2), path: 'evil', target: 'javascript:alert(document.domain)' }),
+      makeShorturl({
+        id: testId(3),
+        path: 'data',
+        target: 'data:text/html,<script>alert(1)</script>',
+      }),
+      makeShorturl({ id: testId(4), path: 'vb', target: 'vbscript:msgbox(1)' }),
+    ]
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+
+    const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
+    expect(hrefs).toContain('https://example.org/a')
+    const scriptScheme = /^(javascript|data|vbscript):/i
+    expect(hrefs.some((href) => scriptScheme.test(href ?? ''))).toBe(false)
+    for (const link of wrapper.findAll('a[target="_blank"]')) {
+      expect(link.attributes('rel')).toBe('noopener noreferrer')
+    }
+    expect(rows(wrapper)[1]?.text()).toContain('javascript:alert(document.domain)')
+  })
+
   it('shows counter and latestcall_at, blank when never called', async () => {
     mockItems.value = [
-      makeShorturl({ id: 1, counter: 7, latestcall_at: '2026-08-01T10:00:00+00:00' }),
-      makeShorturl({ id: 2, path: 'never-called', counter: 0, latestcall_at: null }),
+      makeShorturl({ id: testId(1), counter: 7, latestcall_at: '2026-08-01T10:00:00+00:00' }),
+      makeShorturl({ id: testId(2), path: 'never-called', counter: 0, latestcall_at: null }),
     ]
     const wrapper = mount(ShorturlView)
     await flushPromises()
@@ -100,6 +140,7 @@ describe('ShorturlView', () => {
     expect(wrapper.find('.modal').exists()).toBe(false)
     await wrapper.find('button.btn-secondary.my-3').trigger('click')
     expect(wrapper.find('.modal').exists()).toBe(true)
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe('Bearbeiten')
 
     await wrapper.find('input#shorturl-path').setValue('konzert')
     await wrapper.find('input#shorturl-target').setValue('example.org')
@@ -112,7 +153,9 @@ describe('ShorturlView', () => {
   })
 
   it('pre-fills the form and updates the existing shorturl when editing', async () => {
-    mockItems.value = [makeShorturl({ id: 7, path: 'konzert', target: 'http://example.org' })]
+    mockItems.value = [
+      makeShorturl({ id: testId(7), path: 'konzert', target: 'http://example.org' }),
+    ]
     mockSave.mockResolvedValueOnce(undefined)
     const wrapper = mount(ShorturlView)
     await flushPromises()
@@ -127,7 +170,7 @@ describe('ShorturlView', () => {
     await wrapper.find('button.btn-primary').trigger('click')
     await flushPromises()
 
-    expect(mockSave).toHaveBeenCalledWith(7, { path: 'konzert', target: 'example.org/new' })
+    expect(mockSave).toHaveBeenCalledWith(testId(7), { path: 'konzert', target: 'example.org/new' })
   })
 
   it('shows field-level validation errors under the matching input', async () => {
@@ -150,7 +193,7 @@ describe('ShorturlView', () => {
   })
 
   it('deletes a shorturl after the user confirms', async () => {
-    mockItems.value = [makeShorturl({ id: 3 })]
+    mockItems.value = [makeShorturl({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(true)
     mockRemove.mockResolvedValueOnce(undefined)
     const wrapper = mount(ShorturlView)
@@ -160,12 +203,25 @@ describe('ShorturlView', () => {
     await flushPromises()
 
     expect(mockConfirmAction).toHaveBeenCalledWith('Soll das Element wirklich gelöscht werden?')
-    expect(mockRemove).toHaveBeenCalledWith(3)
+    expect(mockRemove).toHaveBeenCalledWith(testId(3))
     expect(mockShowToast).toHaveBeenCalledWith('Element gelöscht')
   })
 
+  it('tells the user when deleting fails without a reason of its own', async () => {
+    mockItems.value = [makeShorturl({ id: testId(3) })]
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+
+    await wrapper.find('i[title="löschen"]').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
   it('does not delete when the user cancels the confirmation', async () => {
-    mockItems.value = [makeShorturl({ id: 3 })]
+    mockItems.value = [makeShorturl({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(false)
     const wrapper = mount(ShorturlView)
     await flushPromises()

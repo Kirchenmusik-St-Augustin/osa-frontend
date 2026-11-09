@@ -33,7 +33,7 @@ watch(
 </script>
 
 <template>
-  <AppModal v-model="isOpen">
+  <AppModal v-model="isOpen" label="Bestätigung">
     <div class="modal-content">
       <div class="modal-body">{{ displayedMessage }}</div>
       <div class="modal-footer">

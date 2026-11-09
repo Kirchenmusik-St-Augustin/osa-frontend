@@ -102,6 +102,21 @@ describe('AppNavbar', () => {
     expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
   })
 
+  it('still redirects to login when the logout request fails', async () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [],
+    }
+    mockLogout.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(AppNavbar)
+
+    await wrapper.find('button.dropdown-item').trigger('click')
+    await vi.waitFor(() => expect(mockPush).toHaveBeenCalled())
+
+    expect(mockPush).toHaveBeenCalledWith({ name: 'login' })
+  })
+
   it('shows the three self-service links in the user dropdown when logged in', () => {
     mockAuthState = {
       isAuthenticated: true,
@@ -307,6 +322,21 @@ describe('AppNavbar', () => {
     expect(wrapper.text()).not.toContain('Notenarchiv')
   })
 
+  it.each([
+    ['artistMaintain', 'Komponisten und Dirigenten'],
+    ['propriumworkMaintain', 'Proprium-Werke'],
+  ])('opens the Repertoire menu with just %s', (permission, linkText) => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: [permission],
+    }
+    const wrapper = mount(AppNavbar)
+
+    expect(wrapper.text()).toContain('Repertoire')
+    expect(wrapper.text()).toContain(linkText)
+  })
+
   it('shows only "Notenarchiv" with just scoreMaintain', () => {
     mockAuthState = {
       isAuthenticated: true,
@@ -355,6 +385,35 @@ describe('AppNavbar', () => {
       'Komponisten und Dirigenten',
       'Notenarchiv',
     ])
+  })
+
+  it('separates "Notenarchiv" from "Komponisten und Dirigenten" with a divider', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: ['artistMaintain', 'scoreMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    const artists = wrapper
+      .findAll('.dropdown-item')
+      .find((link) => link.text() === 'Komponisten und Dirigenten')
+    const divider = artists?.element.nextElementSibling
+    expect(divider?.classList.contains('dropdown-divider')).toBe(true)
+    expect(divider?.nextElementSibling?.textContent?.trim()).toBe('Notenarchiv')
+  })
+
+  it('shows no divider in the repertoire menu when only one of the two entries is visible', () => {
+    mockAuthState = {
+      isAuthenticated: true,
+      user: { surname: 'MUSTER', givenname: 'Max' },
+      permissions: ['scoreMaintain'],
+    }
+    const wrapper = mount(AppNavbar)
+
+    const scores = wrapper.findAll('.dropdown-item').find((link) => link.text() === 'Notenarchiv')
+    expect(scores?.exists()).toBe(true)
+    expect(scores?.element.parentElement?.querySelector('.dropdown-divider')).toBeNull()
   })
 
   it('hides "Kurz-URLs" without shorturlMaintain', () => {

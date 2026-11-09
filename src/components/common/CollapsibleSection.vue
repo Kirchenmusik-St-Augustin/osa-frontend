@@ -23,11 +23,16 @@ const show = ref(props.initShow)
 
 <template>
   <div>
-    <div class="c-pointer text-primary my-3" @click="show = !show">
-      <i :class="show ? 'fas fa-minus-square' : 'fas fa-plus-square'"></i>
+    <button
+      type="button"
+      class="c-pointer text-primary my-3 d-block p-0 border-0 bg-transparent text-start"
+      :aria-expanded="show"
+      @click="show = !show"
+    >
+      <i :class="show ? 'fas fa-minus-square' : 'fas fa-plus-square'" aria-hidden="true"></i>
       <strong class="ms-2">{{ title }}</strong>
       <strong v-if="!hideDesc">&nbsp;{{ show ? 'verbergen' : 'anzeigen' }}</strong>
-    </div>
+    </button>
     <div v-if="show" :class="hideBorder ? '' : 'border rounded p-2 my-1'">
       <slot />
     </div>

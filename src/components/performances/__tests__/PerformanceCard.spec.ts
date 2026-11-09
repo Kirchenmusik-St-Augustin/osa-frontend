@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PerformanceCard, { type PerformanceCardData } from '../PerformanceCard.vue'
 import { toWallClockString } from '@/services/dateFormat'
+import { testId } from '@/__tests__/testId'
 
 let mockPermissions: string[] = []
 vi.mock('@/stores/auth', () => ({
@@ -27,7 +28,7 @@ function pastIso(): string {
 }
 
 const basePerformance: PerformanceCardData = {
-  id: 42,
+  id: testId(42),
   schedule: futureIso(),
   location: { name: 'Augustinerkirche', color: '336699' },
   ordinariumwork_name: 'Krönungsmesse',
@@ -90,6 +91,38 @@ describe('PerformanceCard', () => {
     expect(wrapper.text()).toContain('GP')
   })
 
+  it('exposes both toggles as buttons that mirror their state in aria-expanded', async () => {
+    const wrapper = mount(PerformanceCard, {
+      props: {
+        performance: {
+          ...basePerformance,
+          rehearsals: [{ schedule: futureIso(), comment: 'GP' }],
+          proprium: [
+            {
+              propriumelement_id: testId(1),
+              propriumelement_name: 'Introitus',
+              propriumwork_id: testId(2),
+              propriumwork_name: 'Gregorianik I',
+              artist_name: 'HAYDN, Joseph',
+              description: null,
+              demanding: false,
+            },
+          ],
+        },
+      },
+    })
+    const toggles = wrapper.findAll('button')
+    expect(toggles).toHaveLength(2)
+
+    for (const toggle of toggles) {
+      expect(toggle.attributes('type')).toBe('button')
+      expect(toggle.find('i').attributes('aria-hidden')).toBe('true')
+      expect(toggle.attributes('aria-expanded')).toBe('false')
+      await toggle.trigger('click')
+      expect(toggle.attributes('aria-expanded')).toBe('true')
+    }
+  })
+
   it('toggles the read-only Proprium display without a remove control', async () => {
     const wrapper = mount(PerformanceCard, {
       props: {
@@ -97,9 +130,9 @@ describe('PerformanceCard', () => {
           ...basePerformance,
           proprium: [
             {
-              propriumelement_id: 1,
+              propriumelement_id: testId(1),
               propriumelement_name: 'Introitus',
-              propriumwork_id: 2,
+              propriumwork_id: testId(2),
               propriumwork_name: 'Gregorianik I',
               artist_name: 'HAYDN, Joseph',
               description: null,

@@ -46,7 +46,7 @@ const badge = computed((): { text: string; badgeClass: string } | null => {
 })
 
 const tooltip = computed(() =>
-  props.status.at ? `status changed at: ${formatDateTime(props.status.at)}` : undefined,
+  props.status.at ? `Status geändert am ${formatDateTime(props.status.at)}` : undefined,
 )
 
 const action = computed(() => nextActionFor(props.status.status))
@@ -62,11 +62,14 @@ const triggerTitle = computed(() => TRIGGER_TITLE_BY_STATUS[props.status.status]
   <span v-if="badge" class="badge" :class="badge.badgeClass" :title="tooltip">{{
     badge.text
   }}</span>
-  <i
+  <button
     v-if="interactive && action"
-    class="fas c-pointer ms-2"
-    :class="[triggerIcon, triggerColor]"
+    type="button"
+    class="btn btn-link p-0 ms-2 align-baseline"
     :title="triggerTitle"
+    :aria-label="triggerTitle"
     @click="emit('trigger')"
-  ></i>
+  >
+    <i class="fas" :class="[triggerIcon, triggerColor]" aria-hidden="true"></i>
+  </button>
 </template>

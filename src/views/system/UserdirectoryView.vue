@@ -12,6 +12,8 @@ import {
   type DirectoryEntry,
   type DirectoryPositionType,
 } from '@/composables/useUserdirectory'
+import { useLatestResult } from '@/composables/useLatestResult'
+import { unattachedErrorMessage } from '@/services/apiErrors'
 import { showToast } from '@/services/notifications'
 
 const { getAbilities, listUsers } = useUserdirectory()
@@ -24,6 +26,7 @@ const checkAllStatus = ref(false)
 // list right on mount -- no manual selection required (same default as
 // MessageToCastView.vue's ability dropdown).
 const selectedAbility = ref('all')
+const applyLatest = useLatestResult()
 
 const POSITION_TYPES: readonly DirectoryPositionType[] = ['instruments', 'voices', 'choirjobs']
 const POSITION_LABELS: Record<DirectoryPositionType, string> = {
@@ -32,23 +35,36 @@ const POSITION_LABELS: Record<DirectoryPositionType, string> = {
   choirjobs: 'Choraufgaben',
 }
 
+function usersFor(ability: string): Promise<DirectoryEntry[]> {
+  if (ability === 'none') return Promise.resolve([])
+  if (ability === 'all') return listUsers('all', null)
+  const [type, idText] = ability.split('@') as [DirectoryPositionType, string]
+  return listUsers(type, idText)
+}
+
+// Only the answer to the LAST dropdown choice is shown, so the table always
+// belongs to the label above it.
 async function loadUsers(): Promise<void> {
   selectedUserIds.value = []
   checkAllStatus.value = false
-  if (selectedAbility.value === 'none') {
-    users.value = []
-    return
+  try {
+    await applyLatest(
+      () => usersFor(selectedAbility.value),
+      (loaded) => {
+        users.value = loaded
+      },
+    )
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Das Verzeichnis konnte nicht geladen werden.', true)
   }
-  if (selectedAbility.value === 'all') {
-    users.value = await listUsers('all', null)
-    return
-  }
-  const [type, idText] = selectedAbility.value.split('@') as [DirectoryPositionType, string]
-  users.value = await listUsers(type, idText)
 }
 
 onMounted(async () => {
-  abilities.value = await getAbilities()
+  try {
+    abilities.value = await getAbilities()
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Das Verzeichnis konnte nicht geladen werden.', true)
+  }
 })
 
 // immediate: true -- fires right on mount against the 'all' default (see
@@ -69,12 +85,18 @@ function toggleUser(id: string): void {
     : [...selectedUserIds.value, id]
 }
 
-function copySelected(): void {
+async function copySelected(): Promise<void> {
   const emails = users.value
     .filter((user) => selectedUserIds.value.includes(user.id) && user.email)
     .map((user) => user.email)
     .join(', ')
-  void navigator.clipboard.writeText(emails)
+  try {
+    await navigator.clipboard.writeText(emails)
+  } catch {
+    // Refused by the browser: do not claim the list was copied.
+    showToast('Die Mailing-Liste konnte nicht kopiert werden.', true)
+    return
+  }
   showToast('Mailing-Liste in Zwischenablage kopiert.')
 }
 </script>
@@ -84,13 +106,14 @@ function copySelected(): void {
 
   <div v-if="abilities" class="row justify-content-center mt-4">
     <div class="col-md-9">
-      <div
-        class="text-center mb-3 c-pointer"
+      <button
+        type="button"
+        class="btn btn-link d-block mx-auto mb-3 text-reset text-decoration-none c-pointer"
         :class="{ invisible: !selectedUserIds.length }"
         @click="copySelected"
       >
         Mailing-Liste in Zwischenablage kopieren
-      </div>
+      </button>
 
       <div class="row justify-content-center">
         <div class="col-md-8">
@@ -172,13 +195,14 @@ function copySelected(): void {
         </div>
       </div>
 
-      <div
-        class="text-center my-3 c-pointer"
+      <button
+        type="button"
+        class="btn btn-link d-block mx-auto my-3 text-reset text-decoration-none c-pointer"
         :class="{ invisible: !selectedUserIds.length }"
         @click="copySelected"
       >
         Mailing-Liste in Zwischenablage kopieren
-      </div>
+      </button>
     </div>
   </div>
 </template>

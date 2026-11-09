@@ -1,8 +1,10 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import type { RouteLocationNormalized } from 'vue-router'
 import { runAuthGuards } from '../guards'
 import api from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn() },
@@ -46,14 +48,19 @@ beforeEach(() => {
 
 describe('runAuthGuards', () => {
   it('allows a public route through when logged out', async () => {
-    const result = await runAuthGuards(makeRoute({ meta: {} }), makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(
+      undefined,
+      makeRoute({ meta: {} }),
+      makeRoute(),
+      vi.fn(),
+    )
     expect(result).toBe(true)
   })
 
   it('redirects to login for a requiresAuth route when logged out', async () => {
     const to = makeRoute({ fullPath: '/some-protected-page', meta: { requiresAuth: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toEqual({ name: 'login', query: { redirect: '/some-protected-page' } })
   })
@@ -66,7 +73,7 @@ describe('runAuthGuards', () => {
     mockedApi.get.mockResolvedValueOnce({ data: authenticatedProfile })
     const to = makeRoute({ meta: { requiresAuth: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -79,7 +86,7 @@ describe('runAuthGuards', () => {
     mockedApi.get.mockResolvedValueOnce({ data: authenticatedProfile })
     const to = makeRoute({ meta: { requiresGuest: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toEqual({ name: 'home' })
   })
@@ -87,7 +94,7 @@ describe('runAuthGuards', () => {
   it('allows a requiresGuest route through when logged out', async () => {
     const to = makeRoute({ meta: { requiresGuest: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -95,7 +102,7 @@ describe('runAuthGuards', () => {
   it('allows a route with neither meta flag through regardless of auth state', async () => {
     const to = makeRoute({ meta: {} })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -108,7 +115,7 @@ describe('runAuthGuards', () => {
     mockedApi.get.mockResolvedValueOnce({ data: authenticatedProfile })
     const to = makeRoute({ meta: { requiredPermission: 'artistMaintain' } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toEqual({ name: 'home' })
   })
@@ -123,7 +130,7 @@ describe('runAuthGuards', () => {
     })
     const to = makeRoute({ meta: { requiredPermission: 'artistMaintain' } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -138,9 +145,21 @@ describe('runAuthGuards', () => {
     })
     const to = makeRoute({ meta: { requiresAuth: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toEqual({ name: 'verify-email-notice' })
+  })
+
+  it('does not call a signed-in user without a loaded profile unverified', async () => {
+    const authStore = useAuthStore()
+    await authStore.restoreSession()
+    authStore.accessToken = 'token-without-profile'
+    const to = makeRoute({ meta: { requiresAuth: true } })
+
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
+
+    expect(authStore.user).toBeNull()
+    expect(result).toBe(true)
   })
 
   it('lets an unverified logged-in user reach verify-email-notice itself', async () => {
@@ -153,7 +172,7 @@ describe('runAuthGuards', () => {
     })
     const to = makeRoute({ name: 'verify-email-notice', meta: { requiresAuth: true } })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })
@@ -168,7 +187,7 @@ describe('runAuthGuards', () => {
     })
     const to = makeRoute({ name: 'verify-email', meta: {} })
 
-    const result = await runAuthGuards(to, makeRoute(), vi.fn())
+    const result = await runAuthGuards.call(undefined, to, makeRoute(), vi.fn())
 
     expect(result).toBe(true)
   })

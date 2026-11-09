@@ -22,6 +22,7 @@ withDefaults(
     error?: string
     readonly?: boolean
     small?: boolean
+    ariaLabel?: string
   }>(),
   {
     title: undefined,
@@ -30,6 +31,7 @@ withDefaults(
     error: '',
     readonly: false,
     small: false,
+    ariaLabel: undefined,
   },
 )
 </script>
@@ -46,13 +48,16 @@ withDefaults(
       class="form-select"
       :required="required"
       :disabled="readonly"
+      :aria-label="ariaLabel"
+      :aria-invalid="error ? 'true' : undefined"
+      :aria-describedby="`${id}-error`"
       :class="small ? ['form-select-sm'] : []"
     >
       <option v-for="option in options" :key="option.id" :value="option.id">
         {{ option.label }}
       </option>
     </select>
-    <small class="text-danger">{{ error }}&nbsp;</small>
+    <small :id="`${id}-error`" class="text-danger">{{ error }}&nbsp;</small>
   </div>
 </template>
 

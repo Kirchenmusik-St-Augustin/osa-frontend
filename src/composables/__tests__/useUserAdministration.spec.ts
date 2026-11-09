@@ -1,9 +1,12 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useUserAdministration } from '../useUserAdministration'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
-  default: { get: vi.fn(), post: vi.fn() },
+  default: { get: vi.fn(), post: vi.fn(), delete: vi.fn() },
 }))
 
 const mockedApi = vi.mocked(api)
@@ -23,7 +26,7 @@ const sampleResult = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useUserAdministration', () => {
@@ -40,21 +43,21 @@ describe('useUserAdministration', () => {
   })
 
   it('listDeleted requests the deleted endpoint', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [] })
+    mockedApi.get.mockResolvedValueOnce({ data: pageOf([]) })
     const { listDeleted } = useUserAdministration()
 
     await listDeleted()
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/users/deleted')
+    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/users/deleted', firstPageRequest())
   })
 
   it('get requests the user by id', async () => {
     mockedApi.get.mockResolvedValueOnce({ data: sampleResult })
     const { get } = useUserAdministration()
 
-    const result = await get(1)
+    const result = await get(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/administrator/users/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/administrator/users/${testId(1)}`)
     expect(result).toEqual(sampleResult)
   })
 
@@ -62,27 +65,37 @@ describe('useUserAdministration', () => {
     mockedApi.post.mockResolvedValueOnce({ data: sampleResult })
     const { restore } = useUserAdministration()
 
-    await restore(1)
+    await restore(testId(1))
 
-    expect(mockedApi.post).toHaveBeenCalledWith('/administrator/users/1/restore')
+    expect(mockedApi.post).toHaveBeenCalledWith(`/administrator/users/${testId(1)}/restore`)
   })
 
   it('unlock POSTs to the unlock endpoint', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: sampleResult })
     const { unlock } = useUserAdministration()
 
-    await unlock(1)
+    await unlock(testId(1))
 
-    expect(mockedApi.post).toHaveBeenCalledWith('/administrator/users/1/unlock')
+    expect(mockedApi.post).toHaveBeenCalledWith(`/administrator/users/${testId(1)}/unlock`)
   })
 
   it('setPassword POSTs to the set-password endpoint', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { ...sampleResult, newpw: 'aB3xY9kLmQ' } })
     const { setPassword } = useUserAdministration()
 
-    const result = await setPassword(1)
+    const result = await setPassword(testId(1))
 
-    expect(mockedApi.post).toHaveBeenCalledWith('/administrator/users/1/set-password')
+    expect(mockedApi.post).toHaveBeenCalledWith(`/administrator/users/${testId(1)}/set-password`)
     expect(result.newpw).toBe('aB3xY9kLmQ')
+  })
+
+  it('purge deletes the user permanently by id', async () => {
+    mockedApi.delete.mockResolvedValueOnce({ data: null })
+    const { purge } = useUserAdministration()
+
+    await purge(testId(1))
+
+    expect(mockedApi.delete).toHaveBeenCalledOnce()
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/administrator/users/${testId(1)}`)
   })
 })

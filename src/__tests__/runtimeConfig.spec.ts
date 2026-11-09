@@ -4,7 +4,7 @@ import { apiBaseUrl, appEnvironment, googleClientId } from '@/runtimeConfig'
 // Explicitly stub/unstub every VITE_* var this module reads instead of
 // relying on it being absent from the ambient environment -- the dev
 // container sets these for `npm run dev` convenience, and tests must not
-// implicitly depend on that (see feedback_dev_workflow: test hermeticity).
+// implicitly depend on that.
 afterEach(() => {
   delete window.__APP_CONFIG__
   vi.unstubAllEnvs()

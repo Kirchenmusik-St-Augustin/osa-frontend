@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import ProfileFormView from '../ProfileFormView.vue'
 import type { User } from '@/composables/useUsers'
+import { testId } from '@/__tests__/testId'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
 vi.mock('vue-router', async (importOriginal) => ({
@@ -25,7 +26,7 @@ vi.mock('@/services/notifications', () => ({
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: 1,
+    id: testId(1),
     surname: 'SCHINDLER',
     givenname: 'Margot',
     email: 'margot@example.com',
@@ -153,6 +154,37 @@ describe('ProfileFormView', () => {
     await flushPromises()
 
     expect(mockUpdate).not.toHaveBeenCalled()
+  })
+
+  it('tells the member when the profile cannot be loaded', async () => {
+    mockGet.mockReset()
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Gesperrt.' } } })
+    mount(ProfileFormView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Gesperrt.', true)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGet.mockReset()
+    mockGet.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(ProfileFormView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Das Profil konnte nicht geladen werden.', true)
+  })
+
+  it('tells the member when saving fails without a field-level reason', async () => {
+    mockUpdate.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(ProfileFormView)
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
   it('shows field-level validation errors under the matching input', async () => {

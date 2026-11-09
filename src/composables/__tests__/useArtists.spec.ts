@@ -1,6 +1,9 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useArtists } from '../useArtists'
 import api from '@/services/api'
+import { pageOf, firstPageRequest } from '@/__tests__/pageOf'
+import { testId } from '@/__tests__/testId'
 
 vi.mock('@/services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -20,7 +23,7 @@ const sampleArtist = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('useArtists', () => {
@@ -35,12 +38,14 @@ describe('useArtists', () => {
   })
 
   it('listComposers requests the composers endpoint', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [{ id: 1, label: 'MOZART, Wolfgang' }] })
+    mockedApi.get.mockResolvedValueOnce({
+      data: pageOf([{ id: 1, label: 'MOZART, Wolfgang' }]),
+    })
     const { listComposers } = useArtists()
 
     const results = await listComposers()
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/artists/composers')
+    expect(mockedApi.get).toHaveBeenCalledWith('/artists/composers', firstPageRequest())
     expect(results).toEqual([{ id: 1, label: 'MOZART, Wolfgang' }])
   })
 
@@ -48,9 +53,9 @@ describe('useArtists', () => {
     mockedApi.get.mockResolvedValueOnce({ data: sampleArtist })
     const { get } = useArtists()
 
-    const artist = await get(1)
+    const artist = await get(testId(1))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/artists/1')
+    expect(mockedApi.get).toHaveBeenCalledWith(`/artists/${testId(1)}`)
     expect(artist).toEqual(sampleArtist)
   })
 
@@ -86,17 +91,17 @@ describe('useArtists', () => {
       composer: true,
       conductor: false,
     }
-    await update(1, payload)
+    await update(testId(1), payload)
 
-    expect(mockedApi.put).toHaveBeenCalledWith('/artists/1', payload)
+    expect(mockedApi.put).toHaveBeenCalledWith(`/artists/${testId(1)}`, payload)
   })
 
   it('remove DELETEs the artist by id', async () => {
     mockedApi.delete.mockResolvedValueOnce({ data: null })
     const { remove } = useArtists()
 
-    await remove(1)
+    await remove(testId(1))
 
-    expect(mockedApi.delete).toHaveBeenCalledWith('/artists/1')
+    expect(mockedApi.delete).toHaveBeenCalledWith(`/artists/${testId(1)}`)
   })
 })

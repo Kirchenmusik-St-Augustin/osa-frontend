@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PropriumSetup from '../PropriumSetup.vue'
 import type { PerformancePropriumItem } from '@/composables/usePerformances'
+import { testId } from '@/__tests__/testId'
 
 const item: PerformancePropriumItem = {
-  propriumelement_id: 1,
+  propriumelement_id: testId(1),
   propriumelement_name: 'Introitus',
-  propriumwork_id: 2,
+  propriumwork_id: testId(2),
   propriumwork_name: 'Gregorianik I',
   artist_name: 'HAYDN, Joseph',
   description: 'Feierlich',
@@ -39,5 +40,16 @@ describe('PropriumSetup', () => {
     await wrapper.find('.fa-trash').trigger('click')
 
     expect(wrapper.emitted('removeElement')).toEqual([[item]])
+  })
+
+  it('renders the remove control as a named button', () => {
+    const wrapper = mount(PropriumSetup, {
+      props: { proprium: [item], withControls: true },
+    })
+
+    const remove = wrapper.find('button')
+    expect(remove.attributes('type')).toBe('button')
+    expect(remove.attributes('aria-label')).toBe('entfernen')
+    expect(remove.find('i').attributes('aria-hidden')).toBe('true')
   })
 })

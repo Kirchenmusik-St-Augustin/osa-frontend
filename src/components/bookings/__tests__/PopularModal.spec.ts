@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PopularModal from '../PopularModal.vue'
 import type { PopularItem } from '@/composables/useBookings'
+import { testId } from '@/__tests__/testId'
 
 const popular: PopularItem = {
-  frequent: [{ id: 1, name: 'Muster, Max', total: 5 }],
-  recent: [{ id: 2, name: 'Beispiel, Erika', booked: '2026-07-01T11:00:00' }],
+  frequent: [{ id: testId(1), name: 'Muster, Max', total: 5 }],
+  recent: [{ id: testId(2), name: 'Beispiel, Erika', booked: '2026-07-01T11:00:00' }],
 }
 
 describe('PopularModal', () => {
@@ -18,6 +19,9 @@ describe('PopularModal', () => {
   it('renders frequent and recent bookers with their counts/dates when open', () => {
     const wrapper = mount(PopularModal, { props: { modelValue: true, popular } })
 
+    expect(wrapper.find('.modal').attributes('aria-label')).toBe(
+      'Populäre Buchungen f. diese Komposition & Position',
+    )
     expect(wrapper.text()).toContain('Muster, Max (5)')
     expect(wrapper.text()).toContain('Beispiel, Erika')
   })

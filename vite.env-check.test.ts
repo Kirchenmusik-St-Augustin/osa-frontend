@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateViteEnv } from './vite.env-check'
+import { parseAllowedHosts, validateViteEnv } from './vite.env-check'
 
 describe('validateViteEnv', () => {
   it('throws when VITE_APP_ENVIRONMENT is missing', () => {
@@ -36,4 +36,21 @@ describe('validateViteEnv', () => {
       ).not.toThrow()
     },
   )
+})
+
+describe('parseAllowedHosts', () => {
+  it.each([undefined, '', '  ', ' , ,'])('returns no hosts for %j', (value) => {
+    expect(parseAllowedHosts(value)).toEqual([])
+  })
+
+  it('returns a single host', () => {
+    expect(parseAllowedHosts('dev.example.test')).toEqual(['dev.example.test'])
+  })
+
+  it('splits a comma-separated list, trims blanks and drops empty entries', () => {
+    expect(parseAllowedHosts(' a.example.test, b.example.test ,, ')).toEqual([
+      'a.example.test',
+      'b.example.test',
+    ])
+  })
 })

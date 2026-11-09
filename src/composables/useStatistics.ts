@@ -13,7 +13,9 @@ export interface Statistics {
   ordinariumworks: number
   propriumworks: number
   scores: number
-  email: StatisticsEmail
+  // null for callers without the sentEmailView permission (the server
+  // withholds the mail volume from everybody else).
+  email: StatisticsEmail | null
 }
 
 // UI-independent API layer for the Statistiken page (admin audit viewer).

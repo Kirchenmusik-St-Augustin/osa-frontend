@@ -25,6 +25,7 @@ describe('GlobalLoadingBar', () => {
     const bar = wrapper.find('.global-loading-bar')
     expect(bar.exists()).toBe(true)
     expect(bar.attributes('role')).toBe('progressbar')
+    expect(bar.attributes('aria-label')).toBe('Daten werden geladen')
   })
 
   it('disappears again once the last in-flight request finishes', async () => {

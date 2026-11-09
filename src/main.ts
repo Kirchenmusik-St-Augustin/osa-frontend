@@ -1,3 +1,5 @@
+import '@fontsource/quicksand/latin-400.css'
+import '@fontsource/nova-mono/latin-400.css'
 import '@/assets/scss/app.scss'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

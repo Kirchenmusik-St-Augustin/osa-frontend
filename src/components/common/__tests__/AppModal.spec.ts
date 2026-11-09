@@ -13,7 +13,12 @@ const CONTENT = `
 
 // Real Teleport here (the global test setup stubs it): the dialog must end up
 // directly under <body>, outside the mounted wrapper.
-function mountModal(props: { modelValue: boolean; dismissible?: boolean; size?: 'lg' }) {
+function mountModal(props: {
+  modelValue: boolean
+  dismissible?: boolean
+  size?: 'lg'
+  label?: string
+}) {
   return mount(AppModal, {
     props,
     slots: { default: CONTENT },
@@ -46,6 +51,16 @@ describe('AppModal', () => {
     expect(byId('first')).not.toBeNull()
   })
 
+  it('names the dialog for assistive technology when a label is given', () => {
+    mountModal({ modelValue: true, label: 'Buchung stornieren' })
+    expect(modalElement()?.getAttribute('aria-label')).toBe('Buchung stornieren')
+  })
+
+  it('leaves the dialog unnamed when no label is given', () => {
+    mountModal({ modelValue: true })
+    expect(modalElement()?.hasAttribute('aria-label')).toBe(false)
+  })
+
   it('applies the large size class only when asked for', () => {
     mountModal({ modelValue: true, size: 'lg' })
     expect(modalElement()?.querySelector('.modal-dialog')?.classList).toContain('modal-lg')
@@ -72,12 +87,10 @@ describe('AppModal', () => {
   })
 
   describe('dismissing', () => {
-    it('closes on Escape when dismissible', async () => {
+    it('closes on Escape when dismissible', () => {
       const wrapper = mountModal({ modelValue: true })
 
-      await modalElement()!.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-      )
+      modalElement()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
 
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
     })
@@ -147,6 +160,50 @@ describe('AppModal', () => {
       opener.remove()
     })
 
+    it('returns focus to the opener when the dialog is unmounted while open', async () => {
+      const opener = document.createElement('button')
+      document.body.appendChild(opener)
+      opener.focus()
+
+      const wrapper = mountModal({ modelValue: true })
+      await nextTick()
+      expect(document.activeElement).toBe(modalElement())
+
+      wrapper.unmount()
+      expect(document.activeElement).toBe(opener)
+      opener.remove()
+    })
+
+    it('does not touch focus on unmount when the dialog is already closed', async () => {
+      const opener = document.createElement('button')
+      document.body.appendChild(opener)
+      opener.focus()
+      const wrapper = mountModal({ modelValue: false })
+      await wrapper.setProps({ modelValue: true })
+      await wrapper.setProps({ modelValue: false })
+
+      const other = document.createElement('button')
+      document.body.appendChild(other)
+      other.focus()
+      wrapper.unmount()
+
+      expect(document.activeElement).toBe(other)
+      opener.remove()
+      other.remove()
+    })
+
+    it('skips elements that cannot take focus because they are not rendered', () => {
+      mountModal({ modelValue: true })
+      byId('last').checkVisibility = () => false
+      byId('middle').focus()
+      const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+      byId('middle').dispatchEvent(event)
+
+      // "middle" is now the last visible element, so Tab wraps to the first one.
+      expect(event.defaultPrevented).toBe(true)
+      expect(document.activeElement).toBe(byId('first'))
+    })
+
     it('wraps Tab from the last focusable element to the first', () => {
       mountModal({ modelValue: true })
       byId('last').focus()
@@ -213,9 +270,7 @@ describe('AppModal', () => {
     await nextTick()
     expect(modalElement()).not.toBeNull()
 
-    await modalElement()!.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    )
+    modalElement()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     await nextTick()
     expect(modalElement()).toBeNull()
   })

@@ -3,7 +3,9 @@ import { computed, onMounted, ref } from 'vue'
 import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
 import PerformanceCard from '@/components/performances/PerformanceCard.vue'
 import { usePerformances, type PerformanceShow } from '@/composables/usePerformances'
+import { extractApiErrors } from '@/services/apiErrors'
 import { parseWallClock } from '@/services/dateFormat'
+import { showToast } from '@/services/notifications'
 
 // Casting is deliberately not shown here (showing casts on the Show page is
 // disabled on request).
@@ -19,7 +21,14 @@ const backQuery = computed(() => {
 })
 
 onMounted(async () => {
-  performance.value = await getDetail(props.id)
+  try {
+    performance.value = await getDetail(props.id)
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Die Aufführung konnte nicht geladen werden.',
+      true,
+    )
+  }
 })
 </script>
 

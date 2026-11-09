@@ -31,9 +31,10 @@ export function useSqlInspector() {
     page: number,
     pageSize: number,
   ): Promise<TableData> {
-    const response = await api.get<TableData>(`/administrator/sql-inspector/tables/${tableName}`, {
-      params: { page, page_size: pageSize },
-    })
+    const response = await api.get<TableData>(
+      `/administrator/sql-inspector/tables/${encodeURIComponent(tableName)}`,
+      { params: { page, page_size: pageSize } },
+    )
     return response.data
   }
 

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import MyRequestsAndBookingsView from '../MyRequestsAndBookingsView.vue'
 import type { PerformanceShortBase } from '@/composables/useBookings'
+import { testId } from '@/__tests__/testId'
 
 const mockGetMyRequestsAndBookings = vi.fn()
 vi.mock('@/composables/useSupport', () => ({
@@ -30,12 +31,12 @@ vi.mock('@/stores/auth', () => ({
 
 function makeItem(overrides: Partial<PerformanceShortBase> = {}): PerformanceShortBase {
   return {
-    id: 1,
+    id: testId(1),
     ordinariumwork_name: 'Krönungsmesse',
     ordinariumwork_artist_name: 'MOZART, Wolfgang',
     artist_name: null,
     schedule: '2099-01-01T12:00:00',
-    location: { id: 1, name: 'Augustinerkirche', color: '336699', address: null },
+    location: { id: testId(1), name: 'Augustinerkirche', color: '336699', address: null },
     user_booking: { status: 1, position: null, at: null },
     proprium: [],
     demanding_proprium: false,
@@ -60,6 +61,29 @@ describe('MyRequestsAndBookingsView', () => {
     expect(wrapper.text()).toContain('Krönungsmesse')
   })
 
+  it('tells the member when the list cannot be loaded instead of claiming there are none', async () => {
+    mockGetMyRequestsAndBookings.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(MyRequestsAndBookingsView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.find('.card').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Derzeit liegen keine Anfragen oder Buchungen vor.')
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGetMyRequestsAndBookings.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(MyRequestsAndBookingsView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'Die Anfragen und Buchungen konnten nicht geladen werden.',
+      true,
+    )
+  })
+
   it('shows the empty-state text when there are none', async () => {
     mockGetMyRequestsAndBookings.mockResolvedValueOnce([])
     const wrapper = mount(MyRequestsAndBookingsView)
@@ -81,7 +105,7 @@ describe('MyRequestsAndBookingsView', () => {
     await wrapper.find('.fa-hand-point-up').trigger('click')
     await flushPromises()
 
-    expect(mockChangeBookingStatus).toHaveBeenCalledWith(1)
+    expect(mockChangeBookingStatus).toHaveBeenCalledWith(testId(1))
     expect(mockGetMyRequestsAndBookings).toHaveBeenCalledTimes(2)
   })
 

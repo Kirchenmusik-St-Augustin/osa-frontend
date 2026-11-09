@@ -7,7 +7,7 @@ import {
   type Ordinariumwork,
   type OrdinariumworkSetup,
 } from '@/composables/useOrdinariumworks'
-import { extractApiErrors } from '@/services/apiErrors'
+import { unattachedErrorMessage } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 
 const props = defineProps<{ id: string }>()
@@ -27,9 +27,13 @@ const fields = computed(() => {
 })
 
 onMounted(async () => {
-  const [loadedWork, loadedSetup] = await Promise.all([get(props.id), getSetup(props.id)])
-  work.value = loadedWork
-  setup.value = loadedSetup
+  try {
+    const [loadedWork, loadedSetup] = await Promise.all([get(props.id), getSetup(props.id)])
+    work.value = loadedWork
+    setup.value = loadedSetup
+  } catch (error) {
+    showToast(unattachedErrorMessage(error) ?? 'Der Eintrag konnte nicht geladen werden.', true)
+  }
 })
 
 async function destroy(): Promise<void> {
@@ -41,12 +45,9 @@ async function destroy(): Promise<void> {
     showToast('gelöscht.')
     await router.push({ name: 'repertoire-ordinariumworks-search' })
   } catch (error) {
-    const { fieldErrors } = extractApiErrors(error)
-    showToast(
-      fieldErrors['general'] ??
-        'Die Ordinarium-Komposition kann nicht gelöscht werden, da sie im Kalender verwendet wird.',
-      true,
-    )
+    // The server answers "in use" with its own German message; anything
+    // else (server error, lost connection) must not be reported as "in use".
+    showToast(unattachedErrorMessage(error) ?? 'Der Eintrag konnte nicht gelöscht werden.', true)
   }
 }
 </script>

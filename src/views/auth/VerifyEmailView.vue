@@ -21,6 +21,8 @@ const errorMessage = ref<string | null>(null)
 
 onMounted(async () => {
   const token = typeof route.query['token'] === 'string' ? route.query['token'] : ''
+  // Read once; drop it from the address bar and the history entry.
+  if (token) await router.replace({ name: 'verify-email' })
   if (!token) {
     status.value = 'error'
     errorMessage.value = 'Der Bestätigungslink ist ungültig oder abgelaufen.'
@@ -37,6 +39,10 @@ onMounted(async () => {
 
 async function goToHome(): Promise<void> {
   await router.push({ name: 'home' })
+}
+
+async function goToLogin(): Promise<void> {
+  await router.push({ name: 'login' })
 }
 </script>
 
@@ -56,6 +62,14 @@ async function goToHome(): Promise<void> {
           </div>
           <div v-else class="mb-4">
             <strong class="text-danger">{{ errorMessage }}</strong>
+            <div class="mt-3">
+              Wurde die E-Mail-Adresse bereits bestätigt, ist eine direkte Anmeldung möglich.
+            </div>
+            <div class="mt-3">
+              <button type="button" class="btn btn-primary" @click="goToLogin">
+                Zur Anmeldung
+              </button>
+            </div>
           </div>
         </div>
       </div>

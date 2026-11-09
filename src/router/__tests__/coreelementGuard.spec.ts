@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RouteLocationNormalized } from 'vue-router'
 import { coreelementRouteGuard } from '../coreelementGuard'
@@ -19,7 +20,12 @@ describe('coreelementRouteGuard', () => {
   it('allows navigation when the user has the matching permission', () => {
     mockHasPermission.mockReturnValue(true)
 
-    const result = coreelementRouteGuard(makeRoute('instrument'), makeRoute('instrument'), vi.fn())
+    const result = coreelementRouteGuard.call(
+      undefined,
+      makeRoute('instrument'),
+      makeRoute('instrument'),
+      vi.fn(),
+    )
 
     expect(result).toBe(true)
     expect(mockHasPermission).toHaveBeenCalledWith('instrumentMaintain')
@@ -28,7 +34,7 @@ describe('coreelementRouteGuard', () => {
   it('resolves the correct permission per type', () => {
     mockHasPermission.mockReturnValue(true)
 
-    coreelementRouteGuard(makeRoute('role'), makeRoute('role'), vi.fn())
+    coreelementRouteGuard.call(undefined, makeRoute('role'), makeRoute('role'), vi.fn())
 
     expect(mockHasPermission).toHaveBeenCalledWith('roleMaintain')
   })
@@ -36,7 +42,12 @@ describe('coreelementRouteGuard', () => {
   it('redirects home when the user lacks the matching permission', () => {
     mockHasPermission.mockReturnValue(false)
 
-    const result = coreelementRouteGuard(makeRoute('location'), makeRoute('location'), vi.fn())
+    const result = coreelementRouteGuard.call(
+      undefined,
+      makeRoute('location'),
+      makeRoute('location'),
+      vi.fn(),
+    )
 
     expect(result).toEqual({ name: 'home' })
   })
@@ -44,7 +55,12 @@ describe('coreelementRouteGuard', () => {
   it('redirects home for an unknown/unrecognized type', () => {
     mockHasPermission.mockReturnValue(true)
 
-    const result = coreelementRouteGuard(makeRoute('bogus'), makeRoute('bogus'), vi.fn())
+    const result = coreelementRouteGuard.call(
+      undefined,
+      makeRoute('bogus'),
+      makeRoute('bogus'),
+      vi.fn(),
+    )
 
     expect(result).toEqual({ name: 'home' })
   })

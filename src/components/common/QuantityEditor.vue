@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import QuantitySetup, { type QuantitySetupEntry } from './QuantitySetup.vue'
 
 export interface AvailablePosition {
@@ -32,17 +32,19 @@ function computeUnused(): AvailablePosition[] {
   return props.available.filter((item) => !usedIds.has(item.id))
 }
 
-const unused = ref(computeUnused())
-const selectedUnused = ref<string | null>(unused.value[0]?.id ?? null)
-
-watch(
-  setup,
-  () => {
-    unused.value = computeUnused()
-    selectedUnused.value = unused.value[0]?.id ?? null
+const unused = computed(computeUnused)
+const chosenUnused = ref<string | null>(null)
+// The user's pick stays while it is still unused (changing another row's
+// quantity must not reset the dropdown); otherwise the first unused item.
+const selectedUnused = computed<string | null>({
+  get: () =>
+    unused.value.some((item) => item.id === chosenUnused.value)
+      ? chosenUnused.value
+      : (unused.value[0]?.id ?? null),
+  set: (id) => {
+    chosenUnused.value = id
   },
-  { deep: true },
-)
+})
 
 const setupChanged = computed(() => JSON.stringify(setup.value) !== JSON.stringify(setupOrig))
 
@@ -50,10 +52,16 @@ function add(): void {
   const item = props.available.find((candidate) => candidate.id === selectedUnused.value)
   if (!item) return
   const updated = [...setup.value, { id: item.id, name: item.name, quantity: 1 }]
-  // Rebuilt in `available`'s canonical order, not insertion order.
-  setup.value = props.available
+  // Rebuilt in `available`'s canonical order, not insertion order. Entries
+  // that `available` does not list (archived instruments/voices stay
+  // assigned but are filtered out of the dropdown source) are kept after
+  // them, never dropped: saving the form would otherwise delete them.
+  const availableIds = new Set(props.available.map((candidate) => candidate.id))
+  const known = props.available
     .map((candidate) => updated.find((entry) => entry.id === candidate.id))
     .filter((entry): entry is QuantitySetupEntry => entry !== undefined)
+  const archived = updated.filter((entry) => !availableIds.has(entry.id))
+  setup.value = [...known, ...archived]
 }
 
 function remove(id: string): void {
@@ -85,8 +93,14 @@ function reset(): void {
       <div v-if="selectedUnused !== null" class="text-end">
         <button type="button" class="btn btn-primary btn-sm mt-2" @click="add">hinzufügen</button>
       </div>
-      <div v-if="setupChanged" class="text-end mt-3 c-pointer">
-        <small class="text-black-50" @click="reset">auf derz. Werte zurücksetzen</small>
+      <div v-if="setupChanged" class="text-end mt-3">
+        <button
+          type="button"
+          class="btn btn-link btn-sm p-0 text-black-50 text-decoration-none"
+          @click="reset"
+        >
+          auf derz. Werte zurücksetzen
+        </button>
       </div>
     </div>
   </div>

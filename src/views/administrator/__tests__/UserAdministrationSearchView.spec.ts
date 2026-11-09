@@ -4,11 +4,17 @@ import { mount, flushPromises } from '@vue/test-utils'
 import UserAdministrationSearchView from '../UserAdministrationSearchView.vue'
 import SearchTypeahead from '@/components/common/SearchTypeahead.vue'
 import type { UserAdministrationDeletedEntry } from '@/composables/useUserAdministration'
+import { testId } from '@/__tests__/testId'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof VueRouter>()),
   useRouter: () => ({ push: mockPush }),
+}))
+
+const mockShowToast = vi.fn()
+vi.mock('@/services/notifications', () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
 }))
 
 const mockSearch = vi.fn()
@@ -18,7 +24,7 @@ vi.mock('@/composables/useUserAdministration', () => ({
 }))
 
 const deletedUsers: UserAdministrationDeletedEntry[] = [
-  { id: 9, surname: 'ABICHT', givenname: 'Luis', email: 'luis.abicht@gmx.at' },
+  { id: testId(9), surname: 'ABICHT', givenname: 'Luis', email: 'luis.abicht@gmx.at' },
 ]
 
 beforeEach(() => {
@@ -39,11 +45,11 @@ describe('UserAdministrationSearchView', () => {
     const wrapper = mount(UserAdministrationSearchView)
     await flushPromises()
 
-    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', 9)
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', testId(9))
 
     expect(mockPush).toHaveBeenCalledWith({
       name: 'administrator-users-show',
-      params: { id: 9 },
+      params: { id: testId(9) },
     })
   })
 
@@ -57,8 +63,19 @@ describe('UserAdministrationSearchView', () => {
     const link = wrapper.findComponent({ name: 'RouterLinkStub' })
     expect(link.props('to')).toEqual({
       name: 'administrator-users-show',
-      params: { id: 9 },
+      params: { id: testId(9) },
     })
+  })
+
+  it('tells the administrator when the deleted-users list cannot be loaded', async () => {
+    mockListDeleted.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(UserAdministrationSearchView, {
+      global: { stubs: { RouterLink: true } },
+    })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+    expect(wrapper.text()).not.toContain('Liste gelöschter Benutzerkonten')
   })
 
   it('omits the deleted-users section when there are none', async () => {
@@ -66,5 +83,15 @@ describe('UserAdministrationSearchView', () => {
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('Liste gelöschter Benutzerkonten')
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockListDeleted.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'x'], msg: 'Ungültig.' }] } },
+    })
+    mount(UserAdministrationSearchView, { global: { stubs: { RouterLink: true } } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Die Liste konnte nicht geladen werden.', true)
   })
 })

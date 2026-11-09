@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, useTemplateRef, watch } from 'vue'
+import { nextTick, onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
 
 // Vue-owned modal dialog: `v-model` is the single source of truth for whether
@@ -14,10 +14,13 @@ import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
 //   trap the fixed-position dialog under the sticky navbar.
 // - Page scroll is locked while open and released on unmount (see
 //   useBodyScrollLock), Tab cycles inside the dialog, and focus returns to
-//   whatever opened it on close.
-const props = withDefaults(defineProps<{ dismissible?: boolean; size?: 'lg' }>(), {
+//   whatever opened it on close, also when the dialog is removed while open.
+// - `label`: accessible name of the dialog (announced by screen readers when
+//   it opens); pass the visible title text.
+const props = withDefaults(defineProps<{ dismissible?: boolean; size?: 'lg'; label?: string }>(), {
   dismissible: true,
   size: undefined,
+  label: undefined,
 })
 
 const open = defineModel<boolean>({ required: true })
@@ -57,6 +60,14 @@ watch(
   },
   { immediate: true },
 )
+
+// Browsers without Element.checkVisibility() keep every candidate.
+function isVisible(element: HTMLElement): boolean {
+  return typeof element.checkVisibility !== 'function' || element.checkVisibility()
+}
+
+// previouslyFocused is only set while the dialog is open.
+onBeforeUnmount(() => previouslyFocused?.focus())
 
 function close(): void {
   open.value = false
@@ -98,7 +109,9 @@ function focusWrapTarget(
 function trapTab(event: KeyboardEvent): void {
   const modal = modalElement.value
   if (!modal) return
-  const focusable = Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+  const focusable = Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    isVisible,
+  )
   const target = focusWrapTarget(modal, focusable, event.shiftKey)
   if (!target) return
   event.preventDefault()
@@ -116,6 +129,7 @@ function trapTab(event: KeyboardEvent): void {
         tabindex="-1"
         role="dialog"
         aria-modal="true"
+        :aria-label="label"
         @mousedown="rememberPress"
         @click="handleBackdropClick"
         @keydown.esc="handleEscape"

@@ -11,6 +11,7 @@ import {
   type CastSavePayload,
   type PerformanceCastPage,
 } from '@/composables/useBookings'
+import { extractApiErrors } from '@/services/apiErrors'
 import { confirmAction, showToast } from '@/services/notifications'
 import { parseWallClock } from '@/services/dateFormat'
 
@@ -39,6 +40,7 @@ const form = reactive<CastFormData>({
   not_booked: [],
 })
 const formOrig = ref('')
+const saving = ref(false)
 
 // Vue-Proxy wrapped values can't go through structuredClone() -- a JSON
 // round-trip is the established, simple deep-clone pattern for this plain
@@ -50,8 +52,16 @@ function setForm(data: CastFormData): void {
 }
 
 onMounted(async () => {
-  page.value = await getCastPage(performanceId.value)
-  setForm(page.value.form_data)
+  try {
+    const loaded = await getCastPage(performanceId.value)
+    page.value = loaded
+    setForm(loaded.form_data)
+  } catch (error) {
+    showToast(
+      extractApiErrors(error).generalError ?? 'Die Besetzung konnte nicht geladen werden.',
+      true,
+    )
+  }
 })
 
 const castChanged = computed(() => JSON.stringify(form) !== formOrig.value)
@@ -96,6 +106,16 @@ function itemsFor(type: PositionType): DisplayItem[] {
   }))
 }
 
+// Computed once per change instead of once per template call (the template
+// asks twice per position type: header row and list).
+const itemsByType = computed(
+  () =>
+    Object.fromEntries(POSITION_TYPES.map((type) => [type, itemsFor(type)])) as Record<
+      PositionType,
+      DisplayItem[]
+    >,
+)
+
 function bookableFor(type: PositionType, itemId: string): BookableGroup {
   const fallback: BookableGroup = { requesting: [], other: [] }
   return page.value?.staff[type].find((entry) => entry.id === itemId)?.bookable ?? fallback
@@ -131,6 +151,7 @@ function removeNotBooked(id: string): void {
 }
 
 async function save(): Promise<void> {
+  if (saving.value) return
   const confirmed = await confirmAction('Wirklich speichern?')
   if (!confirmed) return
 
@@ -152,12 +173,18 @@ async function save(): Promise<void> {
     not_booked: form.not_booked.map((entry) => ({ id: entry.id })),
   }
 
+  saving.value = true
   try {
     await saveCast(performanceId.value, payload)
     showToast('gespeichert.')
     await router.push(backTarget.value)
-  } catch {
-    showToast('Ein Fehler ist aufgetreten.', true)
+  } catch (error) {
+    // The server explains a rejected cast (e.g. a candidate who is no
+    // longer bookable); the generic text is only the fallback.
+    const { fieldErrors, generalError } = extractApiErrors(error)
+    showToast(fieldErrors['general'] ?? generalError ?? 'Ein Fehler ist aufgetreten.', true)
+  } finally {
+    saving.value = false
   }
 }
 
@@ -193,25 +220,33 @@ function reset(): void {
 
       <div class="text-center my-3">
         <RouterLink class="btn btn-primary mx-2" :to="backTarget"> zurück </RouterLink>
-        <button type="button" class="btn btn-danger mx-2" :disabled="!castChanged" @click="save">
+        <button
+          type="button"
+          class="btn btn-danger mx-2"
+          :disabled="!castChanged || saving"
+          @click="save"
+        >
           speichern
         </button>
       </div>
       <div class="text-center mb-3 c-pointer" :class="{ invisible: !castChanged }">
-        <small class="text-black-50" @click="reset"
-          >alles auf derzeit gespeicherte Werte zurücksetzen</small
-        >
+        <button type="button" class="btn btn-link btn-sm p-0 text-reset" @click="reset">
+          <small class="text-black-50">alles auf derzeit gespeicherte Werte zurücksetzen</small>
+        </button>
       </div>
 
       <div v-for="type in POSITION_TYPES" :key="type" class="mb-4">
         <div class="h4 text-center mb-4">{{ POSITION_LABELS[type] }}</div>
-        <div v-if="itemsFor(type).length" class="d-flex justify-content-between fw-bold px-2 mb-1">
+        <div
+          v-if="itemsByType[type].length"
+          class="d-flex justify-content-between fw-bold px-2 mb-1"
+        >
           <span>Name</span>
           <span>gebucht</span>
         </div>
         <div class="list-group">
           <CastItem
-            v-for="item in itemsFor(type)"
+            v-for="item in itemsByType[type]"
             :key="item.id"
             :type="type"
             :item="{ id: item.id, name: item.name, quantity: item.quantity }"

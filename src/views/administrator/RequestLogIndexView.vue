@@ -4,20 +4,43 @@
 // SentEmailIndexView/PerformanceCalendarView.
 import { computed, ref, watch } from 'vue'
 import { useRequestLogs, type RequestLogDayGroup } from '@/composables/useRequestLogs'
+import { useLatestResult } from '@/composables/useLatestResult'
 import { useMonthQuery } from '@/composables/useMonthQuery'
 import MonthNavigator from '@/components/common/MonthNavigator.vue'
 import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
+import { extractApiErrors } from '@/services/apiErrors'
 import { formatDayMonthYear, parseCalendarDate } from '@/services/dateFormat'
+import { showToast } from '@/services/notifications'
 
 const { listDaysWithUsersForMonth } = useRequestLogs()
 const { year, month } = useMonthQuery()
 
+const applyLatest = useLatestResult()
+
 const dayGroups = ref<RequestLogDayGroup[]>([])
+const loadFailed = ref(false)
 
 watch(
   [year, month],
   async ([currentYear, currentMonth]) => {
-    dayGroups.value = await listDaysWithUsersForMonth(currentYear, currentMonth)
+    try {
+      await applyLatest(
+        () => listDaysWithUsersForMonth(currentYear, currentMonth),
+        (groups) => {
+          dayGroups.value = groups
+          loadFailed.value = false
+        },
+      )
+    } catch (error) {
+      // Neither the entries of another month nor "no entries" may stand for
+      // a month that could not be loaded.
+      dayGroups.value = []
+      loadFailed.value = true
+      showToast(
+        extractApiErrors(error).generalError ?? 'Das Logbuch konnte nicht geladen werden.',
+        true,
+      )
+    }
   },
   { immediate: true },
 )
@@ -71,7 +94,9 @@ const dayGroupsView = computed(() =>
           </div>
         </CollapsibleSection>
       </div>
-      <div v-else class="text-center">Für diesen Monat wurden keine Log-Einträge gefunden.</div>
+      <div v-else-if="!loadFailed" class="text-center">
+        Für diesen Monat wurden keine Log-Einträge gefunden.
+      </div>
     </div>
   </div>
 </template>

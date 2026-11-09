@@ -116,4 +116,50 @@ describe('ArtistShowView', () => {
 
     expect(mockShowToast).toHaveBeenCalledWith('in use', true)
   })
+
+  it('tells the user when the entry cannot be loaded', async () => {
+    mockGet.mockRejectedValueOnce({ response: { data: { detail: 'Nicht gefunden.' } } })
+    mount(ArtistShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Nicht gefunden.', true)
+  })
+
+  it('uses its own text when the load error carries no message of its own', async () => {
+    mockGet.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    mount(ArtistShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Der Eintrag konnte nicht geladen werden.', true)
+  })
+
+  it('uses its own text when the delete error carries no message of its own', async () => {
+    mockGet.mockResolvedValueOnce(makeArtist())
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['body', 'id'], msg: 'Ungültige Kennung.' }] } },
+    })
+    const wrapper = mount(ArtistShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('button.btn-danger').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Der Eintrag konnte nicht gelöscht werden.', true)
+  })
+
+  it('does not call a failed delete "in use" when the request itself failed', async () => {
+    mockGet.mockResolvedValueOnce(makeArtist())
+    mockConfirmAction.mockResolvedValueOnce(true)
+    mockRemove.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(ArtistShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('button.btn-danger').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
 })

@@ -11,7 +11,12 @@ const loadingStore = useLoadingStore()
 </script>
 
 <template>
-  <div v-if="loadingStore.isLoading" class="global-loading-bar" role="progressbar"></div>
+  <div
+    v-if="loadingStore.isLoading"
+    class="global-loading-bar"
+    role="progressbar"
+    aria-label="Daten werden geladen"
+  ></div>
 </template>
 
 <style scoped>
@@ -40,6 +45,12 @@ const loadingStore = useLoadingStore()
   );
   background-size: 20px 20px;
   animation: global-loading-bar-stripes 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .global-loading-bar {
+    animation: none;
+  }
 }
 
 @keyframes global-loading-bar-stripes {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import BookingStatusBadge from '../BookingStatusBadge.vue'
 import type { BookingStatus } from '@/composables/useBookings'
+import { testId } from '@/__tests__/testId'
 
 function status(overrides: Partial<BookingStatus> = {}): BookingStatus {
   return { status: 1, position: null, at: null, ...overrides }
@@ -39,7 +40,7 @@ describe('BookingStatusBadge', () => {
 
   it('renders "Gebucht für <position>" in green for status 4', () => {
     const wrapper = mount(BookingStatusBadge, {
-      props: { status: status({ status: 4, position: { id: 1, name: 'Violine 1' } }) },
+      props: { status: status({ status: 4, position: { id: testId(1), name: 'Violine 1' } }) },
     })
     expect(wrapper.text()).toContain('Gebucht für Violine 1')
     expect(wrapper.find('.badge').classes()).toContain('text-bg-success')
@@ -47,7 +48,7 @@ describe('BookingStatusBadge', () => {
 
   it('renders "Standby für <position>" for status 3', () => {
     const wrapper = mount(BookingStatusBadge, {
-      props: { status: status({ status: 3, position: { id: 1, name: 'Violine 2' } }) },
+      props: { status: status({ status: 3, position: { id: testId(1), name: 'Violine 2' } }) },
     })
     expect(wrapper.text()).toContain('Standby für Violine 2')
   })
@@ -102,6 +103,25 @@ describe('BookingStatusBadge', () => {
     const wrapper = mount(BookingStatusBadge, {
       props: { status: status({ status: statusCode }), interactive: true },
     })
-    expect(wrapper.find('i.fas').attributes('title')).toBe(expectedTitle)
+    expect(wrapper.find('button').attributes('title')).toBe(expectedTitle)
+    expect(wrapper.find('button').attributes('aria-label')).toBe(expectedTitle)
+  })
+
+  it('renders the trigger as a keyboard-operable button and emits on click', async () => {
+    const wrapper = mount(BookingStatusBadge, {
+      props: { status: status({ status: 1 }), interactive: true },
+    })
+    const button = wrapper.find('button')
+    expect(button.attributes('type')).toBe('button')
+    expect(wrapper.find('i.fas').attributes('aria-hidden')).toBe('true')
+    await button.trigger('click')
+    expect(wrapper.emitted('trigger')).toHaveLength(1)
+  })
+
+  it('words the status-change tooltip in German', () => {
+    const wrapper = mount(BookingStatusBadge, {
+      props: { status: status({ status: 4, at: '2026-01-02T10:00:00' }) },
+    })
+    expect(wrapper.find('.badge').attributes('title')).toMatch(/^Status geändert am /)
   })
 })

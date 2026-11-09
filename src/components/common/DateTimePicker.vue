@@ -53,6 +53,11 @@ const config = {
   enableTime: true,
   minuteIncrement: 15,
   locale: German,
+  // Flatpickr swaps itself for the phone's native datetime-local input on
+  // mobile user agents; that input ignores `minuteIncrement` and the German
+  // display format, so a time like 10:07 could be entered on exactly the
+  // devices this app is mostly used on.
+  disableMobile: true,
 }
 </script>
 

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SingleCastList from '../SingleCastList.vue'
 import type { CastMember, NotBookedEntry } from '@/composables/useBookings'
+import { testId } from '@/__tests__/testId'
 
 // vuedraggable/SortableJS drive real drag gestures via native pointer/touch
 // events jsdom doesn't implement -- stubbed minimally instead (same
@@ -38,13 +39,13 @@ vi.mock('vuedraggable', () => ({
 
 function cast(): CastMember[] {
   return [
-    { id: 1, name: 'Regular', fee: 80 },
-    { id: 2, name: 'Standby', fee: 80 },
+    { id: testId(1), name: 'Regular', fee: 80 },
+    { id: testId(2), name: 'Standby', fee: 80 },
   ]
 }
 
 function notBooked(): NotBookedEntry[] {
-  return [{ id: 3, name: 'REJECTED, Kandidat' }]
+  return [{ id: testId(3), name: 'REJECTED, Kandidat' }]
 }
 
 // Mounts SingleCastList behind a thin REACTIVE host that mirrors
@@ -52,10 +53,10 @@ function notBooked(): NotBookedEntry[] {
 // cast}` -- a real reactive mutation, round-tripped back down as a real
 // prop, through Vue's real scheduler) instead of a test manually calling
 // setProps() at a moment it controls. This is what actually exercises the
-// watcher-ordering regression found via live testing (two watchers both
-// reacting to the same `autoSort` change, one of them reactively
-// mutating `cast` before the other's turn) -- a plain setProps()-driven
-// test cannot reproduce that timing at all.
+// watcher-ordering regression (two watchers both reacting to the same
+// `autoSort` change, one of them reactively mutating `cast` before the
+// other's turn) -- a plain setProps()-driven test cannot reproduce that
+// timing at all.
 const ReactiveHost = defineComponent({
   props: {
     initialCast: { type: Array as PropType<CastMember[]>, required: true },
@@ -93,8 +94,8 @@ describe('SingleCastList', () => {
     const downArrows = wrapper.findAll('.fa-arrow-down')
     await downArrows[0]?.trigger('click')
     expect(wrapper.emitted('cast-changed')?.[0]?.[0]).toEqual([
-      { id: 2, name: 'Standby', fee: 80 },
-      { id: 1, name: 'Regular', fee: 80 },
+      { id: testId(2), name: 'Standby', fee: 80 },
+      { id: testId(1), name: 'Regular', fee: 80 },
     ])
   })
 
@@ -107,13 +108,34 @@ describe('SingleCastList', () => {
     expect(wrapper.emitted('cast-changed')).toBeUndefined()
   })
 
+  it('renders every row control as a named button and disables the arrows at the list boundaries', () => {
+    const wrapper = mount(SingleCastList, {
+      props: { cast: cast(), required: 1, notBooked: notBooked(), allowAutoSort: false },
+    })
+    const buttons = wrapper.findAll('button')
+    expect(buttons.length).toBeGreaterThan(0)
+    for (const button of buttons) {
+      expect(button.attributes('type')).toBe('button')
+      expect(button.attributes('aria-label')).toBeTruthy()
+      expect(button.find('i').attributes('aria-hidden')).toBe('true')
+    }
+    const up = wrapper.findAll('button[aria-label="nach oben"]')
+    const down = wrapper.findAll('button[aria-label="nach unten"]')
+    expect(up[0]?.attributes('disabled')).toBeDefined()
+    expect(up[1]?.attributes('disabled')).toBeUndefined()
+    expect(down[0]?.attributes('disabled')).toBeUndefined()
+    expect(down.at(-1)?.attributes('disabled')).toBeDefined()
+  })
+
   it('emits cast-changed without the removed entry', async () => {
     const wrapper = mount(SingleCastList, {
       props: { cast: cast(), required: 1, notBooked: [], allowAutoSort: false },
     })
     const removeIcons = wrapper.findAll('.fa-times')
     await removeIcons[0]?.trigger('click')
-    expect(wrapper.emitted('cast-changed')?.[0]?.[0]).toEqual([{ id: 2, name: 'Standby', fee: 80 }])
+    expect(wrapper.emitted('cast-changed')?.[0]?.[0]).toEqual([
+      { id: testId(2), name: 'Standby', fee: 80 },
+    ])
   })
 
   it('renders its own "nicht gebucht" section when notBooked entries are passed', () => {
@@ -137,7 +159,7 @@ describe('SingleCastList', () => {
     })
     const notBookedRemoveIcon = wrapper.findAll('.fa-times').at(-1)
     await notBookedRemoveIcon?.trigger('click')
-    expect(wrapper.emitted('remove-not-booked')?.[0]).toEqual([3])
+    expect(wrapper.emitted('remove-not-booked')?.[0]).toEqual([testId(3)])
     expect(wrapper.emitted('cast-changed')).toBeUndefined()
   })
 
@@ -151,7 +173,7 @@ describe('SingleCastList', () => {
   it('hides the drag handle and both arrows when only one person is booked -- nothing to reorder against', () => {
     const wrapper = mount(SingleCastList, {
       props: {
-        cast: [{ id: 1, name: 'Solo', fee: 80 }],
+        cast: [{ id: testId(1), name: 'Solo', fee: 80 }],
         required: 1,
         notBooked: [],
         allowAutoSort: false,
@@ -192,7 +214,7 @@ describe('SingleCastList', () => {
     const wrapper = mount(SingleCastList, {
       props: { cast: cast(), required: 1, notBooked: [], allowAutoSort: false },
     })
-    const newCast: CastMember[] = [{ id: 4, name: 'ADDED, Kandidat', fee: 90 }]
+    const newCast: CastMember[] = [{ id: testId(4), name: 'ADDED, Kandidat', fee: 90 }]
 
     await wrapper.setProps({ cast: newCast })
 
@@ -220,11 +242,11 @@ describe('SingleCastList', () => {
   describe('autom. Sortierung (choirjobs only)', () => {
     function voicedCast(): CastMember[] {
       return [
-        { id: 1, name: 'ZIMMERMANN, Anna', fee: 35, voice_name: 'Alt', voice_order: 2 },
-        { id: 2, name: 'ADLER, Bernd', fee: 35, voice_name: 'Sopran', voice_order: 1 },
-        { id: 3, name: 'MUELLER, Clara', fee: 35, voice_name: 'Sopran', voice_order: 1 },
-        { id: 4, name: 'ZIEGLER, Dora', fee: 35 }, // no voice assigned
-        { id: 5, name: 'ABEL, Egon', fee: 35 }, // no voice assigned
+        { id: testId(1), name: 'ZIMMERMANN, Anna', fee: 35, voice_name: 'Alt', voice_order: 2 },
+        { id: testId(2), name: 'ADLER, Bernd', fee: 35, voice_name: 'Sopran', voice_order: 1 },
+        { id: testId(3), name: 'MUELLER, Clara', fee: 35, voice_name: 'Sopran', voice_order: 1 },
+        { id: testId(4), name: 'ZIEGLER, Dora', fee: 35 }, // no voice assigned
+        { id: testId(5), name: 'ABEL, Egon', fee: 35 }, // no voice assigned
       ]
     }
 
@@ -289,6 +311,21 @@ describe('SingleCastList', () => {
       expect(wrapper.findAll('.fa-times')).toHaveLength(voicedCast().length)
     })
 
+    it('renders the remove control of every grouped row as a named button in auto-sort mode', async () => {
+      const wrapper = mount(SingleCastList, {
+        props: { cast: voicedCast(), required: 5, notBooked: [], allowAutoSort: true },
+      })
+      await wrapper.find('input[role="switch"]').setValue(true)
+
+      const buttons = wrapper.findAll('button')
+      expect(buttons).toHaveLength(voicedCast().length)
+      for (const button of buttons) {
+        expect(button.attributes('type')).toBe('button')
+        expect(button.attributes('aria-label')).toBe('entfernen')
+        expect(button.find('i').attributes('aria-hidden')).toBe('true')
+      }
+    })
+
     it('still removes a member via the ✕ icon in auto-sort mode', async () => {
       const wrapper = mount(SingleCastList, {
         props: { cast: voicedCast(), required: 5, notBooked: [], allowAutoSort: true },
@@ -299,7 +336,7 @@ describe('SingleCastList', () => {
       await wrapper.findAll('.fa-times')[0]?.trigger('click')
 
       const emitted = wrapper.emitted('cast-changed')
-      expect(emitted?.at(-1)?.[0]).not.toContainEqual(expect.objectContaining({ id: 2 }))
+      expect(emitted?.at(-1)?.[0]).not.toContainEqual(expect.objectContaining({ id: testId(2) }))
     })
 
     it('colors regular/standby by the GLOBAL sorted index, not a per-group index', async () => {
@@ -327,7 +364,7 @@ describe('SingleCastList', () => {
       await wrapper.find('input[role="switch"]').setValue(true)
 
       const newCandidate: CastMember = {
-        id: 6,
+        id: testId(6),
         name: 'AAA, Neu',
         fee: 35,
         voice_name: 'Sopran',
@@ -377,15 +414,14 @@ describe('SingleCastList', () => {
     })
 
     it('restores the manual order through a REAL reactive round trip (regression: watcher-ordering bug, only reproducible with real Vue reactivity, not manual setProps)', async () => {
-      // No voice assignments at all -- exactly the real-world scenario
-      // that surfaced the bug live (every currently-booked choir member
-      // lacks a structured Voice assignment today, see project memory on
-      // the known data gap), so auto-sort collapses everything into one
-      // "Stimmlage unbekannt" group, sorted purely alphabetically.
+      // No voice assignments at all -- the situation of a choir whose
+      // members have no structured Voice assignment yet, so auto-sort
+      // collapses everything into one "Stimmlage unbekannt" group, sorted
+      // purely alphabetically.
       const original: CastMember[] = [
-        { id: 1, name: 'ZIMMERMANN, Anna', fee: 35 },
-        { id: 2, name: 'ADLER, Bernd', fee: 35 },
-        { id: 3, name: 'MUELLER, Clara', fee: 35 },
+        { id: testId(1), name: 'ZIMMERMANN, Anna', fee: 35 },
+        { id: testId(2), name: 'ADLER, Bernd', fee: 35 },
+        { id: testId(3), name: 'MUELLER, Clara', fee: 35 },
       ]
       const wrapper = mount(ReactiveHost, { props: { initialCast: original, required: 3 } })
       const switchInput = wrapper.find('input[role="switch"]')
@@ -413,7 +449,7 @@ describe('SingleCastList', () => {
       await switchInput.setValue(true)
       const sorted = wrapper.emitted('cast-changed')?.at(-1)?.[0] as CastMember[]
       const newMember: CastMember = {
-        id: 6,
+        id: testId(6),
         name: 'NEU, Zusatz',
         fee: 35,
         voice_name: 'Sopran',
@@ -426,7 +462,7 @@ describe('SingleCastList', () => {
       await switchInput.setValue(false)
 
       const restored = wrapper.emitted('cast-changed')?.at(-1)?.[0] as CastMember[]
-      expect(restored.map((m) => m.id)).toEqual([...original.map((m) => m.id), 6])
+      expect(restored.map((m) => m.id)).toEqual([...original.map((m) => m.id), testId(6)])
     })
 
     it('drops a member removed while auto-sort was on, instead of resurrecting them on restore', async () => {
@@ -437,12 +473,14 @@ describe('SingleCastList', () => {
       const switchInput = wrapper.find('input[role="switch"]')
       await switchInput.setValue(true)
       const sorted = wrapper.emitted('cast-changed')?.at(-1)?.[0] as CastMember[]
-      await wrapper.setProps({ cast: sorted.filter((m) => m.id !== 2) })
+      await wrapper.setProps({ cast: sorted.filter((m) => m.id !== testId(2)) })
 
       await switchInput.setValue(false)
 
       const restored = wrapper.emitted('cast-changed')?.at(-1)?.[0] as CastMember[]
-      expect(restored.map((m) => m.id)).toEqual(original.filter((m) => m.id !== 2).map((m) => m.id))
+      expect(restored.map((m) => m.id)).toEqual(
+        original.filter((m) => m.id !== testId(2)).map((m) => m.id),
+      )
     })
   })
 })

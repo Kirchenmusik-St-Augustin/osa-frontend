@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 
 export interface Artist {
   id: string
@@ -38,8 +39,7 @@ export function useArtists() {
   }
 
   async function listComposers(): Promise<ArtistSearchResult[]> {
-    const response = await api.get<ArtistSearchResult[]>('/artists/composers')
-    return response.data
+    return fetchAllPages<ArtistSearchResult>('/artists/composers')
   }
 
   async function get(id: string): Promise<Artist> {
