@@ -7,7 +7,7 @@ ARG VITE_APP_ENVIRONMENT=production
 ENV VITE_APP_ENVIRONMENT=$VITE_APP_ENVIRONMENT
 RUN npm run build
 
-FROM docker.io/library/nginx:1-alpine@sha256:2db7d28517d1fba17c2da3210395f7be11a11b419246ad0da2edf782af72f367
+FROM docker.io/library/nginx:1-alpine@sha256:713fc2ebfd92e8217db451477182ee91944b123d2b1ee9fd5a8c6e91ca6c3a11
 COPY --from=builder /build/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --chmod=755 docker/docker-entrypoint.d/40-generate-runtime-config.sh /docker-entrypoint.d/40-generate-runtime-config.sh
