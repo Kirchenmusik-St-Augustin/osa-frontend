@@ -92,7 +92,7 @@ describe('ShorturlView', () => {
     expect(hrefs).toEqual(['https://example.org/a'])
   })
 
-  it('links a web target with noopener, and never links a script or data target', async () => {
+  it('links a web target with noopener, and never links a script, data or vbscript target', async () => {
     mockItems.value = [
       makeShorturl({ id: testId(1), path: 'ok', target: 'https://example.org/a' }),
       makeShorturl({ id: testId(2), path: 'evil', target: 'javascript:alert(document.domain)' }),
@@ -101,14 +101,15 @@ describe('ShorturlView', () => {
         path: 'data',
         target: 'data:text/html,<script>alert(1)</script>',
       }),
+      makeShorturl({ id: testId(4), path: 'vb', target: 'vbscript:msgbox(1)' }),
     ]
     const wrapper = mount(ShorturlView)
     await flushPromises()
 
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
     expect(hrefs).toContain('https://example.org/a')
-    expect(hrefs.some((href) => href?.startsWith('javascript:'))).toBe(false)
-    expect(hrefs.some((href) => href?.startsWith('data:'))).toBe(false)
+    const scriptScheme = /^(javascript|data|vbscript):/i
+    expect(hrefs.some((href) => scriptScheme.test(href ?? ''))).toBe(false)
     for (const link of wrapper.findAll('a[target="_blank"]')) {
       expect(link.attributes('rel')).toBe('noopener noreferrer')
     }
