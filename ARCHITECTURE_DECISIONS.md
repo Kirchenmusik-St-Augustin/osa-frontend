@@ -7,9 +7,9 @@
 `flatpickr` 4.6.13 (last registry change 2022-06-18) and `vuedraggable` 4.1.0
 (the `next` line for Vue 3; its `latest` tag is the Vue 2 line, last changed
 2023-08-20) are no longer maintained. The package manager's advisory check
-reports nothing for either today. They are third-party code in two places that matter: the date
-inputs and the drag-and-drop ordering of the cast lists. A vulnerability in
-either would get no upstream fix.
+reports nothing for either today. They are third-party code in two places
+that matter: the date inputs and the drag-and-drop ordering of the cast lists.
+A vulnerability in either would get no upstream fix.
 
 **Decision:** both stay for now. No dependency change.
 
