@@ -51,10 +51,11 @@ describe('useAuthStore', () => {
     expect(store.user?.surname).toBe('MUSTER')
     expect(mockedApi.get).toHaveBeenCalledWith('/auth/me')
     const body = mockedApi.post.mock.calls[0]?.[1] as URLSearchParams
+    expect(body).toBeInstanceOf(URLSearchParams)
     expect(Object.fromEntries(body)).toEqual({ username: 'a@example.test', password: 'secret' })
     expect(mockedApi.post).toHaveBeenCalledWith(
       '/auth/login',
-      expect.any(URLSearchParams),
+      body,
       expect.objectContaining({
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       }),

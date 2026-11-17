@@ -162,7 +162,7 @@ describe('SchedulerView', () => {
     mount(SchedulerView)
     await flushPromises()
 
-    expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
   it('shows the server text, or a fixed text for a field-only answer, when loading jobs fails', async () => {
@@ -315,7 +315,7 @@ describe('SchedulerView', () => {
     await wrapper.find('button').trigger('click')
     await flushPromises()
 
-    expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
     expect(mockShowToast).not.toHaveBeenCalledWith(expect.stringContaining('gestartet'))
     expect(mockListScheduledJobs).toHaveBeenCalledTimes(1)
   })
@@ -470,7 +470,7 @@ describe('SchedulerView', () => {
     await wrapper.find('button').trigger('click')
     await flushPromises()
 
-    expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
     expect(mockShowToast).not.toHaveBeenCalledWith(expect.stringContaining('gestartet'))
   })
 
