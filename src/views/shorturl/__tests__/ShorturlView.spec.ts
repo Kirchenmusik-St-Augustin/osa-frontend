@@ -192,6 +192,79 @@ describe('ShorturlView', () => {
     expect(wrapper.find('.modal').exists()).toBe(true)
   })
 
+  it('opens an empty create dialog after the edit dialog was closed, and saves it as new', async () => {
+    mockItems.value = [
+      makeShorturl({ id: testId(7), path: 'konzert', target: 'http://example.org' }),
+    ]
+    mockSave.mockResolvedValue(undefined)
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+    await wrapper.find('i[title="bearbeiten"]').trigger('click')
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Schließen')
+      ?.trigger('click')
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+
+    expect((wrapper.find('input#shorturl-path').element as HTMLInputElement).value).toBe('')
+    expect((wrapper.find('input#shorturl-target').element as HTMLInputElement).value).toBe('')
+    await wrapper.find('input#shorturl-path').setValue('orgel')
+    await wrapper.find('input#shorturl-target').setValue('example.org/orgel')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(mockSave).toHaveBeenCalledWith(null, { path: 'orgel', target: 'example.org/orgel' })
+  })
+
+  it('clears the form and old errors after a failed and then successful save', async () => {
+    mockSave.mockRejectedValueOnce({
+      response: {
+        data: { detail: [{ loc: ['body', 'path'], msg: 'Der Pfad ist bereits vergeben.' }] },
+      },
+    })
+    mockSave.mockResolvedValueOnce(undefined)
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+    await wrapper.find('input#shorturl-path').setValue('konzert')
+    await wrapper.find('input#shorturl-target').setValue('example.org')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Der Pfad ist bereits vergeben.')
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+
+    expect(wrapper.text()).not.toContain('Der Pfad ist bereits vergeben.')
+    expect((wrapper.find('input#shorturl-path').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('locks the save button while the request runs and releases it after a failure', async () => {
+    let fail: (reason: unknown) => void = () => {}
+    mockSave.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => {
+        fail = reject
+      }),
+    )
+    const wrapper = mount(ShorturlView)
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+    const saveButton = () => wrapper.find('button.btn-primary')
+    expect(saveButton().attributes('disabled')).toBeDefined()
+    await wrapper.find('input#shorturl-path').setValue('konzert')
+    expect(saveButton().attributes('disabled')).toBeDefined()
+    await wrapper.find('input#shorturl-target').setValue('example.org')
+    expect(saveButton().attributes('disabled')).toBeUndefined()
+
+    await saveButton().trigger('click')
+    expect(saveButton().attributes('disabled')).toBeDefined()
+
+    fail(new Error('network'))
+    await flushPromises()
+    expect(saveButton().attributes('disabled')).toBeUndefined()
+  })
+
   it('deletes a shorturl after the user confirms', async () => {
     mockItems.value = [makeShorturl({ id: testId(3) })]
     mockConfirmAction.mockResolvedValueOnce(true)

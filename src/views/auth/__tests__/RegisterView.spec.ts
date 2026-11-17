@@ -56,6 +56,22 @@ describe('RegisterView', () => {
     expect(wrapper.find('input#phone').attributes('autocomplete')).toBe('tel')
   })
 
+  it('shows its title and starts with every field empty', () => {
+    const wrapper = mount(RegisterView)
+
+    expect(wrapper.find('h2').text()).toBe('Registrierung')
+    for (const id of [
+      'givenname',
+      'surname',
+      'email',
+      'phone',
+      'password',
+      'password_confirmation',
+    ]) {
+      expect((wrapper.find(`input#${id}`).element as HTMLInputElement).value).toBe('')
+    }
+  })
+
   it('registers and replaces the form with the notice of the backend', async () => {
     mockRegister.mockResolvedValueOnce('Bitte prüfe dein Postfach.')
     const wrapper = mount(RegisterView)

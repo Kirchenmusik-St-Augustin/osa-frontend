@@ -65,6 +65,16 @@ describe('ProfileFormView', () => {
     )
   })
 
+  it('shows empty email and phone fields for a profile that has none', async () => {
+    mockGet.mockReset()
+    mockGet.mockResolvedValueOnce(makeUser({ email: null, phone: null }))
+    const wrapper = mount(ProfileFormView)
+    await flushPromises()
+
+    expect((wrapper.find('input#profile-email').element as HTMLInputElement).value).toBe('')
+    expect((wrapper.find('input#profile-phone').element as HTMLInputElement).value).toBe('')
+  })
+
   it('hides the new-password fields until "Passwort setzen" is toggled', async () => {
     const wrapper = mount(ProfileFormView)
     await flushPromises()
@@ -154,6 +164,7 @@ describe('ProfileFormView', () => {
     await flushPromises()
 
     expect(mockUpdate).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
   })
 
   it('tells the member when the profile cannot be loaded', async () => {
@@ -187,6 +198,27 @@ describe('ProfileFormView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
+  it('locks the save button while the request runs and releases it after a failure', async () => {
+    let fail: (reason: unknown) => void = () => {}
+    mockUpdate.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => {
+        fail = reject
+      }),
+    )
+    const wrapper = mount(ProfileFormView)
+    await flushPromises()
+    const saveButton = () => wrapper.find('button.btn-primary')
+    expect(saveButton().attributes('disabled')).toBeUndefined()
+
+    await saveButton().trigger('click')
+    await flushPromises()
+    expect(saveButton().attributes('disabled')).toBeDefined()
+
+    fail(new Error('offline'))
+    await flushPromises()
+    expect(saveButton().attributes('disabled')).toBeUndefined()
+  })
+
   it('shows field-level validation errors under the matching input', async () => {
     mockUpdate.mockRejectedValueOnce({
       response: {
@@ -202,6 +234,7 @@ describe('ProfileFormView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Das bestehende Passwort ist falsch.')
+    expect(mockShowToast).not.toHaveBeenCalled()
     expect(mockPush).not.toHaveBeenCalled()
   })
 })

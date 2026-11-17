@@ -99,6 +99,29 @@ describe('SearchTypeahead', () => {
       wrapper.unmount()
     })
 
+    it('does not show the answer of a query typed before the list was dismissed once newer input exists', async () => {
+      let resolveOld: (found: typeof hit) => void = () => {}
+      const search = vi
+        .fn()
+        .mockReturnValueOnce(
+          new Promise<typeof hit>((resolve) => {
+            resolveOld = resolve
+          }),
+        )
+        .mockReturnValue(new Promise<typeof hit>(() => {}))
+      const wrapper = mount(SearchTypeahead, { props: { search }, attachTo: document.body })
+      await wrapper.find('input').setValue('Moz')
+      await vi.advanceTimersByTimeAsync(300)
+
+      document.body.click()
+      await wrapper.find('input').setValue('Haydn')
+      resolveOld(hit)
+      await flushPromises()
+
+      expect(wrapper.find('.list-group-item').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
     it('does not run a debounced search that was still waiting when the list was dismissed', async () => {
       const search = vi.fn().mockResolvedValue(hit)
       const wrapper = mount(SearchTypeahead, { props: { search }, attachTo: document.body })
@@ -288,6 +311,30 @@ describe('SearchTypeahead', () => {
       await input.trigger('keydown', { key: 'ArrowUp' })
       expect(activeItems(wrapper)).toEqual([false, true, false])
     })
+
+    it.each(['ArrowDown', 'ArrowUp', 'Enter'])(
+      'keeps the browser from acting on %s while the list is shown',
+      async (key) => {
+        const wrapper = await mountWithResults()
+        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+
+        wrapper.find('input').element.dispatchEvent(event)
+
+        expect(event.defaultPrevented).toBe(true)
+      },
+    )
+
+    it.each(['ArrowDown', 'ArrowUp', 'Enter'])(
+      'does not swallow %s while no list is shown',
+      async (key) => {
+        const wrapper = mount(SearchTypeahead, { props: { search: vi.fn() } })
+        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+
+        wrapper.find('input').element.dispatchEvent(event)
+
+        expect(event.defaultPrevented).toBe(false)
+      },
+    )
 
     it('selects the highlighted result on Enter', async () => {
       const wrapper = await mountWithResults()

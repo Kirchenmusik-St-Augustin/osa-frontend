@@ -86,6 +86,30 @@ describe('ScoreFormView', () => {
 
     expect(mockConfirmAction).toHaveBeenCalledWith('Wirklich speichern?')
     expect(mockCreate).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('locks the save button while the request runs and releases it after a failure', async () => {
+    mockGetDefaults.mockResolvedValueOnce({ werk: 'Requiem' })
+    mockConfirmAction.mockResolvedValueOnce(true)
+    let fail: (reason: unknown) => void = () => {}
+    mockCreate.mockReturnValueOnce(
+      new Promise<Score>((_resolve, reject) => {
+        fail = reject
+      }),
+    )
+    const wrapper = mount(ScoreFormView)
+    await flushPromises()
+    const saveButton = () => wrapper.find('button[type="submit"]')
+    expect(saveButton().attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(saveButton().attributes('disabled')).toBeDefined()
+
+    fail(new Error('offline'))
+    await flushPromises()
+    expect(saveButton().attributes('disabled')).toBeUndefined()
   })
 
   it('creates the score, toasts, and navigates to its show page on success', async () => {
