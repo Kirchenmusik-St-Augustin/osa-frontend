@@ -124,6 +124,21 @@ describe('OrdinariumworkShowView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
+  it('neither deletes nor navigates when the confirmation is declined', async () => {
+    mockGet.mockResolvedValueOnce(makeWork())
+    mockGetSetup.mockResolvedValueOnce(makeSetup())
+    mockConfirmAction.mockResolvedValueOnce(false)
+    const wrapper = mount(OrdinariumworkShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('button.btn-danger').trigger('click')
+    await flushPromises()
+
+    expect(mockConfirmAction).toHaveBeenCalledTimes(1)
+    expect(mockRemove).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
   it('navigates back to search after a successful delete', async () => {
     mockGet.mockResolvedValueOnce(makeWork())
     mockGetSetup.mockResolvedValueOnce(makeSetup())

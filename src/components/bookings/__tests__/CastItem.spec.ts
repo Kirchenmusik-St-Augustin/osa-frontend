@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import CastItem from '../CastItem.vue'
 import SingleCastList from '../SingleCastList.vue'
+import SingleCastSelector from '../SingleCastSelector.vue'
 import type { BookableGroup, CastMember, Fee } from '@/composables/useBookings'
 import { testId } from '@/__tests__/testId'
 
@@ -103,6 +104,34 @@ describe('CastItem', () => {
     await wrapper.find('.fa-times').trigger('click')
     expect(wrapper.emitted('remove-not-booked')?.[0]).toEqual([testId(9)])
     wrapper.unmount()
+  })
+
+  it('appends candidates chosen for the cast to the current cast instead of asking for a rejection', async () => {
+    const wrapper = mountItem([{ id: testId(1), name: 'A', fee: 80 }], 2)
+    await wrapper.find('.c-pointer').trigger('click') // expand
+    const candidate = { id: testId(5), name: 'Candidate', fee: 80 }
+
+    wrapper
+      .findComponent(SingleCastSelector)
+      .vm.$emit('add-to', { stack: 'cast', candidates: [candidate] })
+
+    expect(wrapper.emitted('cast-changed')).toEqual([
+      [testId(1), [{ id: testId(1), name: 'A', fee: 80 }, candidate]],
+    ])
+    expect(wrapper.emitted('add-to')).toBeUndefined()
+  })
+
+  it('reports candidates rejected for the performance without touching the cast', async () => {
+    const wrapper = mountItem([{ id: testId(1), name: 'A', fee: 80 }], 2)
+    await wrapper.find('.c-pointer').trigger('click') // expand
+    const candidate = { id: testId(5), name: 'Candidate', fee: 80 }
+
+    wrapper
+      .findComponent(SingleCastSelector)
+      .vm.$emit('add-to', { stack: 'notBooked', candidates: [candidate] })
+
+    expect(wrapper.emitted('add-to')).toEqual([[testId(1), 'notBooked', [candidate]]])
+    expect(wrapper.emitted('cast-changed')).toBeUndefined()
   })
 
   it('hides the reset link while auto-sort is on, even though the cast changed', async () => {

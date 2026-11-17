@@ -100,6 +100,72 @@ describe('ArtistFormView', () => {
     await flushPromises()
 
     expect(mockCreate).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('sends an untouched new form with both roles off and no years', async () => {
+    mockCreate.mockResolvedValueOnce(makeArtist({ id: '9' }))
+    const wrapper = mount(ArtistFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      givenname: '',
+      surname: '',
+      description: null,
+      birthyear: null,
+      deathyear: null,
+      composer: false,
+      conductor: false,
+    })
+  })
+
+  it('keeps an artist without years without years when it is saved again', async () => {
+    mockGet.mockResolvedValueOnce(makeArtist({ birthyear: null, deathyear: null }))
+    mockUpdate.mockResolvedValueOnce(makeArtist())
+    const wrapper = mount(ArtistFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ birthyear: null, deathyear: null }),
+    )
+  })
+
+  it('locks the save button while the request runs and releases it afterwards', async () => {
+    let finish: (artist: Artist) => void = () => undefined
+    mockCreate.mockReturnValueOnce(
+      new Promise<Artist>((resolve) => {
+        finish = resolve
+      }),
+    )
+    const wrapper = mount(ArtistFormView, { props: {} })
+    await flushPromises()
+    expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeDefined()
+
+    finish(makeArtist({ id: '9' }))
+    await flushPromises()
+    expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeUndefined()
+  })
+
+  it('releases the save button after a failed request', async () => {
+    mockCreate.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(ArtistFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeUndefined()
   })
 
   it('tells the user when saving fails without a field-level reason', async () => {

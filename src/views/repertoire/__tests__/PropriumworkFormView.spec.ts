@@ -135,6 +135,79 @@ describe('PropriumworkFormView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
+  it('does not save when the confirmation is declined', async () => {
+    mockConfirmAction.mockResolvedValueOnce(false)
+    const wrapper = mount(PropriumworkFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockConfirmAction).toHaveBeenCalledTimes(1)
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('sends an untouched new form with no duration and no description', async () => {
+    mockCreate.mockResolvedValueOnce(makeWork({ id: '9' }))
+    const wrapper = mount(PropriumworkFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      name: '',
+      description: null,
+      artist_id: null,
+      duration: null,
+      demanding: false,
+    })
+  })
+
+  it('keeps a work without a duration without one when it is saved again', async () => {
+    mockGet.mockResolvedValueOnce(makeWork({ duration: null }))
+    mockUpdate.mockResolvedValueOnce(makeWork())
+    const wrapper = mount(PropriumworkFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith('1', expect.objectContaining({ duration: null }))
+  })
+
+  it('locks the save button while the request runs and releases it afterwards', async () => {
+    let finish: (work: Propriumwork) => void = () => undefined
+    mockCreate.mockReturnValueOnce(
+      new Promise<Propriumwork>((resolve) => {
+        finish = resolve
+      }),
+    )
+    const wrapper = mount(PropriumworkFormView, { props: {} })
+    await flushPromises()
+    expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeDefined()
+
+    finish(makeWork({ id: '9' }))
+    await flushPromises()
+    expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeUndefined()
+  })
+
+  it('releases the save button after a failed request', async () => {
+    mockCreate.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PropriumworkFormView, { props: {} })
+    await flushPromises()
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeUndefined()
+  })
+
   it('shows field-level validation errors under the matching input', async () => {
     mockCreate.mockRejectedValueOnce({
       response: {
@@ -151,5 +224,6 @@ describe('PropriumworkFormView', () => {
 
     expect(wrapper.text()).toContain('Muss zwischen 1 und 999 liegen.')
     expect(mockPush).not.toHaveBeenCalled()
+    expect(mockShowToast).not.toHaveBeenCalled()
   })
 })

@@ -50,6 +50,31 @@ describe('ResetPasswordView', () => {
     )
   })
 
+  it('starts with empty address and token when the link carries none', () => {
+    mockRoute.query = { token: ['a', 'b'] as unknown as string, email: ['x'] as unknown as string }
+    const wrapper = mount(ResetPasswordView)
+
+    expect((wrapper.find('input#email').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('locks the submit button while the request runs and releases it after a failure', async () => {
+    let failReset: (reason: unknown) => void = () => {}
+    mockResetPassword.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => {
+        failReset = reject
+      }),
+    )
+    const wrapper = mount(ResetPasswordView)
+    const submitButton = () => wrapper.find('button[type="submit"]')
+    expect(submitButton().attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('form').trigger('submit.prevent')
+    expect(submitButton().attributes('disabled')).toBeDefined()
+
+    failReset(new Error('network'))
+    await vi.waitFor(() => expect(submitButton().attributes('disabled')).toBeUndefined())
+  })
+
   it('submits the reset and redirects to login on success', async () => {
     mockResetPassword.mockResolvedValueOnce(undefined)
     const wrapper = mount(ResetPasswordView)

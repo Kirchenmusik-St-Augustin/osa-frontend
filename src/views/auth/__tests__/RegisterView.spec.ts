@@ -75,6 +75,24 @@ describe('RegisterView', () => {
     expect(wrapper.find('[role="status"]').text()).toBe('Bitte prüfe dein Postfach.')
   })
 
+  it('locks the submit button while the request runs and releases it after a failure', async () => {
+    let failRegistration: (reason: unknown) => void = () => {}
+    mockRegister.mockReturnValueOnce(
+      new Promise<string>((_resolve, reject) => {
+        failRegistration = reject
+      }),
+    )
+    const wrapper = mount(RegisterView)
+    const submitButton = () => wrapper.find('button[type="submit"]')
+    expect(submitButton().attributes('disabled')).toBeUndefined()
+
+    await fillAndSubmit(wrapper)
+    expect(submitButton().attributes('disabled')).toBeDefined()
+
+    failRegistration(new Error('network'))
+    await vi.waitFor(() => expect(submitButton().attributes('disabled')).toBeUndefined())
+  })
+
   it('shows per-field errors of a 422 and keeps the form', async () => {
     mockRegister.mockRejectedValueOnce({
       response: {

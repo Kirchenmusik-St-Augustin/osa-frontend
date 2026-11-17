@@ -155,6 +155,45 @@ describe('QuantityEditor', () => {
     expect(emitted?.[0]).toEqual([[]])
   })
 
+  it('changes only the clicked row and keeps a quantity of 1 after decrementing from 2', async () => {
+    const wrapper = mount(QuantityEditor, {
+      props: {
+        modelValue: [
+          { id: testId(1), name: 'Fagott', quantity: 2 },
+          { id: testId(2), name: 'Oboe', quantity: 3 },
+        ],
+        available,
+      },
+    })
+
+    await wrapper.findAll('.fa-minus-circle')[0]?.trigger('click')
+
+    const emitted = wrapper.emitted('update:modelValue')
+    expect(emitted?.[0]).toEqual([
+      [
+        { id: testId(1), name: 'Fagott', quantity: 1 },
+        { id: testId(2), name: 'Oboe', quantity: 3 },
+      ],
+    ])
+  })
+
+  it('removes only the clicked row when its quantity drops below 1', async () => {
+    const wrapper = mount(QuantityEditor, {
+      props: {
+        modelValue: [
+          { id: testId(1), name: 'Fagott', quantity: 1 },
+          { id: testId(2), name: 'Oboe', quantity: 3 },
+        ],
+        available,
+      },
+    })
+
+    await wrapper.findAll('.fa-minus-circle')[0]?.trigger('click')
+
+    const emitted = wrapper.emitted('update:modelValue')
+    expect(emitted?.[0]).toEqual([[{ id: testId(2), name: 'Oboe', quantity: 3 }]])
+  })
+
   it('removes a row instantly via the trash icon', async () => {
     const wrapper = mount(QuantityEditor, {
       props: {
