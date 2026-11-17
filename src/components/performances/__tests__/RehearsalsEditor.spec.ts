@@ -154,11 +154,9 @@ describe('RehearsalsEditor', () => {
       props: { modelValue: existing, 'onUpdate:modelValue': () => {} },
     })
 
-    // DateTimePicker's Flatpickr instance renders a hidden input (class
-    // "flatpickr-input") plus a visible alt-input (class "form-control
-    // input") -- restricting to type="text" without the "input" class
-    // isolates this component's own comment field from both.
-    const commentInputs = wrapper.findAll('input[type="text"].form-control:not(.input)')
+    // The DateTimePicker of an editable row renders a text input of its own,
+    // so the comment fields are selected by their accessible name.
+    const commentInputs = wrapper.findAll('input[aria-label="Kommentar zur Probe"]')
     expect(commentInputs).toHaveLength(1)
     expect((commentInputs[0]!.element as HTMLInputElement).value).toBe('GP')
   })

@@ -449,6 +449,176 @@ describe('CoreelementView', () => {
     expect(wrapper.find('.modal').exists()).toBe(false)
   })
 
+  const findButton = (wrapper: ReturnType<typeof mount>, text: string) =>
+    wrapper.findAll('button').find((button) => button.text() === text)
+
+  it('builds a role payload with label and description but without location fields', async () => {
+    mockSave.mockResolvedValueOnce(undefined)
+    const wrapper = await mountWithCreateModalOpen('role')
+
+    await wrapper.find('input#coreelement-name').setValue('chorleiter')
+    await wrapper.find('input#coreelement-label').setValue('Chorleiter')
+    await wrapper.find('textarea#coreelement-description').setValue('Leitet den Chor')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockSave).toHaveBeenCalledWith(null, {
+      name: 'chorleiter',
+      label: 'Chorleiter',
+      description: 'Leitet den Chor',
+    })
+  })
+
+  it('pre-fills and saves every field of an existing role and location', async () => {
+    mockItems.value = [
+      makeItem({ id: testId(7), name: 'chorleiter', label: 'Chorleiter', description: 'Leitet' }),
+    ]
+    mockSave.mockResolvedValue(undefined)
+    const roleWrapper = mount(CoreelementView, { props: { type: 'role' } })
+    await flushPromises()
+    await roleWrapper.find('button[title="bearbeiten"]').trigger('click')
+    expect((roleWrapper.find('input#coreelement-label').element as HTMLInputElement).value).toBe(
+      'Chorleiter',
+    )
+    expect(
+      (roleWrapper.find('textarea#coreelement-description').element as HTMLTextAreaElement).value,
+    ).toBe('Leitet')
+    await roleWrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(mockSave).toHaveBeenLastCalledWith(testId(7), {
+      name: 'chorleiter',
+      label: 'Chorleiter',
+      description: 'Leitet',
+    })
+
+    mockItems.value = [
+      makeItem({ id: testId(8), name: 'Kirche', address: 'Hauptstraße 1', color: '336699' }),
+    ]
+    const locationWrapper = mount(CoreelementView, { props: { type: 'location' } })
+    await flushPromises()
+    await locationWrapper.find('button[title="bearbeiten"]').trigger('click')
+    expect(
+      (locationWrapper.find('textarea#coreelement-address').element as HTMLTextAreaElement).value,
+    ).toBe('Hauptstraße 1')
+    expect(
+      (locationWrapper.find('input#coreelement-color').element as HTMLInputElement).value,
+    ).toBe('336699')
+    await locationWrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(mockSave).toHaveBeenLastCalledWith(testId(8), {
+      name: 'Kirche',
+      address: 'Hauptstraße 1',
+      color: '336699',
+    })
+  })
+
+  it('sends empty texts for a role or location that has no optional values stored', async () => {
+    mockItems.value = [makeItem({ id: testId(7), name: 'chorleiter' })]
+    mockSave.mockResolvedValue(undefined)
+    const roleWrapper = mount(CoreelementView, { props: { type: 'role' } })
+    await flushPromises()
+    await roleWrapper.find('button[title="bearbeiten"]').trigger('click')
+    await roleWrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(mockSave).toHaveBeenLastCalledWith(testId(7), {
+      name: 'chorleiter',
+      label: '',
+      description: '',
+    })
+
+    const locationWrapper = mount(CoreelementView, { props: { type: 'location' } })
+    await flushPromises()
+    await locationWrapper.find('button[title="bearbeiten"]').trigger('click')
+    await locationWrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(mockSave).toHaveBeenLastCalledWith(testId(7), {
+      name: 'chorleiter',
+      address: '',
+      color: '',
+    })
+  })
+
+  it('opens an empty create dialog after closing an edit dialog, and saves it as new', async () => {
+    mockItems.value = [makeItem({ id: testId(7), name: 'Fagott', active: false })]
+    mockSave.mockResolvedValue(undefined)
+    const wrapper = mount(CoreelementView, { props: { type: 'instrument' } })
+    await flushPromises()
+    await wrapper.find('button[title="bearbeiten"]').trigger('click')
+    expect((wrapper.find('input#coreelement-active').element as HTMLInputElement).checked).toBe(
+      false,
+    )
+
+    await findButton(wrapper, 'Schließen')?.trigger('click')
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+
+    expect((wrapper.find('input#coreelement-name').element as HTMLInputElement).value).toBe('')
+    expect((wrapper.find('input#coreelement-active').element as HTMLInputElement).checked).toBe(
+      true,
+    )
+    await wrapper.find('input#coreelement-name').setValue('Oboe')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(mockSave).toHaveBeenCalledWith(null, { name: 'Oboe', active: true })
+  })
+
+  it('clears what was typed after a successful save and drops old field errors on reopening', async () => {
+    mockSave.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['body', 'name'], msg: 'Der Name ist vergeben.' }] } },
+    })
+    mockSave.mockResolvedValueOnce(undefined)
+    const wrapper = await mountWithCreateModalOpen('role')
+    await wrapper.find('input#coreelement-name').setValue('chorleiter')
+    await wrapper.find('input#coreelement-label').setValue('Chorleiter')
+    await wrapper.find('textarea#coreelement-description').setValue('Text')
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Der Name ist vergeben.')
+
+    await wrapper.find('button.btn-primary').trigger('click')
+    await flushPromises()
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+
+    expect(wrapper.text()).not.toContain('Der Name ist vergeben.')
+    expect((wrapper.find('input#coreelement-name').element as HTMLInputElement).value).toBe('')
+    expect((wrapper.find('input#coreelement-label').element as HTMLInputElement).value).toBe('')
+    expect(
+      (wrapper.find('textarea#coreelement-description').element as HTMLTextAreaElement).value,
+    ).toBe('')
+  })
+
+  it('clears the address and color after closing a location dialog', async () => {
+    const wrapper = await mountWithCreateModalOpen('location')
+    await wrapper.find('textarea#coreelement-address').setValue('Hauptstraße 1')
+    await wrapper.find('input#coreelement-color').setValue('ff0000')
+
+    await findButton(wrapper, 'Schließen')?.trigger('click')
+    await wrapper.find('button.btn-secondary.my-3').trigger('click')
+
+    expect(
+      (wrapper.find('textarea#coreelement-address').element as HTMLTextAreaElement).value,
+    ).toBe('')
+    expect((wrapper.find('input#coreelement-color').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('locks the save button while the request runs and releases it after a failure', async () => {
+    let fail: (reason: unknown) => void = () => {}
+    mockSave.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => {
+        fail = reject
+      }),
+    )
+    const wrapper = await mountWithCreateModalOpen('instrument')
+    const saveButton = () => wrapper.find('button.btn-primary')
+    expect(saveButton().attributes('disabled')).toBeUndefined()
+
+    await saveButton().trigger('click')
+    expect(saveButton().attributes('disabled')).toBeDefined()
+
+    fail(new Error('network'))
+    await flushPromises()
+    expect(saveButton().attributes('disabled')).toBeUndefined()
+  })
+
   it('releases the page scroll lock when unmounted while the modal is open', async () => {
     // Regression test: navigating away (e.g. browser back) with the dialog
     // open must not leave the page stuck unscrollable.

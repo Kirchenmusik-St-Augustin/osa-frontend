@@ -10,7 +10,7 @@ St. Augustin. Spricht mit [`osa-backend`](https://github.com/Kirchenmusik-St-Aug
 
 - **Framework:** Vue 3 (`<script setup>`, striktes TypeScript), Vite,
   Pinia, Vue Router
-- **UI:** Bootstrap 5 (styles only), FontAwesome, flatpickr
+- **UI:** Bootstrap 5 (styles only), FontAwesome
 - **Auslieferung in Prod:** nginx (statischer Build), Podman Quadlets
   (rootless systemd) — die Quadlets für jede Stage, inklusive lokaler
   Entwicklung, liegen in [`osa-deploy`](https://github.com/Kirchenmusik-St-Augustin/osa-deploy)

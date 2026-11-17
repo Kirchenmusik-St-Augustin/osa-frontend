@@ -1,5 +1,5 @@
 import type * as VueRouter from 'vue-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import PerformanceFormView from '../PerformanceFormView.vue'
 import SearchTypeahead from '@/components/common/SearchTypeahead.vue'
@@ -11,6 +11,7 @@ import type {
 } from '@/composables/usePerformances'
 import type { Ordinariumwork, OrdinariumworkSetup } from '@/composables/useOrdinariumworks'
 import type { Propriumwork } from '@/composables/usePropriumworks'
+import { formatDateTime } from '@/services/dateFormat'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
 let mockQuery: Record<string, string> = {}
@@ -730,5 +731,242 @@ describe('PerformanceFormView -- modal lifecycle', () => {
     wrapper.unmount()
 
     expect(document.body.classList.contains('modal-open')).toBe(false)
+  })
+})
+
+function propriumItem(elementId: string, elementName: string, workId: string, workName: string) {
+  return {
+    propriumelement_id: elementId,
+    propriumelement_name: elementName,
+    propriumwork_id: workId,
+    propriumwork_name: workName,
+    artist_name: 'HAYDN, Joseph',
+    description: null,
+    demanding: false,
+  }
+}
+
+describe('PerformanceFormView -- default date of a new performance', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  // "Today" is Tuesday, 17 November 2026, 12:34.
+  async function defaultScheduleFor(
+    query: Record<string, string>,
+    now = new Date(2026, 10, 17, 12, 34),
+  ): Promise<string> {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(now)
+    mockQuery = query
+    mockGetOrdinariumwork.mockResolvedValueOnce({
+      id: '5',
+      name: 'Krönungsmesse',
+      description: null,
+      artist_id: '2',
+      artist_name: 'MOZART, Wolfgang',
+      duration: 25,
+      demanding: false,
+    })
+    mockGetSetup.mockResolvedValueOnce({ instruments: [], voices: [] })
+    mockCreate.mockResolvedValueOnce({ id: '99', schedule: '2026-12-06T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+    await pickOrdinariumwork(wrapper, '5')
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    return (mockCreate.mock.calls[0]?.[0] as { schedule: string }).schedule
+  }
+
+  it.each([
+    ['the current month: the next Sunday after today', { year: '2026', month: '11' }, '2026-11-22'],
+    ['a past month: the next Sunday after today', { year: '2026', month: '10' }, '2026-11-22'],
+    ['an earlier year: the next Sunday after today', { year: '2025', month: '12' }, '2026-11-22'],
+    ['the next month: its first Sunday', { year: '2026', month: '12' }, '2026-12-06'],
+    ['a month of the next year: its first Sunday', { year: '2027', month: '2' }, '2027-02-07'],
+    [
+      'a month starting on a Sunday: the Sunday after it',
+      { year: '2027', month: '8' },
+      '2027-08-08',
+    ],
+  ])('proposes for %s at 11:00', async (_label, query, day) => {
+    expect(await defaultScheduleFor(query)).toBe(`${day}T11:00:00`)
+  })
+
+  it('proposes the following Sunday when today already is a Sunday', async () => {
+    const schedule = await defaultScheduleFor(
+      { year: '2026', month: '11' },
+      new Date(2026, 10, 22, 8, 0),
+    )
+
+    expect(schedule).toBe('2026-11-29T11:00:00')
+  })
+
+  it('shows date and place of the performance as subtitle once both are known', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 10, 17, 12, 34))
+    mockQuery = { year: '2026', month: '11' }
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    expect(wrapper.find('.h4.text-center.mb-4').text()).toBe(
+      `${formatDateTime('2026-11-22T11:00:00')}, Augustinerkirche`,
+    )
+  })
+
+  it('shows no subtitle without a preselected location', async () => {
+    mockGetAvailableData.mockResolvedValue(makeAvailable({ default_location_id: null }))
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    expect(wrapper.find('.h4.text-center.mb-4').exists()).toBe(false)
+  })
+
+  it('shows no subtitle for a location the list does not know', async () => {
+    mockGetAvailableData.mockResolvedValue(makeAvailable({ default_location_id: '404' }))
+    const wrapper = mount(PerformanceFormView, { props: {} })
+    await flushPromises()
+
+    expect(wrapper.find('.h4.text-center.mb-4').exists()).toBe(false)
+  })
+})
+
+describe('PerformanceFormView -- confirmations and submit state', () => {
+  it('neither saves nor navigates when the save confirmation is declined', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData())
+    mockConfirmAction.mockResolvedValueOnce(false)
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockConfirmAction).toHaveBeenCalledTimes(1)
+    expect(mockUpdate).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('neither deletes nor navigates when the delete confirmation is declined', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData({ deletable: true }))
+    mockConfirmAction.mockResolvedValueOnce(false)
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findDeleteButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockConfirmAction).toHaveBeenCalledTimes(1)
+    expect(mockRemove).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('locks the save button while the request runs and releases it afterwards', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData())
+    let finish: (value: PerformanceResponse) => void = () => undefined
+    mockUpdate.mockReturnValueOnce(
+      new Promise<PerformanceResponse>((resolve) => {
+        finish = resolve
+      }),
+    )
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+    expect(findSaveButton(wrapper)?.attributes('disabled')).toBeUndefined()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+    expect(findSaveButton(wrapper)?.attributes('disabled')).toBeDefined()
+
+    finish({ id: '1', schedule: '2026-08-02T11:00:00' } as PerformanceResponse)
+    await flushPromises()
+    expect(findSaveButton(wrapper)?.attributes('disabled')).toBeUndefined()
+  })
+
+  it('releases the save button and tells the user when the request fails', async () => {
+    mockGetFormData.mockResolvedValueOnce(makeFormData())
+    mockUpdate.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Ein Fehler ist aufgetreten.', true)
+    expect(findSaveButton(wrapper)?.attributes('disabled')).toBeUndefined()
+  })
+})
+
+describe('PerformanceFormView -- Proprium entries', () => {
+  it('removes only the chosen Proprium entry', async () => {
+    mockGetAvailableData.mockResolvedValue(
+      makeAvailable({
+        propriumelements: [
+          { id: '40', name: 'Introitus' },
+          { id: '41', name: 'Graduale' },
+        ],
+      }),
+    )
+    mockGetFormData.mockResolvedValueOnce(
+      makeFormData({
+        proprium: [
+          propriumItem('40', 'Introitus', '7', 'Gregorianik I'),
+          propriumItem('41', 'Graduale', '8', 'Gregorianik II'),
+        ],
+      }),
+    )
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('.fa-trash').trigger('click')
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate.mock.calls[0]?.[1].proprium).toEqual([
+      { propriumelement_id: '41', propriumwork_id: '8' },
+    ])
+  })
+
+  it('offers only a Proprium element that is not used yet and keeps the canon order', async () => {
+    mockGetAvailableData.mockResolvedValue(
+      makeAvailable({
+        propriumelements: [
+          { id: '40', name: 'Introitus' },
+          { id: '41', name: 'Graduale' },
+        ],
+      }),
+    )
+    mockGetFormData.mockResolvedValueOnce(
+      makeFormData({ proprium: [propriumItem('41', 'Graduale', '8', 'Gregorianik II')] }),
+    )
+    mockGetPropriumwork.mockResolvedValueOnce({
+      id: '7',
+      name: 'Gregorianik I',
+      description: null,
+      artist_id: '3',
+      artist_name: 'HAYDN, Joseph',
+      duration: null,
+      demanding: false,
+    } satisfies Propriumwork)
+    mockUpdate.mockResolvedValueOnce({ id: '1', schedule: '2026-08-02T11:00:00' })
+    const wrapper = mount(PerformanceFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('.fa-plus-circle').trigger('click')
+    await wrapper.findComponent(SearchTypeahead).vm.$emit('select', '7')
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Hinzufügen')
+      ?.trigger('click')
+    await flushPromises()
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate.mock.calls[0]?.[1].proprium).toEqual([
+      { propriumelement_id: '40', propriumwork_id: '7' },
+      { propriumelement_id: '41', propriumwork_id: '8' },
+    ])
   })
 })

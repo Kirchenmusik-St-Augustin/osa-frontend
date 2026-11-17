@@ -10,7 +10,7 @@ Talks to [`osa-backend`](https://github.com/Kirchenmusik-St-Augustin/osa-backend
 
 - **Framework:** Vue 3 (`<script setup>`, strict TypeScript), Vite, Pinia,
   Vue Router
-- **UI:** Bootstrap 5 (styles only), FontAwesome, flatpickr
+- **UI:** Bootstrap 5 (styles only), FontAwesome
 - **Prod serving:** nginx (static build), Podman Quadlets (rootless
   systemd) — quadlets for every stage, including local dev, live in
   [`osa-deploy`](https://github.com/Kirchenmusik-St-Augustin/osa-deploy)

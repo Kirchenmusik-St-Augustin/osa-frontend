@@ -257,6 +257,65 @@ describe('AppModal', () => {
     })
   })
 
+  describe('edge cases of dismissing and tabbing', () => {
+    function tab(target: HTMLElement, shiftKey = false): KeyboardEvent {
+      const event = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey,
+        bubbles: true,
+        cancelable: true,
+      })
+      target.dispatchEvent(event)
+      return event
+    }
+
+    it('does not close on a click that was not preceded by a press on the backdrop', () => {
+      const wrapper = mountModal({ modelValue: true })
+
+      modalElement()!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    })
+
+    it('keeps focus on the dialog itself when it holds nothing focusable', () => {
+      mount(AppModal, {
+        props: { modelValue: true },
+        slots: { default: '<div class="modal-content"><p>Nur Text</p></div>' },
+        attachTo: document.body,
+        global: { stubs: { teleport: false } },
+      })
+      modalElement()!.focus()
+
+      const forward = tab(modalElement()!)
+      const backward = tab(modalElement()!, true)
+
+      expect(forward.defaultPrevented).toBe(true)
+      expect(backward.defaultPrevented).toBe(true)
+      expect(document.activeElement).toBe(modalElement())
+    })
+
+    it('leaves Shift+Tab between inner elements to the browser', () => {
+      mountModal({ modelValue: true })
+      byId('middle').focus()
+
+      expect(tab(byId('middle'), true).defaultPrevented).toBe(false)
+    })
+
+    it('leaves Shift+Tab from the last element and Tab from the first to the browser', () => {
+      mountModal({ modelValue: true })
+      byId('last').focus()
+
+      expect(tab(byId('last'), true).defaultPrevented).toBe(false)
+    })
+
+    it('leaves Tab from the dialog container to the browser', () => {
+      mountModal({ modelValue: true })
+      modalElement()!.focus()
+
+      expect(tab(modalElement()!).defaultPrevented).toBe(false)
+    })
+  })
+
   it('reacts to a parent-owned v-model', async () => {
     const Parent = defineComponent({
       components: { AppModal },

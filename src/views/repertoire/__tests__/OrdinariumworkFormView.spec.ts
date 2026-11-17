@@ -187,6 +187,98 @@ describe('OrdinariumworkFormView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
+  it('does not save when the confirmation is declined', async () => {
+    mockConfirmAction.mockResolvedValueOnce(false)
+    const wrapper = mount(OrdinariumworkFormView, { props: {} })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockConfirmAction).toHaveBeenCalledTimes(1)
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('sends an empty new form with no duration, no description and demanding off', async () => {
+    mockCreate.mockResolvedValueOnce(makeWork({ id: '9' }))
+    const wrapper = mount(OrdinariumworkFormView, { props: {} })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      name: '',
+      description: null,
+      artist_id: null,
+      duration: null,
+      demanding: false,
+      setup: { instruments: [], voices: [] },
+    })
+  })
+
+  it('keeps a work without a duration without one when it is saved again', async () => {
+    mockGet.mockResolvedValueOnce(makeWork({ duration: null }))
+    mockGetSetup.mockResolvedValueOnce(makeSetup())
+    mockUpdate.mockResolvedValueOnce(makeWork())
+    const wrapper = mount(OrdinariumworkFormView, { props: { id: '1' } })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ duration: null, demanding: false }),
+    )
+  })
+
+  it('locks the save button while the request runs and releases it afterwards', async () => {
+    let finish: (work: Ordinariumwork) => void = () => undefined
+    mockCreate.mockReturnValueOnce(
+      new Promise<Ordinariumwork>((resolve) => {
+        finish = resolve
+      }),
+    )
+    const wrapper = mount(OrdinariumworkFormView, { props: {} })
+    await flushPromises()
+    expect(findSaveButton(wrapper)?.attributes('disabled')).toBeUndefined()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+    expect(findSaveButton(wrapper)?.attributes('disabled')).toBeDefined()
+
+    finish(makeWork({ id: '9' }))
+    await flushPromises()
+    expect(findSaveButton(wrapper)?.attributes('disabled')).toBeUndefined()
+  })
+
+  it('releases the save button after a failed request', async () => {
+    mockCreate.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(OrdinariumworkFormView, { props: {} })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(findSaveButton(wrapper)?.attributes('disabled')).toBeUndefined()
+  })
+
+  it('shows a field-level failure at its field without an extra toast', async () => {
+    mockCreate.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['body', 'name'], msg: 'Der Name ist zu kurz.' }] } },
+    })
+    const wrapper = mount(OrdinariumworkFormView, { props: {} })
+    await flushPromises()
+
+    await findSaveButton(wrapper)?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Der Name ist zu kurz.')
+    expect(mockShowToast).not.toHaveBeenCalled()
+  })
+
   it('shows the setup validation error under the setup section', async () => {
     mockCreate.mockRejectedValueOnce({
       response: {

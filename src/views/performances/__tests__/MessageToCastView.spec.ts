@@ -352,6 +352,104 @@ describe('MessageToCastView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('Der Email-Versand ist deaktiviert.', true)
   })
 
+  it('shows the fallback when every booked position is empty', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(
+      makePage({
+        instruments: [{ id: '10', name: 'Fagott', cast: [] }],
+        voices: [{ id: '20', name: 'Sopran', cast: [] }],
+        choirjobs: [{ id: '30', name: 'Notenwart', cast: [] }],
+      }),
+    )
+    mockGetMessageRecipients.mockResolvedValueOnce([])
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(wrapper.find('textarea').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Zu dieser Aufführung gibt es aktuell keine Buchungen.')
+  })
+
+  it('shows the form when only a voice or a choir job is booked', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(
+      makePage({
+        instruments: [],
+        voices: [{ id: '20', name: 'Sopran', cast: [{ id: '5', name: 'HUBER, Franz', fee: 60 }] }],
+        choirjobs: [],
+      }),
+    )
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect(wrapper.find('textarea').exists()).toBe(true)
+  })
+
+  it('starts with the "alle" switch off and no recipient chosen', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    expect((wrapper.find('#message-to-cast-check-all').element as HTMLInputElement).checked).toBe(
+      false,
+    )
+    expect((rowCheckbox(wrapper, 0).element as HTMLInputElement).checked).toBe(false)
+  })
+
+  it('addresses only recipients with an email when the "alle" switch is used', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    mockSendMessageToCast.mockResolvedValueOnce(undefined)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    await wrapper.find('#message-to-cast-check-all').setValue(true)
+    await wrapper.find('textarea').setValue('Bitte pünktlich erscheinen.')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Senden')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockSendMessageToCast).toHaveBeenCalledWith('1', ['5'], 'Bitte pünktlich erscheinen.')
+  })
+
+  it('addresses a recipient once after being chosen, dropped and chosen again', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    mockSendMessageToCast.mockResolvedValueOnce(undefined)
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+
+    await rowCheckbox(wrapper, 0).setValue(true)
+    await rowCheckbox(wrapper, 0).setValue(false)
+    await rowCheckbox(wrapper, 0).setValue(true)
+    await wrapper.find('textarea').setValue('Hallo')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Senden')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockSendMessageToCast).toHaveBeenCalledWith('1', ['5'], 'Hallo')
+  })
+
+  it('offers the send button again after a failed send and keeps the message', async () => {
+    mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
+    mockGetMessageRecipients.mockResolvedValueOnce(recipients)
+    mockSendMessageToCast.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(MessageToCastView, { props: { id: '1' } })
+    await flushPromises()
+    await rowCheckbox(wrapper, 0).setValue(true)
+    await wrapper.find('textarea').setValue('Hallo')
+
+    const sendButton = wrapper.findAll('button').find((button) => button.text() === 'Senden')
+    await sendButton?.trigger('click')
+    await flushPromises()
+
+    expect(sendButton?.attributes('disabled')).toBeUndefined()
+    expect(wrapper.find('textarea').element.value).toBe('Hallo')
+  })
+
   it('shows the recipients of the LAST dropdown choice when an earlier answer arrives late', async () => {
     mockGetMessageToCastPage.mockResolvedValueOnce(makePage())
     mockGetMessageRecipients.mockResolvedValueOnce(recipients)

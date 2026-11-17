@@ -56,6 +56,22 @@ describe('RegisterView', () => {
     expect(wrapper.find('input#phone').attributes('autocomplete')).toBe('tel')
   })
 
+  it('shows its title and starts with every field empty', () => {
+    const wrapper = mount(RegisterView)
+
+    expect(wrapper.find('h2').text()).toBe('Registrierung')
+    for (const id of [
+      'givenname',
+      'surname',
+      'email',
+      'phone',
+      'password',
+      'password_confirmation',
+    ]) {
+      expect((wrapper.find(`input#${id}`).element as HTMLInputElement).value).toBe('')
+    }
+  })
+
   it('registers and replaces the form with the notice of the backend', async () => {
     mockRegister.mockResolvedValueOnce('Bitte prüfe dein Postfach.')
     const wrapper = mount(RegisterView)
@@ -73,6 +89,24 @@ describe('RegisterView', () => {
     })
     expect(wrapper.find('form').exists()).toBe(false)
     expect(wrapper.find('[role="status"]').text()).toBe('Bitte prüfe dein Postfach.')
+  })
+
+  it('locks the submit button while the request runs and releases it after a failure', async () => {
+    let failRegistration: (reason: unknown) => void = () => {}
+    mockRegister.mockReturnValueOnce(
+      new Promise<string>((_resolve, reject) => {
+        failRegistration = reject
+      }),
+    )
+    const wrapper = mount(RegisterView)
+    const submitButton = () => wrapper.find('button[type="submit"]')
+    expect(submitButton().attributes('disabled')).toBeUndefined()
+
+    await fillAndSubmit(wrapper)
+    expect(submitButton().attributes('disabled')).toBeDefined()
+
+    failRegistration(new Error('network'))
+    await vi.waitFor(() => expect(submitButton().attributes('disabled')).toBeUndefined())
   })
 
   it('shows per-field errors of a 422 and keeps the form', async () => {

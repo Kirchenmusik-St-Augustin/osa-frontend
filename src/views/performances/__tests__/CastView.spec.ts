@@ -2,6 +2,7 @@ import type * as VueRouter from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import CastView from '../CastView.vue'
+import CastItem from '@/components/bookings/CastItem.vue'
 import SingleCastList from '@/components/bookings/SingleCastList.vue'
 import type { PerformanceCastPage } from '@/composables/useBookings'
 
@@ -185,6 +186,135 @@ describe('CastView', () => {
 
     expect(mockShowToast).toHaveBeenCalledWith('Der Benutzer ist nicht buchbar.', true)
     expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('does not save or navigate when the confirmation is declined', async () => {
+    mockGetCastPage.mockResolvedValueOnce(makePage())
+    mockConfirmAction.mockResolvedValueOnce(false)
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+    await wrapper.find('.c-pointer').trigger('click')
+    await wrapper.find('.fa-times').trigger('click')
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'speichern')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(mockConfirmAction).toHaveBeenCalledTimes(1)
+    expect(mockSaveCast).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('offers the save button again after a failed save', async () => {
+    mockGetCastPage.mockResolvedValueOnce(makePage())
+    mockSaveCast.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+    await wrapper.find('.c-pointer').trigger('click')
+    await wrapper.find('.fa-times').trigger('click')
+    const save = () => wrapper.findAll('button').find((button) => button.text() === 'speichern')
+
+    await save()?.trigger('click')
+    await flushPromises()
+
+    expect(save()?.attributes('disabled')).toBeUndefined()
+  })
+
+  it('hands every item its quantity, its bookable staff and the names booked anywhere', async () => {
+    mockGetCastPage.mockResolvedValueOnce(
+      makePage({
+        setup: {
+          instruments: [{ id: '10', name: 'Fagott', quantity: 3, active: true }],
+          voices: [],
+          choirjobs: [],
+        },
+      }),
+    )
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+
+    const item = wrapper.findComponent(CastItem)
+    expect(item.props('item')).toEqual({ id: '10', name: 'Fagott', quantity: 3 })
+    expect(item.props('bookable')).toEqual({
+      requesting: [],
+      other: [{ id: '7', name: 'NEU, Kandidat' }],
+    })
+    expect(item.props('allBooked')).toEqual([{ id: '5', name: 'HUBER, Franz' }])
+  })
+
+  it('treats an item missing from the setup as quantity 0 with nobody bookable', async () => {
+    mockGetCastPage.mockResolvedValueOnce(
+      makePage({
+        setup: { instruments: [], voices: [], choirjobs: [] },
+        staff: { instruments: [], voices: [], choirjobs: [] },
+      }),
+    )
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+
+    const item = wrapper.findComponent(CastItem)
+    expect(item.props('item')).toMatchObject({ id: '10', quantity: 0 })
+    expect(item.props('bookable')).toEqual({ requesting: [], other: [] })
+  })
+
+  it('passes popular bookings on for instruments and never for choir jobs', async () => {
+    const popular = {
+      frequent: [{ id: '5', name: 'HUBER, Franz', total: 4 }],
+      recent: [],
+    }
+    mockGetCastPage.mockResolvedValueOnce(
+      makePage({
+        setup: {
+          instruments: [{ id: '10', name: 'Fagott', quantity: 1, active: true }],
+          voices: [],
+          choirjobs: [{ id: '30', name: 'Notenwart', quantity: 1, active: true }],
+        },
+        form_data: {
+          cast: {
+            instruments: [{ id: '10', name: 'Fagott', cast: [] }],
+            voices: [],
+            choirjobs: [{ id: '30', name: 'Notenwart', cast: [] }],
+          },
+          not_booked: [],
+        },
+        popular: { instruments: { '10': popular }, voices: {}, choirjobs: { '30': popular } },
+      }),
+    )
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+
+    const [instrumentItem, choirjobItem] = wrapper.findAllComponents(CastItem)
+    expect(instrumentItem?.props('popular')).toEqual(popular)
+    expect(choirjobItem?.props('popular')).toBeUndefined()
+  })
+
+  it('adds a rejected candidate to the not_booked list only once and ignores other stacks', async () => {
+    mockGetCastPage.mockResolvedValueOnce(makeFullPage())
+    mockSaveCast.mockResolvedValueOnce(undefined)
+    const wrapper = mount(CastView, { props: { id: '1' } })
+    await flushPromises()
+    const save = () => wrapper.findAll('button').find((button) => button.text() === 'speichern')
+    const item = wrapper.findComponent(CastItem)
+    const already = { id: '98', name: 'ZURÜCK, Zita', fee: 0 }
+    const fresh = { id: '77', name: 'FRISCH, Fritz', fee: 0 }
+
+    item.vm.$emit('add-to', '10', 'cast', [fresh])
+    await flushPromises()
+    expect(save()?.attributes('disabled')).toBeDefined()
+
+    item.vm.$emit('add-to', '10', 'notBooked', [already, fresh])
+    item.vm.$emit('add-to', '10', 'notBooked', [fresh])
+    await flushPromises()
+    await save()?.trigger('click')
+    await flushPromises()
+
+    expect(mockSaveCast.mock.calls[0]?.[1].not_booked).toEqual([
+      { id: '99' },
+      { id: '98' },
+      { id: '77' },
+    ])
   })
 
   it('sends one save while the request is in flight', async () => {

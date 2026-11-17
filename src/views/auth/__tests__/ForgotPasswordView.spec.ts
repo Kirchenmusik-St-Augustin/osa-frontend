@@ -39,6 +39,24 @@ describe('ForgotPasswordView', () => {
     expect(wrapper.find('input#email').exists()).toBe(false)
   })
 
+  it('locks the submit button while the request runs and releases it after a failure', async () => {
+    let failRequest: (reason: unknown) => void = () => {}
+    mockForgotPassword.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => {
+        failRequest = reject
+      }),
+    )
+    const wrapper = mount(ForgotPasswordView)
+    const submitButton = () => wrapper.find('button[type="submit"]')
+    expect(submitButton().attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('form').trigger('submit.prevent')
+    expect(submitButton().attributes('disabled')).toBeDefined()
+
+    failRequest(new Error('network'))
+    await vi.waitFor(() => expect(submitButton().attributes('disabled')).toBeUndefined())
+  })
+
   it('shows the server message when the request is throttled, keeping the form', async () => {
     mockForgotPassword.mockRejectedValueOnce({
       response: {

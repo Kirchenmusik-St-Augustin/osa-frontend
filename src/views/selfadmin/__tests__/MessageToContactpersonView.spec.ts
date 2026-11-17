@@ -183,6 +183,44 @@ describe('MessageToContactpersonView', () => {
     expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
+  it('locks the send button while the message is on its way and releases it after a failure', async () => {
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    let fail: (reason: unknown) => void = () => {}
+    mockSendMessageToContactperson.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => {
+        fail = reject
+      }),
+    )
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+    await wrapper.find('select').setValue(testId(5))
+    await wrapper.find('textarea').setValue('Bitte um Rückruf.')
+    const sendButton = () => wrapper.findAll('button').find((button) => button.text() === 'senden')
+    expect(sendButton()?.attributes('disabled')).toBeUndefined()
+
+    await sendButton()?.trigger('click')
+    await flushPromises()
+    expect(sendButton()?.attributes('disabled')).toBeDefined()
+
+    fail(new Error('offline'))
+    await flushPromises()
+    expect(sendButton()?.attributes('disabled')).toBeUndefined()
+  })
+
+  it('does not ask for a confirmation or send while no recipient is chosen', async () => {
+    mockGetContactpersons.mockResolvedValueOnce(makeRoles())
+    const wrapper = mount(MessageToContactpersonView)
+    await flushPromises()
+    await wrapper.find('textarea').setValue('Bitte um Rückruf.')
+
+    const sendButton = wrapper.findAll('button').find((button) => button.text() === 'senden')
+    expect(sendButton?.attributes('disabled')).toBeDefined()
+    await sendButton?.trigger('click')
+    await flushPromises()
+
+    expect(mockSendMessageToContactperson).not.toHaveBeenCalled()
+  })
+
   it('keeps the typed message after a failed send so it can be sent again', async () => {
     mockGetContactpersons.mockResolvedValueOnce(makeRoles())
     mockSendMessageToContactperson.mockRejectedValueOnce(new Error('offline'))

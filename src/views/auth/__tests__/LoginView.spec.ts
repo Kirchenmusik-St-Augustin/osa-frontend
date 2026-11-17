@@ -127,6 +127,47 @@ describe('LoginView', () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
+  it('locks the login button while the request runs and releases it afterwards', async () => {
+    let finishLogin: () => void = () => {}
+    mockLogin.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishLogin = resolve
+      }),
+    )
+    const wrapper = mountLoginView()
+    const loginButton = () => wrapper.find('button[type="submit"]')
+    expect(loginButton().attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('form').trigger('submit.prevent')
+    expect(loginButton().attributes('disabled')).toBeDefined()
+
+    finishLogin()
+    await vi.waitFor(() => expect(loginButton().attributes('disabled')).toBeUndefined())
+  })
+
+  it('releases the login button after a failed login', async () => {
+    mockLogin.mockRejectedValueOnce({ response: { data: { detail: 'Anmeldedaten unbekannt.' } } })
+    const wrapper = mountLoginView()
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Anmeldedaten unbekannt.'))
+
+    expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('shows the Google error and stays on the login card for any other failure than 404', async () => {
+    mockLoginWithGoogleCredential.mockRejectedValueOnce({
+      response: { status: 500, data: { detail: 'Google-Anmeldung nicht möglich.' } },
+    })
+    const wrapper = mountLoginView()
+
+    await triggerGoogleCallback(wrapper, 'google-credential-token')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Google-Anmeldung nicht möglich.'))
+
+    expect(wrapper.text()).not.toContain('Authentisierung zur Konten-Verknüpfung')
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
   it('shows the link-account form when Google reports ACCOUNT_NOT_LINKED (404)', async () => {
     mockLoginWithGoogleCredential.mockRejectedValueOnce({
       response: { status: 404, data: { detail: 'ACCOUNT_NOT_LINKED' } },

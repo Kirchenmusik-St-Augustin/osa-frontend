@@ -133,7 +133,41 @@ describe('SqlInspectorView', () => {
     mount(SqlInspectorView)
     await flushPromises()
 
-    expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
+  })
+
+  it('shows the message of the server when the table list fetch is refused', async () => {
+    mockListTables.mockRejectedValueOnce({ response: { data: { detail: 'Zugriff verweigert' } } })
+
+    mount(SqlInspectorView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Zugriff verweigert', true)
+  })
+
+  it('falls back to its own text when the table list failure carries only field errors', async () => {
+    mockListTables.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'table'], msg: 'ungültig' }] } },
+    })
+
+    mount(SqlInspectorView)
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Tabellenliste konnte nicht geladen werden.', true)
+  })
+
+  it('falls back to its own text when the table data failure carries only field errors', async () => {
+    mockListTables.mockResolvedValueOnce(['users'])
+    mockGetTableData.mockRejectedValueOnce({
+      response: { data: { detail: [{ loc: ['query', 'page'], msg: 'ungültig' }] } },
+    })
+
+    const wrapper = mount(SqlInspectorView)
+    await flushPromises()
+    await wrapper.find('select').setValue('users')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Tabellendaten konnten nicht geladen werden.', true)
   })
 
   it('shows an error toast when the table data fetch fails', async () => {
@@ -145,7 +179,7 @@ describe('SqlInspectorView', () => {
     await wrapper.find('select').setValue('users')
     await flushPromises()
 
-    expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), true)
+    expect(mockShowToast).toHaveBeenCalledWith('Ein unerwarteter Fehler ist aufgetreten.', true)
   })
 
   it('shows the fixed texts when the table list or the table data fail with a field-only answer', async () => {

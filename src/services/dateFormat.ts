@@ -1,9 +1,8 @@
 // Small, dependency-free German date-formatting helper -- this project has no
-// date library, and pulling in moment/dayjs just for text formatting (as
-// opposed to the Flatpickr *widget*) would be exactly the kind of
-// unnecessary dependency the project's lean/no-over-engineering principle
-// warns against. These arrays hold the German month/weekday names
-// (short/full/weekday-min).
+// date library, and pulling in moment/dayjs just for text formatting would be
+// exactly the kind of unnecessary dependency the project's lean/no-over-
+// engineering principle warns against. These arrays hold the German month/
+// weekday names (short/full/weekday-min).
 const MONTHS_SHORT = [
   'Jan.',
   'Feb.',
@@ -18,7 +17,7 @@ const MONTHS_SHORT = [
   'Nov.',
   'Dez.',
 ]
-const MONTHS_FULL = [
+export const MONTHS_FULL = [
   'Januar',
   'Februar',
   'März',
@@ -74,9 +73,9 @@ export function parseWallClock(value: string): Date {
   )
 }
 
-// The inverse of parseWallClock: turns a local Date (e.g. from a Flatpickr
-// selection, which already operates in wall-clock time) back into the
-// naive wall-clock string the backend expects on write.
+// The inverse of parseWallClock: turns a local Date (e.g. the date-time
+// picker's selection, which already operates in wall-clock time) back into
+// the naive wall-clock string the backend expects on write.
 export function toWallClockString(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }

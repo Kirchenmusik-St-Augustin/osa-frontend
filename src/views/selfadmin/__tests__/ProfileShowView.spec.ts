@@ -124,6 +124,46 @@ describe('ProfileShowView', () => {
     expect(wrapper.text()).not.toContain('Verbundene Konten')
   })
 
+  it('removes only the chosen binding and keeps the others listed', async () => {
+    mockGet.mockResolvedValueOnce(
+      makeUser({
+        oauth2_bindings: [
+          { id: testId(9), provider: 'google', remote_name: 'Margot S.' },
+          { id: testId(10), provider: 'github', remote_name: 'margot' },
+        ],
+      }),
+    )
+    mockDisconnectOauth2.mockResolvedValueOnce(undefined)
+    const wrapper = mount(ProfileShowView)
+    await flushPromises()
+
+    await wrapper.findAll('.fa-trash-alt')[0]?.trigger('click')
+    await flushPromises()
+
+    expect(mockDisconnectOauth2).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('Verbundene Konten')
+    expect(wrapper.text()).toContain('Github')
+    expect(wrapper.text()).not.toContain('Google')
+  })
+
+  it('keeps the binding listed and says so when it cannot be removed', async () => {
+    mockGet.mockResolvedValueOnce(
+      makeUser({
+        oauth2_bindings: [{ id: testId(9), provider: 'google', remote_name: 'Margot S.' }],
+      }),
+    )
+    mockDisconnectOauth2.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(ProfileShowView)
+    await flushPromises()
+
+    await wrapper.find('.fa-trash-alt').trigger('click')
+    await flushPromises()
+
+    expect(mockShowToast).toHaveBeenCalledWith('Bindung konnte nicht entfernt werden.', true)
+    expect(mockShowToast).not.toHaveBeenCalledWith('Bindung entfernt')
+    expect(wrapper.text()).toContain('Google')
+  })
+
   it('offers the removal as a labelled button and asks for the binding by its right name', async () => {
     mockGet.mockResolvedValueOnce(
       makeUser({
