@@ -6,9 +6,8 @@ import type { CastMember, NotBookedEntry } from '@/composables/useBookings'
 import { testId } from '@/__tests__/testId'
 
 // vuedraggable/SortableJS drive real drag gestures via native pointer/touch
-// events jsdom doesn't implement -- stubbed minimally instead (same
-// established pattern as DateTimePicker.spec.ts's vue-flatpickr-component
-// mock), rendering through the REAL #item scoped slot so every existing
+// events jsdom doesn't implement -- stubbed minimally instead, rendering
+// through the REAL #item scoped slot so every existing
 // row-markup assertion below keeps working unmodified, while giving tests
 // a way to (a) inspect the mobile drag options passed through, and (b)
 // simulate "a drag just happened" by emitting update:modelValue directly.

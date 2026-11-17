@@ -43,7 +43,6 @@ const TOUCH_DRAG_DELAY_MS = 200
 const TOUCH_DRAG_JITTER_PX = 5
 
 // vuedraggable needs a real bindable array; `props.cast` is read-only.
-// Mirrors DateTimePicker.vue's localDate/model pattern.
 const localCast = ref<CastMember[]>([...props.cast])
 
 // Resync downward only when content actually differs (JSON.stringify is
