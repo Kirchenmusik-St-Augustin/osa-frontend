@@ -60,6 +60,20 @@ describe('OrdinariumworkShowView', () => {
     expect(wrapper.text()).not.toContain('Beschreibung')
   })
 
+  it('labels name, composer and description of the work', async () => {
+    mockGet.mockResolvedValueOnce(makeWork({ description: 'Festmesse' }))
+    mockGetSetup.mockResolvedValueOnce(makeSetup())
+    const wrapper = mount(OrdinariumworkShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    const rows = wrapper.findAll('.card > div').map((row) => row.text())
+    expect(rows.slice(0, 3)).toEqual([
+      expect.stringMatching(/^Name\s*Krönungsmesse$/),
+      expect.stringMatching(/^Komponist\s*MOZART, Wolfgang$/),
+      expect.stringMatching(/^Beschreibung\s*Festmesse$/),
+    ])
+  })
+
   it('shows "anspruchsvoll" in red text when demanding', async () => {
     mockGet.mockResolvedValueOnce(makeWork({ demanding: true }))
     mockGetSetup.mockResolvedValueOnce(makeSetup())
@@ -150,6 +164,8 @@ describe('OrdinariumworkShowView', () => {
     await wrapper.find('button.btn-danger').trigger('click')
     await flushPromises()
 
+    expect(mockConfirmAction).toHaveBeenCalledWith('Wirklich löschen?')
+    expect(mockShowToast).toHaveBeenCalledWith('gelöscht.')
     expect(mockPush).toHaveBeenCalledWith({ name: 'repertoire-ordinariumworks-search' })
   })
 

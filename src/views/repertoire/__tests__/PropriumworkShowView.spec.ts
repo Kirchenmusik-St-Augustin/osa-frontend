@@ -53,6 +53,19 @@ describe('PropriumworkShowView', () => {
     expect(wrapper.text()).not.toContain('Beschreibung')
   })
 
+  it('labels name, composer and description of the work', async () => {
+    mockGet.mockResolvedValueOnce(makeWork({ description: 'Festmesse' }))
+    const wrapper = mount(PropriumworkShowView, { props: { id: '1' } })
+    await flushPromises()
+
+    const rows = wrapper.findAll('.card > div').map((row) => row.text())
+    expect(rows.slice(0, 3)).toEqual([
+      expect.stringMatching(/^Name\s*Introitus$/),
+      expect.stringMatching(/^Komponist\s*HAYDN, Joseph$/),
+      expect.stringMatching(/^Beschreibung\s*Festmesse$/),
+    ])
+  })
+
   it('shows "anspruchsvoll" in red text when demanding', async () => {
     mockGet.mockResolvedValueOnce(makeWork({ demanding: true }))
     const wrapper = mount(PropriumworkShowView, { props: { id: '1' } })
@@ -112,6 +125,8 @@ describe('PropriumworkShowView', () => {
     await wrapper.find('button.btn-danger').trigger('click')
     await flushPromises()
 
+    expect(mockConfirmAction).toHaveBeenCalledWith('Wirklich löschen?')
+    expect(mockShowToast).toHaveBeenCalledWith('gelöscht.')
     expect(mockPush).toHaveBeenCalledWith({ name: 'repertoire-propriumworks-search' })
   })
 
