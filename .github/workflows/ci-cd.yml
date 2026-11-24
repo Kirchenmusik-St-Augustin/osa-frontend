@@ -29,22 +29,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run format:check
-      # picomatch <= 4.0.7 (GHSA-fc5q-39xc-vjpf, ReDoS) has no patched release
-      # yet. vue-router 5 lists its build-time helpers (unplugin, tinyglobby,
-      # picomatch) as dependencies; none of them is part of the browser bundle,
-      # and exploiting the flaw needs attacker-controlled glob patterns. Every
-      # other advisory of high or critical severity still fails this step.
-      # Remove the exception once picomatch has a release that fixes it.
-      - name: Audit production dependencies
-        run: |
-          npm audit --omit=dev --json > audit.json || true
-          jq -e '
-            [.vulnerabilities[].via[]
-              | select(type == "object")
-              | select(.severity == "high" or .severity == "critical")
-              | .url]
-            | all(. == "https://github.com/advisories/GHSA-fc5q-39xc-vjpf")
-          ' audit.json
+      - run: npm audit --omit=dev --audit-level=high
 
   quality:
     name: Typecheck & Test
